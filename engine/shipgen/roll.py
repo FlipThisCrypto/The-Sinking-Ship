@@ -49,11 +49,17 @@ class RollEngine:
         self.cfg = cfg
         self.roll_order = list(cfg.roll_order)
         self._layer = {}
+        self._rank_of: dict[str, dict[str, int]] = {}
         for layer in cfg.layers:
             names = [t.name for t in layer.traits]
             ranks = [t.rarity_rank for t in layer.traits]
             weights = [int(cfg.weights[layer.name][t.name]) for t in layer.traits]
             self._layer[layer.name] = (names, ranks, weights)
+            self._rank_of[layer.name] = {t.name: t.rarity_rank for t in layer.traits}
+        # hot-path cache: (layer, luck) -> (luck-scaled weights tuple, total).
+        # Purely a memoization of the unmodified per-trait arithmetic below —
+        # the draw sequence is bit-identical with or without the cache.
+        self._luck_cache: dict[tuple[str, int], tuple[list[int], int]] = {}
 
         # forward effects: (if_layer, if_trait) -> list of (target_layer, kind, payload)
         self._forward: dict[tuple[str, str], list] = {}
@@ -110,6 +116,10 @@ class RollEngine:
             if rule["type"] == "forced_aura":
                 self._forced_aura = rule
 
+        # layers that participate in any cluster rule (short-circuit helper)
+        self._cluster_layers = {lay for cl in self._clusters
+                                for (lay, _) in cl["members"]}
+
         # roll_order sanity: every forward rule must point forward
         order_pos = {name: i for i, name in enumerate(self.roll_order)}
         for (if_layer, _), effects in self._forward.items():
@@ -135,6 +145,22 @@ class RollEngine:
             f"roll_nft exceeded {MAX_NFT_ATTEMPTS} attempts for {label!r} — "
             "constraints are likely unsatisfiable; check config")
 
+    def _luck_weights(self, layer_name: str, luck_permille: int):
+        """Memoized luck-scaled base weights + total for one layer."""
+        key = (layer_name, luck_permille)
+        cached = self._luck_cache.get(key)
+        if cached is None:
+            names, ranks, base = self._layer[layer_name]
+            if luck_permille == LUCK_BASE:
+                weights = list(base)
+            else:
+                weights = [w * luck_permille // LUCK_BASE
+                           if (w > 0 and r >= EPIC_RANK) else w
+                           for w, r in zip(base, ranks)]
+            cached = (weights, sum(weights))
+            self._luck_cache[key] = cached
+        return cached
+
     def _attempt(self, seed_key, label, nonce, luck_permille, restrict):
         drbg = Drbg(seed_key, f"{label}/nft/{nonce}")
         traits: dict[str, str] = {}
@@ -144,33 +170,45 @@ class RollEngine:
 
         for layer_name in self.roll_order:
             names, ranks, base = self._layer[layer_name]
-            weights = []
             req = active_req.get(layer_name)
             excl = active_excl.get(layer_name)
             mults = active_mult.get(layer_name)
-            cluster_boost = self._cluster_boost(layer_name, traits)
-            for i, name in enumerate(names):
-                w = base[i]
-                if w > 0:
-                    if ranks[i] >= EPIC_RANK and luck_permille != LUCK_BASE:
-                        w = w * luck_permille // LUCK_BASE
-                    if req is not None and name not in req:
-                        w = 0
-                    elif excl is not None and name in excl:
-                        w = 0
-                    if w > 0 and restrict is not None and layer_name == restrict[0] \
-                            and ranks[i] < restrict[1]:
-                        w = 0
-                    if w > 0 and mults is not None and name in mults:
-                        w = w * mults[name] // 1000
-                    if w > 0 and cluster_boost is not None and name in cluster_boost:
-                        w = w * cluster_boost[name] // 1000
-                weights.append(w)
-            if not any(weights):
-                return None  # over-constrained this attempt; try next nonce
-            idx = drbg.weighted_index(weights)
-            chosen = names[idx]
-            traits[layer_name] = chosen
+            cluster_boost = (self._cluster_boost(layer_name, traits)
+                             if layer_name in self._cluster_layers else None)
+            restricted = restrict is not None and layer_name == restrict[0]
+
+            if req is None and excl is None and mults is None \
+                    and cluster_boost is None and not restricted:
+                # fast path: no active modifiers — identical arithmetic to the
+                # loop below, just precomputed (same weights, same total, so
+                # the DRBG consumes the same bytes)
+                weights, total = self._luck_weights(layer_name, luck_permille)
+                idx = drbg.weighted_index(weights, total)
+                traits[layer_name] = names[idx]
+                chosen = names[idx]
+            else:
+                weights = []
+                for i, name in enumerate(names):
+                    w = base[i]
+                    if w > 0:
+                        if ranks[i] >= EPIC_RANK and luck_permille != LUCK_BASE:
+                            w = w * luck_permille // LUCK_BASE
+                        if req is not None and name not in req:
+                            w = 0
+                        elif excl is not None and name in excl:
+                            w = 0
+                        if w > 0 and restricted and ranks[i] < restrict[1]:
+                            w = 0
+                        if w > 0 and mults is not None and name in mults:
+                            w = w * mults[name] // 1000
+                        if w > 0 and cluster_boost is not None and name in cluster_boost:
+                            w = w * cluster_boost[name] // 1000
+                    weights.append(w)
+                if not any(weights):
+                    return None  # over-constrained this attempt; try next nonce
+                idx = drbg.weighted_index(weights)
+                chosen = names[idx]
+                traits[layer_name] = chosen
 
             for target, kind, payload in self._forward.get((layer_name, chosen), []):
                 if kind == "exclude":
@@ -261,8 +299,7 @@ class RollEngine:
     def rarity_tier(self, traits: dict[str, str]) -> str:
         best = 0
         for layer_name, trait_name in traits.items():
-            names, ranks, _ = self._layer[layer_name]
-            r = ranks[names.index(trait_name)] if trait_name in names else -1
+            r = self._rank_of[layer_name].get(trait_name, -1)
             if r > best:
                 best = r
         return RARITY_ORDER[best]

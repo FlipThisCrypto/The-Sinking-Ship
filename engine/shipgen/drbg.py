@@ -64,13 +64,18 @@ class Drbg:
             raise ValueError("rand_int requires a <= b")
         return a + self.rand_below(b - a + 1)
 
-    def weighted_index(self, weights: list[int]) -> int:
-        """Pick an index proportional to integer weights (zero allowed)."""
-        total = 0
-        for w in weights:
-            if w < 0:
-                raise ValueError("negative weight")
-            total += w
+    def weighted_index(self, weights: list[int], total: int | None = None) -> int:
+        """Pick an index proportional to integer weights (zero allowed).
+
+        `total` may be supplied when the caller has precomputed sum(weights)
+        (hot-path optimization); the draw sequence is identical either way.
+        """
+        if total is None:
+            total = 0
+            for w in weights:
+                if w < 0:
+                    raise ValueError("negative weight")
+                total += w
         if total <= 0:
             raise ValueError("all weights are zero")
         r = self.rand_below(total)
