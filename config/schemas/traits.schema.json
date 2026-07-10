@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "traits.schema.json",
+  "title": "The Sinking Ship — trait matrix",
+  "type": "object",
+  "required": ["config_name", "version", "grid", "roll_order", "layers",
+               "exclusions", "pairings", "quotas", "rules"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "config_name": {"const": "traits"},
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "spec_reference": {"type": "string"},
+    "notes": {"type": "array", "items": {"type": "string"}},
+    "grid": {
+      "type": "object",
+      "required": ["master_px", "upscales"],
+      "properties": {
+        "master_px": {"type": "integer", "minimum": 8},
+        "upscales": {"type": "array", "items": {"type": "integer"}}
+      }
+    },
+    "roll_order": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "display_name", "z_order", "required", "traits"],
+        "properties": {
+          "name": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+          "display_name": {"type": "string"},
+          "z_order": {"type": ["integer", "null"]},
+          "required": {"type": "boolean"},
+          "sprite_pattern": {"type": "string"},
+          "rendered_via": {"type": "string"},
+          "layer_notes": {"type": "string"},
+          "traits": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["name", "sprite_filename", "rarity_bucket"],
+              "properties": {
+                "name": {"type": "string"},
+                "sprite_filename": {"type": ["string", "null"],
+                                    "pattern": "^[a-z0-9_/]+\\.png$"},
+                "rarity_bucket": {"enum": ["common", "uncommon", "rare", "epic",
+                                            "legendary", "mythic", "none", "quota"]},
+                "series": {"enum": ["harbor", "military", "pirate", "wizard", "crystal"]},
+                "notes": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "exclusions": {"type": "array", "items": {"$ref": "#/$defs/constraint"}},
+    "pairings": {"type": "array", "items": {"$ref": "#/$defs/constraint"}},
+    "quotas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "name", "count", "assign", "mechanism"],
+        "properties": {
+          "id": {"type": "string"},
+          "type": {"const": "quota"},
+          "name": {"type": "string"},
+          "count": {"type": "integer", "minimum": 1},
+          "assign": {"$ref": "#/$defs/layerTrait"},
+          "mechanism": {"type": "string"},
+          "source": {"type": "string"}
+        }
+      }
+    },
+    "rules": {"type": "array", "items": {"type": "object", "required": ["id", "type"]}}
+  },
+  "$defs": {
+    "layerTrait": {
+      "type": "object",
+      "required": ["layer", "trait"],
+      "properties": {
+        "layer": {"type": "string"},
+        "trait": {"type": "string"}
+      }
+    },
+    "constraint": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"enum": ["exclude", "require", "require_any", "bias", "bias_multi",
+                           "cluster", "combo_gate", "note"]},
+        "if": {"$ref": "#/$defs/layerTrait"},
+        "then": {},
+        "cluster_traits": {"type": "array", "items": {"$ref": "#/$defs/layerTrait"}},
+        "combo": {"type": "array", "items": {"$ref": "#/$defs/layerTrait"}},
+        "min_present": {"type": "integer"},
+        "weight_multiplier": {"type": "number"},
+        "allowed_only_if_tier_at_least": {"type": "string"},
+        "note": {"type": "string"},
+        "source": {"type": "string"}
+      }
+    }
+  }
+}

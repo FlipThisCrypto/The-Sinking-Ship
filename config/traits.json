@@ -1,0 +1,1421 @@
+{
+  "$schema": "./schemas/traits.schema.json",
+  "config_name": "traits",
+  "version": "1.0.0",
+  "spec_reference": "sinking-ship-master-spec.md Section 3 (trait system) + 4.1/4.2 (buckets)",
+  "notes": [
+    "Trait counts follow the spec's per-layer LISTS, which the Section 7 art budget confirms; several section-header counts are stale (Sky '14' lists 15, Ship Class '14' lists 16, Condition '9' lists 11, Eyes '15' lists 16, Hat '14 + None' lists 13 + None).",
+    "rarity_bucket assignments marked 'bucket fixed by spec' come from the Section 4.2 example table; all others are proposals consistent with depth-equals-rarity and are tunable without code changes.",
+    "roll_order differs from z_order so that every bias/pairing rule points forward during sequential rolling (ADR-0003)."
+  ],
+  "grid": {
+    "master_px": 48,
+    "upscales": [
+      2048,
+      4000
+    ]
+  },
+  "roll_order": [
+    "body",
+    "ship_class",
+    "ship_condition",
+    "sky",
+    "sea",
+    "scene_element",
+    "clothing",
+    "eyes",
+    "hat",
+    "mouth",
+    "pose",
+    "aura"
+  ],
+  "layers": [
+    {
+      "name": "sky",
+      "display_name": "Sky",
+      "z_order": 1,
+      "required": true,
+      "traits": [
+        {
+          "name": "Calm Blue",
+          "sprite_filename": "calm_blue.png",
+          "rarity_bucket": "common",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Overcast",
+          "sprite_filename": "overcast.png",
+          "rarity_bucket": "common"
+        },
+        {
+          "name": "Orange Sunset",
+          "sprite_filename": "orange_sunset.png",
+          "rarity_bucket": "uncommon",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Golden Sunset",
+          "sprite_filename": "golden_sunset.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Moonlit",
+          "sprite_filename": "moonlit.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Heavy Rain",
+          "sprite_filename": "heavy_rain.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Fog",
+          "sprite_filename": "fog.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Lightning",
+          "sprite_filename": "lightning.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Purple Storm",
+          "sprite_filename": "purple_storm.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Aurora",
+          "sprite_filename": "aurora.png",
+          "rarity_bucket": "rare",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Green Aurora",
+          "sprite_filename": "green_aurora.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Meteor Shower",
+          "sprite_filename": "meteor_shower.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Blood Moon",
+          "sprite_filename": "blood_moon.png",
+          "rarity_bucket": "epic",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Fire Sky",
+          "sprite_filename": "fire_sky.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Solar Eclipse",
+          "sprite_filename": "solar_eclipse.png",
+          "rarity_bucket": "legendary",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        }
+      ]
+    },
+    {
+      "name": "sea",
+      "display_name": "Sea",
+      "z_order": 2,
+      "required": true,
+      "traits": [
+        {
+          "name": "Calm",
+          "sprite_filename": "calm.png",
+          "rarity_bucket": "common"
+        },
+        {
+          "name": "Storm Swell",
+          "sprite_filename": "storm_swell.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Black Sea",
+          "sprite_filename": "black_sea.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Frozen",
+          "sprite_filename": "frozen.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Emerald Water",
+          "sprite_filename": "emerald_water.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Red Water",
+          "sprite_filename": "red_water.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Whirlpool",
+          "sprite_filename": "whirlpool.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Glass Sea",
+          "sprite_filename": "glass_sea.png",
+          "rarity_bucket": "epic",
+          "notes": "mirror-still, eerie"
+        },
+        {
+          "name": "Abyss",
+          "sprite_filename": "abyss.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Bioluminescent",
+          "sprite_filename": "bioluminescent.png",
+          "rarity_bucket": "legendary"
+        },
+        {
+          "name": "Chia-Green Tide",
+          "sprite_filename": "chia_green_tide.png",
+          "rarity_bucket": "mythic",
+          "notes": "Chia-coded traits sit at the top of the rarity ladder"
+        }
+      ]
+    },
+    {
+      "name": "scene_element",
+      "display_name": "Scene Element",
+      "z_order": 3,
+      "required": false,
+      "traits": [
+        {
+          "name": "None",
+          "sprite_filename": null,
+          "rarity_bucket": "none",
+          "notes": "majority of supply — keeps the composition clean (spec 3.3)"
+        },
+        {
+          "name": "Abandoned Harbor",
+          "sprite_filename": "harbor_abandoned_harbor.png",
+          "rarity_bucket": "common",
+          "series": "harbor"
+        },
+        {
+          "name": "Broken Pier",
+          "sprite_filename": "harbor_broken_pier.png",
+          "rarity_bucket": "common",
+          "series": "harbor"
+        },
+        {
+          "name": "Storm Harbor",
+          "sprite_filename": "harbor_storm_harbor.png",
+          "rarity_bucket": "uncommon",
+          "series": "harbor"
+        },
+        {
+          "name": "Ship Graveyard",
+          "sprite_filename": "harbor_ship_graveyard.png",
+          "rarity_bucket": "uncommon",
+          "series": "harbor"
+        },
+        {
+          "name": "Dry Dock",
+          "sprite_filename": "harbor_dry_dock.png",
+          "rarity_bucket": "uncommon",
+          "series": "harbor"
+        },
+        {
+          "name": "Lighthouse",
+          "sprite_filename": "harbor_lighthouse.png",
+          "rarity_bucket": "rare",
+          "series": "harbor"
+        },
+        {
+          "name": "Military Port",
+          "sprite_filename": "harbor_military_port.png",
+          "rarity_bucket": "rare",
+          "series": "harbor"
+        },
+        {
+          "name": "Pirate Cove",
+          "sprite_filename": "harbor_pirate_cove.png",
+          "rarity_bucket": "rare",
+          "series": "harbor"
+        },
+        {
+          "name": "Wizard Harbor",
+          "sprite_filename": "harbor_wizard_harbor.png",
+          "rarity_bucket": "epic",
+          "series": "harbor"
+        },
+        {
+          "name": "Convoy Silhouettes",
+          "sprite_filename": "military_convoy_silhouettes.png",
+          "rarity_bucket": "uncommon",
+          "series": "military"
+        },
+        {
+          "name": "Artillery Smoke",
+          "sprite_filename": "military_artillery_smoke.png",
+          "rarity_bucket": "uncommon",
+          "series": "military"
+        },
+        {
+          "name": "Searchlights",
+          "sprite_filename": "military_searchlights.png",
+          "rarity_bucket": "rare",
+          "series": "military"
+        },
+        {
+          "name": "Signal Flags",
+          "sprite_filename": "military_signal_flags.png",
+          "rarity_bucket": "rare",
+          "series": "military"
+        },
+        {
+          "name": "Cargo Drop",
+          "sprite_filename": "military_cargo_drop.png",
+          "rarity_bucket": "epic",
+          "series": "military"
+        },
+        {
+          "name": "Helicopter",
+          "sprite_filename": "military_helicopter.png",
+          "rarity_bucket": "epic",
+          "series": "military",
+          "notes": "spec marks it '(rare)' colloquially; assigned epic bucket to honor scarcity intent"
+        },
+        {
+          "name": "Black Flag",
+          "sprite_filename": "pirate_black_flag.png",
+          "rarity_bucket": "uncommon",
+          "series": "pirate"
+        },
+        {
+          "name": "Fog Fleet",
+          "sprite_filename": "pirate_fog_fleet.png",
+          "rarity_bucket": "uncommon",
+          "series": "pirate"
+        },
+        {
+          "name": "Crow's Nest",
+          "sprite_filename": "pirate_crows_nest.png",
+          "rarity_bucket": "uncommon",
+          "series": "pirate"
+        },
+        {
+          "name": "Hidden Cove",
+          "sprite_filename": "pirate_hidden_cove.png",
+          "rarity_bucket": "rare",
+          "series": "pirate"
+        },
+        {
+          "name": "Treasure Island",
+          "sprite_filename": "pirate_treasure_island.png",
+          "rarity_bucket": "rare",
+          "series": "pirate"
+        },
+        {
+          "name": "Ghost Fleet",
+          "sprite_filename": "pirate_ghost_fleet.png",
+          "rarity_bucket": "epic",
+          "series": "pirate"
+        },
+        {
+          "name": "Skeleton Crew",
+          "sprite_filename": "pirate_skeleton_crew.png",
+          "rarity_bucket": "epic",
+          "series": "pirate"
+        },
+        {
+          "name": "Green Magic",
+          "sprite_filename": "wizard_green_magic.png",
+          "rarity_bucket": "rare",
+          "series": "wizard"
+        },
+        {
+          "name": "Purple Magic",
+          "sprite_filename": "wizard_purple_magic.png",
+          "rarity_bucket": "rare",
+          "series": "wizard"
+        },
+        {
+          "name": "Magic Lanterns",
+          "sprite_filename": "wizard_magic_lanterns.png",
+          "rarity_bucket": "rare",
+          "series": "wizard"
+        },
+        {
+          "name": "Spell Circle",
+          "sprite_filename": "wizard_spell_circle.png",
+          "rarity_bucket": "epic",
+          "series": "wizard"
+        },
+        {
+          "name": "Floating Runes",
+          "sprite_filename": "wizard_floating_runes.png",
+          "rarity_bucket": "epic",
+          "series": "wizard"
+        },
+        {
+          "name": "Summoning Circle",
+          "sprite_filename": "wizard_summoning_circle.png",
+          "rarity_bucket": "epic",
+          "series": "wizard"
+        },
+        {
+          "name": "Blockchain Sigils",
+          "sprite_filename": "wizard_blockchain_sigils.png",
+          "rarity_bucket": "legendary",
+          "series": "wizard"
+        },
+        {
+          "name": "Offer File Scroll",
+          "sprite_filename": "wizard_offer_file_scroll.png",
+          "rarity_bucket": "legendary",
+          "series": "wizard",
+          "notes": "Chia-native meme trait"
+        },
+        {
+          "name": "Emerald Horizon",
+          "sprite_filename": "crystal_emerald_horizon.png",
+          "rarity_bucket": "rare",
+          "series": "crystal"
+        },
+        {
+          "name": "Crystal Reef",
+          "sprite_filename": "crystal_crystal_reef.png",
+          "rarity_bucket": "rare",
+          "series": "crystal"
+        },
+        {
+          "name": "Crystal Moon",
+          "sprite_filename": "crystal_crystal_moon.png",
+          "rarity_bucket": "epic",
+          "series": "crystal"
+        },
+        {
+          "name": "Fractured",
+          "sprite_filename": "crystal_fractured.png",
+          "rarity_bucket": "epic",
+          "series": "crystal"
+        },
+        {
+          "name": "Black",
+          "sprite_filename": "crystal_black.png",
+          "rarity_bucket": "epic",
+          "series": "crystal"
+        },
+        {
+          "name": "Ruby",
+          "sprite_filename": "crystal_ruby.png",
+          "rarity_bucket": "legendary",
+          "series": "crystal"
+        },
+        {
+          "name": "Sapphire",
+          "sprite_filename": "crystal_sapphire.png",
+          "rarity_bucket": "legendary",
+          "series": "crystal"
+        },
+        {
+          "name": "Corrupted",
+          "sprite_filename": "crystal_corrupted.png",
+          "rarity_bucket": "legendary",
+          "series": "crystal"
+        },
+        {
+          "name": "Void",
+          "sprite_filename": "crystal_void.png",
+          "rarity_bucket": "legendary",
+          "series": "crystal"
+        },
+        {
+          "name": "Chia Crystal",
+          "sprite_filename": "crystal_chia_crystal.png",
+          "rarity_bucket": "mythic",
+          "series": "crystal",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        }
+      ],
+      "layer_notes": "one series per NFT max — single-select layer, so series never mix by construction"
+    },
+    {
+      "name": "ship_class",
+      "display_name": "Ship Class",
+      "z_order": 4,
+      "required": true,
+      "traits": [
+        {
+          "name": "Raft",
+          "sprite_filename": "raft.png",
+          "rarity_bucket": "common"
+        },
+        {
+          "name": "Lifeboat",
+          "sprite_filename": "lifeboat.png",
+          "rarity_bucket": "common"
+        },
+        {
+          "name": "Fishing Boat",
+          "sprite_filename": "fishing_boat.png",
+          "rarity_bucket": "common",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Tug Boat",
+          "sprite_filename": "tug_boat.png",
+          "rarity_bucket": "common"
+        },
+        {
+          "name": "Cargo Ship",
+          "sprite_filename": "cargo_ship.png",
+          "rarity_bucket": "uncommon",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Steam Ship",
+          "sprite_filename": "steam_ship.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Luxury Yacht",
+          "sprite_filename": "luxury_yacht.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Cruiser",
+          "sprite_filename": "cruiser.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Battleship",
+          "sprite_filename": "battleship.png",
+          "rarity_bucket": "rare",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Aircraft Carrier",
+          "sprite_filename": "aircraft_carrier.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Submarine",
+          "sprite_filename": "submarine.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Pirate Ship",
+          "sprite_filename": "pirate_ship.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Ghost Ship",
+          "sprite_filename": "ghost_ship.png",
+          "rarity_bucket": "epic",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "The Ark",
+          "sprite_filename": "the_ark.png",
+          "rarity_bucket": "legendary",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Wizard Ship",
+          "sprite_filename": "wizard_ship.png",
+          "rarity_bucket": "legendary"
+        },
+        {
+          "name": "Blockchain Ship",
+          "sprite_filename": "blockchain_ship.png",
+          "rarity_bucket": "mythic",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        }
+      ]
+    },
+    {
+      "name": "ship_condition",
+      "display_name": "Ship Condition",
+      "z_order": 5,
+      "required": true,
+      "traits": [
+        {
+          "name": "Floating",
+          "sprite_filename": "floating.png",
+          "rarity_bucket": "common",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Listing",
+          "sprite_filename": "listing.png",
+          "rarity_bucket": "uncommon",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Half Sunk",
+          "sprite_filename": "half_sunk.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Flooded",
+          "sprite_filename": "flooded.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Broken Mast",
+          "sprite_filename": "broken_mast.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Burning",
+          "sprite_filename": "burning.png",
+          "rarity_bucket": "rare",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Being Salvaged",
+          "sprite_filename": "being_salvaged.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Split Hull",
+          "sprite_filename": "split_hull.png",
+          "rarity_bucket": "epic",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Fully Underwater",
+          "sprite_filename": "fully_underwater.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Ghost",
+          "sprite_filename": "ghost.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Rebuilt",
+          "sprite_filename": "rebuilt.png",
+          "rarity_bucket": "legendary",
+          "notes": "bucket fixed by spec Section 4.2 example; scaffolding, welding sparks — the payoff condition"
+        }
+      ]
+    },
+    {
+      "name": "body",
+      "display_name": "Body",
+      "z_order": 6,
+      "required": true,
+      "traits": [
+        {
+          "name": "Green",
+          "sprite_filename": null,
+          "rarity_bucket": "common",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Blue",
+          "sprite_filename": null,
+          "rarity_bucket": "uncommon",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Zombie",
+          "sprite_filename": null,
+          "rarity_bucket": "rare",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Ghost",
+          "sprite_filename": null,
+          "rarity_bucket": "epic",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Corrupted",
+          "sprite_filename": null,
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Gold",
+          "sprite_filename": null,
+          "rarity_bucket": "legendary",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Emerald",
+          "sprite_filename": null,
+          "rarity_bucket": "legendary",
+          "notes": "Chia-coded"
+        },
+        {
+          "name": "Chrome",
+          "sprite_filename": null,
+          "rarity_bucket": "mythic",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        }
+      ],
+      "sprite_pattern": "body/{body}_{pose}.png",
+      "layer_notes": "8 variants x 6 poses = 48 pre-composited sprites; sprite resolved from body+pose"
+    },
+    {
+      "name": "pose",
+      "display_name": "Pose",
+      "z_order": null,
+      "required": true,
+      "traits": [
+        {
+          "name": "Standing",
+          "sprite_filename": null,
+          "rarity_bucket": "common",
+          "notes": "pose is cosmetic — carries no rarity weight; rendered via the body layer's pre-composited sprite"
+        },
+        {
+          "name": "Saluting",
+          "sprite_filename": null,
+          "rarity_bucket": "common",
+          "notes": "pose is cosmetic — carries no rarity weight; rendered via the body layer's pre-composited sprite"
+        },
+        {
+          "name": "Sitting",
+          "sprite_filename": null,
+          "rarity_bucket": "common",
+          "notes": "pose is cosmetic — carries no rarity weight; rendered via the body layer's pre-composited sprite"
+        },
+        {
+          "name": "On Bow",
+          "sprite_filename": null,
+          "rarity_bucket": "common",
+          "notes": "pose is cosmetic — carries no rarity weight; rendered via the body layer's pre-composited sprite"
+        },
+        {
+          "name": "Back Turned",
+          "sprite_filename": null,
+          "rarity_bucket": "common",
+          "notes": "pose is cosmetic — carries no rarity weight; rendered via the body layer's pre-composited sprite"
+        },
+        {
+          "name": "Looking Down",
+          "sprite_filename": null,
+          "rarity_bucket": "common",
+          "notes": "pose is cosmetic — carries no rarity weight; rendered via the body layer's pre-composited sprite"
+        }
+      ],
+      "rendered_via": "body",
+      "layer_notes": "non-rendered roll dimension consumed by the body layer's sprite_pattern"
+    },
+    {
+      "name": "clothing",
+      "display_name": "Clothing",
+      "z_order": 7,
+      "required": true,
+      "traits": [
+        {
+          "name": "Yellow Jacket",
+          "sprite_filename": "yellow_jacket.png",
+          "rarity_bucket": "common"
+        },
+        {
+          "name": "Rain Jacket",
+          "sprite_filename": "rain_jacket.png",
+          "rarity_bucket": "common"
+        },
+        {
+          "name": "Life Vest",
+          "sprite_filename": "life_vest.png",
+          "rarity_bucket": "common"
+        },
+        {
+          "name": "Hoodie",
+          "sprite_filename": "hoodie.png",
+          "rarity_bucket": "common",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Farmer Overalls",
+          "sprite_filename": "farmer_overalls.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Suit",
+          "sprite_filename": "suit.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Military Coat",
+          "sprite_filename": "military_coat.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Captain Jacket",
+          "sprite_filename": "captain_jacket.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Scuba Suit",
+          "sprite_filename": "scuba_suit.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Pirate Coat",
+          "sprite_filename": "pirate_coat.png",
+          "rarity_bucket": "rare",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Admiral Uniform",
+          "sprite_filename": "admiral_uniform.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Hazmat",
+          "sprite_filename": "hazmat.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Deep Sea Suit",
+          "sprite_filename": "deep_sea_suit.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Wizard Robe",
+          "sprite_filename": "wizard_robe.png",
+          "rarity_bucket": "epic",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        }
+      ]
+    },
+    {
+      "name": "eyes",
+      "display_name": "Eyes",
+      "z_order": 8,
+      "required": true,
+      "traits": [
+        {
+          "name": "Normal",
+          "sprite_filename": "normal.png",
+          "rarity_bucket": "common",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Sleepy",
+          "sprite_filename": "sleepy.png",
+          "rarity_bucket": "common"
+        },
+        {
+          "name": "Closed",
+          "sprite_filename": "closed.png",
+          "rarity_bucket": "common"
+        },
+        {
+          "name": "Determined",
+          "sprite_filename": "determined.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Scared",
+          "sprite_filename": "scared.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Crying",
+          "sprite_filename": "crying.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Hopeful",
+          "sprite_filename": "hopeful.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Looking to Horizon",
+          "sprite_filename": "looking_to_horizon.png",
+          "rarity_bucket": "uncommon",
+          "notes": "absorbed the cut 'Looking at Horizon' pose per spec 3.6"
+        },
+        {
+          "name": "Dead",
+          "sprite_filename": "dead.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Heart",
+          "sprite_filename": "heart.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Laser",
+          "sprite_filename": "laser.png",
+          "rarity_bucket": "rare",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Middle Finger Pupils",
+          "sprite_filename": "middle_finger_pupils.png",
+          "rarity_bucket": "epic",
+          "notes": "meme tier"
+        },
+        {
+          "name": "Pixel Stars",
+          "sprite_filename": "pixel_stars.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Wizard",
+          "sprite_filename": "wizard.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Diamond",
+          "sprite_filename": "diamond.png",
+          "rarity_bucket": "legendary"
+        },
+        {
+          "name": "XCH",
+          "sprite_filename": "xch.png",
+          "rarity_bucket": "legendary",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        }
+      ]
+    },
+    {
+      "name": "mouth",
+      "display_name": "Mouth",
+      "z_order": 9,
+      "required": false,
+      "traits": [
+        {
+          "name": "None",
+          "sprite_filename": null,
+          "rarity_bucket": "none",
+          "notes": "absence of this layer; contributes nothing to rarity tier"
+        },
+        {
+          "name": "Cigarette",
+          "sprite_filename": "cigarette.png",
+          "rarity_bucket": "common"
+        },
+        {
+          "name": "Bubble Gum",
+          "sprite_filename": "bubble_gum.png",
+          "rarity_bucket": "common"
+        },
+        {
+          "name": "Toothpick",
+          "sprite_filename": "toothpick.png",
+          "rarity_bucket": "uncommon",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Cigar",
+          "sprite_filename": "cigar.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Pipe",
+          "sprite_filename": "pipe.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Whistle",
+          "sprite_filename": "whistle.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Flask",
+          "sprite_filename": "flask.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Rose",
+          "sprite_filename": "rose.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Radio",
+          "sprite_filename": "radio.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Kazoo",
+          "sprite_filename": "kazoo.png",
+          "rarity_bucket": "legendary",
+          "notes": "meme tier per spec 3.9"
+        }
+      ]
+    },
+    {
+      "name": "hat",
+      "display_name": "Hat",
+      "z_order": 10,
+      "required": false,
+      "traits": [
+        {
+          "name": "None",
+          "sprite_filename": null,
+          "rarity_bucket": "none",
+          "notes": "absence of this layer; contributes nothing to rarity tier"
+        },
+        {
+          "name": "Headband",
+          "sprite_filename": "headband.png",
+          "rarity_bucket": "common"
+        },
+        {
+          "name": "Beanie",
+          "sprite_filename": "beanie.png",
+          "rarity_bucket": "uncommon",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Beret",
+          "sprite_filename": "beret.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Helmet",
+          "sprite_filename": "helmet.png",
+          "rarity_bucket": "uncommon"
+        },
+        {
+          "name": "Pilot Cap",
+          "sprite_filename": "pilot_cap.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Captain Hat",
+          "sprite_filename": "captain_hat.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Pirate Hat",
+          "sprite_filename": "pirate_hat.png",
+          "rarity_bucket": "rare"
+        },
+        {
+          "name": "Diver Helmet",
+          "sprite_filename": "diver_helmet.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Wizard Hat",
+          "sprite_filename": "wizard_hat.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Admiral Hat",
+          "sprite_filename": "admiral_hat.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Halo",
+          "sprite_filename": "halo.png",
+          "rarity_bucket": "epic",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "Horns",
+          "sprite_filename": "horns.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Crown",
+          "sprite_filename": "crown.png",
+          "rarity_bucket": "legendary",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        },
+        {
+          "name": "The Torn",
+          "sprite_filename": "the_torn_halo_horns.png",
+          "rarity_bucket": "quota",
+          "notes": "Halo + Horns together — never weight-rolled; assigned only via the the_torn quota constraint (exactly 44 pre-committed global mint indices). Renders both halo and horns."
+        }
+      ]
+    },
+    {
+      "name": "aura",
+      "display_name": "Aura / Effect",
+      "z_order": 11,
+      "required": false,
+      "traits": [
+        {
+          "name": "None",
+          "sprite_filename": null,
+          "rarity_bucket": "none",
+          "notes": "~92% of supply has no aura (spec 3.11: ~8% get one)"
+        },
+        {
+          "name": "Green Magic Glow",
+          "sprite_filename": "green_magic_glow.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Purple Magic Glow",
+          "sprite_filename": "purple_magic_glow.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Crystal Shimmer",
+          "sprite_filename": "crystal_shimmer.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Halo Light",
+          "sprite_filename": "halo_light.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Laser Bloom",
+          "sprite_filename": "laser_bloom.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Ghost Fade",
+          "sprite_filename": "ghost_fade.png",
+          "rarity_bucket": "epic"
+        },
+        {
+          "name": "Golden Radiance",
+          "sprite_filename": "golden_radiance.png",
+          "rarity_bucket": "legendary"
+        },
+        {
+          "name": "Chia Bloom",
+          "sprite_filename": "chia_bloom.png",
+          "rarity_bucket": "mythic"
+        },
+        {
+          "name": "Corruption Static",
+          "sprite_filename": "corruption_static.png",
+          "rarity_bucket": "mythic",
+          "notes": "bucket fixed by spec Section 4.2 example"
+        }
+      ]
+    }
+  ],
+  "exclusions": [
+    {
+      "id": "x_diver_helmet_mouth",
+      "type": "require",
+      "if": {
+        "layer": "hat",
+        "trait": "Diver Helmet"
+      },
+      "then": {
+        "layer": "mouth",
+        "traits": [
+          "None"
+        ]
+      },
+      "source": "spec 3: Diver Helmet excludes ALL mouth items"
+    },
+    {
+      "id": "x_diver_helmet_hats",
+      "type": "note",
+      "note": "Diver Helmet excludes all other hats — trivially enforced: hat is a single-select layer",
+      "source": "spec 3"
+    },
+    {
+      "id": "x_ghost_body_burning",
+      "type": "exclude",
+      "if": {
+        "layer": "body",
+        "trait": "Ghost"
+      },
+      "then": {
+        "layer": "ship_condition",
+        "traits": [
+          "Burning"
+        ]
+      },
+      "source": "spec 3: Ghost body never pairs with Burning condition"
+    },
+    {
+      "id": "x_fully_underwater_sea",
+      "type": "require",
+      "if": {
+        "layer": "ship_condition",
+        "trait": "Fully Underwater"
+      },
+      "then": {
+        "layer": "sea",
+        "traits": [
+          "Abyss",
+          "Bioluminescent",
+          "Black Sea"
+        ]
+      },
+      "source": "spec 3: Fully Underwater only pairs with Abyss, Bioluminescent, or Black Sea"
+    },
+    {
+      "id": "x_submarine_pose",
+      "type": "exclude",
+      "if": {
+        "layer": "ship_class",
+        "trait": "Submarine"
+      },
+      "then": {
+        "layer": "pose",
+        "traits": [
+          "On Bow"
+        ]
+      },
+      "source": "spec 3: Submarine excludes On Bow pose"
+    },
+    {
+      "id": "x_submarine_condition",
+      "type": "exclude",
+      "if": {
+        "layer": "ship_class",
+        "trait": "Submarine"
+      },
+      "then": {
+        "layer": "ship_condition",
+        "traits": [
+          "Half Sunk",
+          "Listing"
+        ]
+      },
+      "source": "spec 3: subs don't list — they're either fine or gone"
+    },
+    {
+      "id": "x_ark_weather",
+      "type": "require_any",
+      "if": {
+        "layer": "ship_class",
+        "trait": "The Ark"
+      },
+      "then": {
+        "any_of": [
+          {
+            "layer": "sea",
+            "traits": [
+              "Storm Swell",
+              "Whirlpool"
+            ]
+          },
+          {
+            "layer": "sky",
+            "traits": [
+              "Heavy Rain"
+            ]
+          }
+        ]
+      },
+      "source": "spec 3: The Ark only appears with Storm Swell, Heavy Rain, or Whirlpool"
+    },
+    {
+      "id": "x_halo_horns",
+      "type": "note",
+      "note": "Halo excludes Horns — trivially enforced by single-select hat layer; the 44 exceptions are 'The Torn' quota below",
+      "source": "spec 3"
+    },
+    {
+      "id": "x_mythic_combo_gate",
+      "type": "combo_gate",
+      "combo": [
+        {
+          "layer": "sky",
+          "trait": "Blood Moon"
+        },
+        {
+          "layer": "ship_class",
+          "trait": "Ghost Ship"
+        },
+        {
+          "layer": "scene_element",
+          "trait": "Skeleton Crew"
+        }
+      ],
+      "allowed_only_if_tier_at_least": "mythic",
+      "source": "spec 3: Blood Moon + Ghost Ship + Skeleton Crew allowed together only in Mythic rolls"
+    }
+  ],
+  "pairings": [
+    {
+      "id": "p_scuba_diver_helmet",
+      "type": "bias",
+      "if": {
+        "layer": "clothing",
+        "trait": "Scuba Suit"
+      },
+      "then": {
+        "layer": "hat",
+        "traits": [
+          "Diver Helmet"
+        ],
+        "weight_multiplier": 4.0
+      },
+      "source": "spec 3: Diver Helmet pairs beautifully with Scuba/Deep Sea Suit — weight the pairing up"
+    },
+    {
+      "id": "p_deepsea_diver_helmet",
+      "type": "bias",
+      "if": {
+        "layer": "clothing",
+        "trait": "Deep Sea Suit"
+      },
+      "then": {
+        "layer": "hat",
+        "traits": [
+          "Diver Helmet"
+        ],
+        "weight_multiplier": 4.0
+      },
+      "source": "spec 3"
+    },
+    {
+      "id": "p_ghost_body_ghost_fade",
+      "type": "bias",
+      "if": {
+        "layer": "body",
+        "trait": "Ghost"
+      },
+      "then": {
+        "layer": "aura",
+        "traits": [
+          "Ghost Fade"
+        ],
+        "weight_multiplier": 8.0
+      },
+      "source": "spec 3: Ghost body forces Ghost Fade aura eligibility"
+    },
+    {
+      "id": "p_ghost_body_ghost_ship",
+      "type": "bias",
+      "if": {
+        "layer": "body",
+        "trait": "Ghost"
+      },
+      "then": {
+        "layer": "ship_class",
+        "traits": [
+          "Ghost Ship"
+        ],
+        "weight_multiplier": 4.0
+      },
+      "source": "spec 3: Ghost body biases toward Ghost Ship"
+    },
+    {
+      "id": "p_ghost_body_sky",
+      "type": "bias",
+      "if": {
+        "layer": "body",
+        "trait": "Ghost"
+      },
+      "then": {
+        "layer": "sky",
+        "traits": [
+          "Moonlit",
+          "Fog"
+        ],
+        "weight_multiplier": 3.0
+      },
+      "source": "spec 3: Ghost body biases toward Moonlit / Fog"
+    },
+    {
+      "id": "p_fully_underwater_clothing",
+      "type": "bias",
+      "if": {
+        "layer": "ship_condition",
+        "trait": "Fully Underwater"
+      },
+      "then": {
+        "layer": "clothing",
+        "traits": [
+          "Scuba Suit",
+          "Deep Sea Suit"
+        ],
+        "weight_multiplier": 3.0
+      },
+      "source": "spec 3: Fully Underwater biases Scuba/Deep Sea clothing"
+    },
+    {
+      "id": "p_rebuilt_builder",
+      "type": "bias_multi",
+      "if": {
+        "layer": "ship_condition",
+        "trait": "Rebuilt"
+      },
+      "then": [
+        {
+          "layer": "clothing",
+          "traits": [
+            "Farmer Overalls"
+          ],
+          "weight_multiplier": 4.0
+        },
+        {
+          "layer": "eyes",
+          "traits": [
+            "Determined"
+          ],
+          "weight_multiplier": 4.0
+        },
+        {
+          "layer": "mouth",
+          "traits": [
+            "Toothpick"
+          ],
+          "weight_multiplier": 4.0
+        }
+      ],
+      "source": "spec 3: Rebuilt biases Builder-coded traits — the visual embodiment of the thesis"
+    },
+    {
+      "id": "p_wizard_cluster",
+      "type": "cluster",
+      "cluster_traits": [
+        {
+          "layer": "ship_class",
+          "trait": "Wizard Ship"
+        },
+        {
+          "layer": "clothing",
+          "trait": "Wizard Robe"
+        },
+        {
+          "layer": "eyes",
+          "trait": "Wizard"
+        },
+        {
+          "layer": "hat",
+          "trait": "Wizard Hat"
+        }
+      ],
+      "min_present": 2,
+      "weight_multiplier": 6.0,
+      "source": "spec 3: any two wizard traits boost odds of a third (correlated rolls) — wizards feel like a faction, not a coincidence"
+    }
+  ],
+  "quotas": [
+    {
+      "id": "q_the_torn",
+      "type": "quota",
+      "name": "the_torn",
+      "count": 44,
+      "assign": {
+        "layer": "hat",
+        "trait": "The Torn"
+      },
+      "mechanism": "44 global mint indices in [1, 44400] are pre-committed at commit time, derived from HMAC-SHA256(salt, 'the-torn-slots-v1'). An NFT whose global mint index is in the set has its hat overridden to The Torn. Under The Scuttling (undersell), unminted slots simply never occur, so the realized count can be < 44 — see ADR-0003 and open question OQ-3.",
+      "source": "spec 3: Halo+Horns appear together on exactly 44 NFTs ('The Torn')"
+    }
+  ],
+  "rules": [
+    {
+      "id": "r_mythic_forced_aura",
+      "type": "forced_aura",
+      "if_tier": "mythic",
+      "then": {
+        "layer": "aura",
+        "exclude_traits": [
+          "None"
+        ]
+      },
+      "source": "spec 4.1: Mythic = contains >=1 Mythic-bucket trait + forced aura"
+    }
+  ]
+}
