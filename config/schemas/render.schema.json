@@ -29,7 +29,11 @@
         "binarize_alpha": {"type": "boolean"},
         "palette_snap": {"type": "boolean"},
         "resample": {"enum": ["nearest", "lanczos"]},
-        "outputs": {"type": "array", "items": {"type": "integer"}, "minItems": 1}
+        "outputs": {"type": "array", "items": {"type": "integer"}, "minItems": 1},
+        "layer_transforms": {
+          "type": "object",
+          "description": "optional per-layer composite transform: scale about a horizontal-center anchor (margin discipline; golden refs keep generous white margins)"
+        }
       }
     }
   }

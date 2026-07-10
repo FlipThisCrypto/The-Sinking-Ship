@@ -54,6 +54,7 @@ class RenderProfile:
         self.palette_snap = bool(spec["palette_snap"])
         self.resample = spec["resample"]
         self.outputs = list(spec["outputs"])
+        self.layer_transforms = dict(spec.get("layer_transforms", {}))
 
     @property
     def resample_filter(self):
@@ -223,8 +224,20 @@ def compose(store: SpriteStore, traits: dict, zone: str | None) -> Image.Image:
                     key=lambda l: l.z_order)
     for layer in layers:
         sprite = store.get(layer.name, traits, zone)
-        if sprite is not None:
-            canvas.alpha_composite(sprite)
+        if sprite is None:
+            continue
+        tf = store.profile.layer_transforms.get(layer.name)
+        if tf and float(tf.get("scale", 1.0)) != 1.0:
+            # margin discipline: scale about horizontal center, anchored
+            # vertically (1.0 = bottom stays put) so grounding is preserved
+            sc = float(tf["scale"])
+            new = sprite.resize((max(1, round(size * sc)),) * 2, Image.LANCZOS)
+            ax = (size - new.width) // 2
+            ay = round(float(tf.get("anchor_y", 1.0)) * (size - new.height))
+            layer_canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+            layer_canvas.paste(new, (ax, ay))
+            sprite = layer_canvas
+        canvas.alpha_composite(sprite)
     if store.profile.name == "illustration":
         # Global vertical ink grade — the ships_amano signature on every mint.
         from shipgen.amano_ink import RAMPS, grade_vertical_ink

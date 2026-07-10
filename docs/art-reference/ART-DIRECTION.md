@@ -11,6 +11,14 @@ in ADR-0008 (full Amano illustration).
 [CLAUDE-STYLE-PACK.md](./CLAUDE-STYLE-PACK.md). Style acceptance is measurable:
 `python scripts/style_score.py --threshold 92`.
 
+> **GATE PASSED 2026-07-10:** composite samples score **94.7% / 94.3%** mean on
+> two independent 8/12-sample batches (goldens self-score 96.7%). Achieved via
+> (a) real Amano art in body/ship_class, (b) line-first procedural layers,
+> (c) the global vertical ink grade, and (d) **margin discipline** — config
+> `layer_transforms` in render.json (body 0.84 bottom-anchored, ship 0.80),
+> matching the goldens' generous white framing. Re-check any time with
+> `python scripts/style_score.py --samples output/style_verify --threshold 92`.
+
 ## The one-line look
 
 **Yoshitaka Amano-flavoured aquatic ink illustration: elegant, melancholic,

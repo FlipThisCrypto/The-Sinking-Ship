@@ -22,7 +22,11 @@
       "binarize_alpha": false,
       "palette_snap": false,
       "resample": "lanczos",
-      "outputs": [512, 2048, 4000]
+      "outputs": [512, 2048, 4000],
+      "layer_transforms": {
+        "body": {"scale": 0.84, "anchor_y": 1.0},
+        "ship_class": {"scale": 0.80, "anchor_y": 0.80}
+      }
     }
   }
 }
