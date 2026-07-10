@@ -39,8 +39,9 @@ pip install -r requirements.txt
 # 1. Validate all configs against their schemas
 python engine/validate_configs.py
 
-# 2. Monte Carlo the rarity distribution (target: ±5% of spec Section 4.1)
-python engine/simulate.py --mints 44444 --seed sim-check
+# 2. Monte Carlo the rarity distribution (target: ±5% of spec Section 4.1;
+#    use replicates — the mythic tier has ~5% single-run Poisson noise)
+python engine/simulate.py --profile sellout --seed check --replicates 5 --check
 
 # 3. Generate placeholder sprites (clearly marked, 48×48) and validate
 python scripts/gen_placeholder_sprites.py
@@ -51,11 +52,12 @@ python engine/render_engine.py --sample 25 --seed sample-run --outdir output/sam
 
 # 5. Roll a test chest deterministically and verify it
 python engine/chest_roller.py commit --salt-file test.salt
-python engine/chest_roller.py roll --tier submarine_captain --coin-id 0xTESTCOIN --salt-file test.salt --start-index 1
-python engine/chest_roller.py verify --manifest output/chests/<manifest>.json --salt-file test.salt
+python engine/chest_roller.py roll --tier submarine_captain --coin-id <64-hex coin id> `
+    --salt-file test.salt --pass-ordinal 1 --start-index 1
+python engine/chest_roller.py verify --manifest "output/chests/<manifest>.json" --salt-file test.salt
 
 # 6. Generate CHIP-0007 metadata for a chest manifest
-python engine/metadata_gen.py --manifest output/chests/<manifest>.json --outdir output/metadata
+python engine/metadata_gen.py --manifest "output/chests/<manifest>.json" --outdir output/metadata
 
 # 7. Run the whole pipeline end-to-end
 python scripts/run_pipeline.py
