@@ -1,27 +1,31 @@
 # SPDX-License-Identifier: MIT
-"""Pixel-art compositor for THE SINKING SHIP (P4).
+"""Layer compositor for THE SINKING SHIP (P4), profile-driven (ADR-0008).
 
-48x48 RGBA masters composited in traits.json z-order, with:
-  - alpha binarization (a >= 128 -> 255, else 0 — no partial alpha, ever)
-  - palette snapping: every layer snaps to the 32-color master palette;
-    background layers (sky, sea) snap to the NFT's depth-zone sub-palette
-  - nearest-neighbor upscales to 2048x2048 and 4000x4000, zero anti-aliasing
+Two render profiles, selected by config/render.json `active_profile` (or the
+`--profile` flag):
 
-Scale-mode note (ADR-0005): 2048/48 and 4000/48 are not integers. Default
-"exact" mode does a straight NEAREST resize to the exact spec sizes (pixel
-columns alternate 42/43 px — imperceptible). "integer" mode uses the largest
-integer factor (42x / 83x) and pads symmetrically with transparent border.
+  pixel        — the original spec behaviour: 48x48 masters, alpha binarization
+                 (no partial alpha), palette snapping, nearest-neighbour upscale
+                 to 2048/4000 with zero anti-aliasing.
+  illustration — the owner-chosen Amano medium: native high-res layer art
+                 composited with FULL alpha (no binarization), NO palette snap
+                 (palette is a soft guide), LANCZOS resample to the output
+                 sizes. This is the active profile.
+
+Both share one code path; the profile flags toggle the pixel-specific cleanup.
+Trait selection, rarity, fairness, and metadata are medium-independent and
+untouched — this file only renders a chosen trait manifest.
 
 Usage:
     python engine/render_engine.py --validate-sprites
-    python engine/render_engine.py --sample 25 --seed sample-run --outdir output/samples
-    python engine/render_engine.py --render-manifest output/chests/<file>.json --outdir output/renders
+    python engine/render_engine.py --sample 25 --seed s --outdir output/samples
+    python engine/render_engine.py --render-manifest output/chests/<f>.json --outdir out
+    python engine/render_engine.py --profile pixel --validate-sprites
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import logging
 import sys
 from pathlib import Path
@@ -37,18 +41,42 @@ log = logging.getLogger("render_engine")
 ROOT = Path(__file__).resolve().parent.parent
 SPRITES_DIR = ROOT / "sprites"
 
+_RESAMPLE = {"nearest": Image.NEAREST, "lanczos": Image.LANCZOS}
+
+
+# ------------------------------------------------------------------ profile
+
+class RenderProfile:
+    def __init__(self, name: str, spec: dict):
+        self.name = name
+        self.master_px = int(spec["master_px"])
+        self.binarize_alpha = bool(spec["binarize_alpha"])
+        self.palette_snap = bool(spec["palette_snap"])
+        self.resample = spec["resample"]
+        self.outputs = list(spec["outputs"])
+
+    @property
+    def resample_filter(self):
+        return _RESAMPLE[self.resample]
+
+
+def load_profile(name: str | None, config_dir: Path = CONFIG_DIR) -> RenderProfile:
+    doc = load_json(config_dir / "render.json")
+    validate(doc, load_json(config_dir / "schemas" / "render.schema.json"))
+    chosen = name or doc["active_profile"]
+    if chosen not in doc["profiles"]:
+        raise ValueError(f"unknown render profile {chosen!r}")
+    return RenderProfile(chosen, doc["profiles"][chosen])
+
 
 # ------------------------------------------------------------------ palette
 
 class Palette:
     def __init__(self, config_dir: Path = CONFIG_DIR):
         doc = load_json(config_dir / "palette.json")
-        schema = load_json(config_dir / "schemas" / "palette.schema.json")
-        validate(doc, schema)
+        validate(doc, load_json(config_dir / "schemas" / "palette.schema.json"))
         self.doc = doc
-        self.master: dict[str, tuple[int, int, int]] = {
-            c["name"]: _hex_rgb(c["hex"]) for c in doc["master"]
-        }
+        self.master = {c["name"]: _hex_rgb(c["hex"]) for c in doc["master"]}
         names = set(self.master)
         for zone, members in doc["zones"].items():
             unknown = set(members) - names
@@ -70,7 +98,7 @@ def _hex_rgb(h: str) -> tuple[int, int, int]:
     return (int(h[1:3], 16), int(h[3:5], 16), int(h[5:7], 16))
 
 
-def _nearest(color: tuple[int, int, int], colors: list[tuple[int, int, int]]) -> tuple[int, int, int]:
+def _nearest(color, colors):
     r, g, b = color
     best, best_d = colors[0], 1 << 30
     for c in colors:
@@ -82,37 +110,44 @@ def _nearest(color: tuple[int, int, int], colors: list[tuple[int, int, int]]) ->
 
 # ------------------------------------------------------------------ sprites
 
-def binarize_and_snap(img: Image.Image, colors: list[tuple[int, int, int]]) -> Image.Image:
-    """Force alpha to {0,255} and snap opaque pixels to the given palette."""
+def prepare_sprite(img: Image.Image, colors, binarize: bool, snap: bool) -> Image.Image:
+    """Apply the profile's cleanup. In illustration mode both flags are off and
+    the sprite passes through as authored (full alpha, any colours)."""
     img = img.convert("RGBA")
+    if not binarize and not snap:
+        return img
     px = img.load()
-    cache: dict[tuple[int, int, int], tuple[int, int, int]] = {}
+    cache: dict = {}
     for y in range(img.height):
         for x in range(img.width):
             r, g, b, a = px[x, y]
-            if a < 128:
+            if binarize and a < 128:
                 px[x, y] = (0, 0, 0, 0)
-            else:
+                continue
+            out_a = 255 if binarize else a
+            if snap and out_a > 0:
                 key = (r, g, b)
-                snapped = cache.get(key)
-                if snapped is None:
-                    snapped = key if key in colors else _nearest(key, colors)
-                    cache[key] = snapped
-                px[x, y] = (*snapped, 255)
+                sc = cache.get(key)
+                if sc is None:
+                    sc = key if key in colors else _nearest(key, colors)
+                    cache[key] = sc
+                px[x, y] = (*sc, out_a)
+            else:
+                px[x, y] = (r, g, b, out_a)
     return img
 
 
 class SpriteStore:
-    """Loads, binarizes, palette-snaps, and caches layer sprites."""
-
-    def __init__(self, cfg: GenConfig, palette: Palette, sprites_dir: Path = SPRITES_DIR):
+    def __init__(self, cfg: GenConfig, palette: Palette, profile: RenderProfile,
+                 sprites_dir: Path = SPRITES_DIR):
         self.cfg = cfg
         self.palette = palette
+        self.profile = profile
         self.dir = Path(sprites_dir)
-        self.master_px = cfg.traits_doc["grid"]["master_px"]
-        self._cache: dict[tuple, Image.Image] = {}
+        self.master_px = profile.master_px
+        self._cache: dict = {}
 
-    def sprite_path(self, layer_name: str, traits: dict[str, str]) -> Path | None:
+    def sprite_path(self, layer_name: str, traits: dict) -> Path | None:
         layer = self.cfg.layer_by_name[layer_name]
         if layer.rendered_via:
             return None
@@ -121,14 +156,13 @@ class SpriteStore:
             return None
         if layer.sprite_pattern:
             parts = {ln: _snake(traits[ln]) for ln in (layer_name, *_pattern_deps(layer))}
-            rel = layer.sprite_pattern.format(**parts)
-            return self.dir / rel
+            return self.dir / layer.sprite_pattern.format(**parts)
         trait = layer.traits[layer.trait_index[trait_name]]
         if trait.sprite_filename is None:
-            return None  # e.g. "None" traits
+            return None
         return self.dir / layer_name / trait.sprite_filename
 
-    def get(self, layer_name: str, traits: dict[str, str], zone: str | None) -> Image.Image | None:
+    def get(self, layer_name: str, traits: dict, zone: str | None) -> Image.Image | None:
         path = self.sprite_path(layer_name, traits)
         if path is None:
             return None
@@ -140,15 +174,17 @@ class SpriteStore:
                 raise FileNotFoundError(f"missing sprite: {path}")
             img = Image.open(path)
             if img.size != (self.master_px, self.master_px):
-                raise ValueError(f"{path}: expected {self.master_px}x{self.master_px}, "
-                                 f"got {img.size[0]}x{img.size[1]}")
-            img = binarize_and_snap(img, self.palette.colors_for(layer_name, zone_key))
+                raise ValueError(f"{path}: expected {self.master_px}x{self.master_px} "
+                                 f"for the {self.profile.name} profile, got "
+                                 f"{img.size[0]}x{img.size[1]}")
+            colors = self.palette.colors_for(layer_name, zone_key)
+            img = prepare_sprite(img, colors, self.profile.binarize_alpha,
+                                 self.profile.palette_snap)
             self._cache[key] = img
         return img
 
 
 def _pattern_deps(layer) -> list[str]:
-    """Other layer names referenced by a sprite_pattern (e.g. body needs pose)."""
     import string
     fields = [f for _, f, _, _ in string.Formatter().parse(layer.sprite_pattern) if f]
     return [f for f in fields if f != layer.name]
@@ -163,11 +199,10 @@ def _snake(name: str) -> str:
 
 # ---------------------------------------------------------------- composite
 
-def compose(store: SpriteStore, traits: dict[str, str], zone: str | None) -> Image.Image:
-    cfg = store.cfg
+def compose(store: SpriteStore, traits: dict, zone: str | None) -> Image.Image:
     size = store.master_px
     canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    layers = sorted((l for l in cfg.layers if l.z_order is not None),
+    layers = sorted((l for l in store.cfg.layers if l.z_order is not None),
                     key=lambda l: l.z_order)
     for layer in layers:
         sprite = store.get(layer.name, traits, zone)
@@ -176,27 +211,31 @@ def compose(store: SpriteStore, traits: dict[str, str], zone: str | None) -> Ima
     return canvas
 
 
-def upscale(img: Image.Image, target: int, mode: str) -> Image.Image:
-    if mode == "exact":
-        return img.resize((target, target), Image.NEAREST)
-    factor = target // img.width
-    core = img.resize((img.width * factor, img.height * factor), Image.NEAREST)
-    pad = target - core.width
-    if pad == 0:
-        return core
-    out = Image.new("RGBA", (target, target), (0, 0, 0, 0))
-    out.paste(core, (pad // 2, pad // 2))
-    return out
+def resize_to(img: Image.Image, target: int, profile: RenderProfile,
+              scale_mode: str) -> Image.Image:
+    if target == img.width:
+        return img
+    if profile.resample == "nearest" and scale_mode == "integer" and target > img.width:
+        factor = target // img.width
+        core = img.resize((img.width * factor, img.height * factor), Image.NEAREST)
+        pad = target - core.width
+        if pad == 0:
+            return core
+        out = Image.new("RGBA", (target, target), (0, 0, 0, 0))
+        out.paste(core, (pad // 2, pad // 2))
+        return out
+    return img.resize((target, target), profile.resample_filter)
 
 
 # --------------------------------------------------------------- validation
 
-def validate_sprites(cfg: GenConfig, palette: Palette, sprites_dir: Path) -> int:
-    """Scan the sprite tree against traits.json. Returns error count."""
-    master_px = cfg.traits_doc["grid"]["master_px"]
+def validate_sprites(cfg: GenConfig, palette: Palette, profile: RenderProfile,
+                     sprites_dir: Path) -> int:
+    master_px = profile.master_px
     errors = warnings = checked = 0
+    strict_pixels = profile.binarize_alpha or profile.palette_snap
 
-    def check(path: Path, layer_name: str):
+    def check(path: Path):
         nonlocal errors, warnings, checked
         checked += 1
         if not path.exists():
@@ -205,10 +244,13 @@ def validate_sprites(cfg: GenConfig, palette: Palette, sprites_dir: Path) -> int
             return
         img = Image.open(path).convert("RGBA")
         if img.size != (master_px, master_px):
-            log.error("BAD SIZE %s: %dx%d (want %dx%d)",
-                      path.relative_to(sprites_dir), *img.size, master_px, master_px)
+            log.error("BAD SIZE %s: %dx%d (want %dx%d for %s profile)",
+                      path.relative_to(sprites_dir), *img.size, master_px, master_px,
+                      profile.name)
             errors += 1
             return
+        if not strict_pixels:
+            return  # illustration: AA + off-palette are expected, nothing to flag
         colors = set(palette.master_colors)
         semi = off = 0
         for _, (r, g, b, a) in img.getcolors(maxcolors=master_px * master_px) or []:
@@ -217,12 +259,12 @@ def validate_sprites(cfg: GenConfig, palette: Palette, sprites_dir: Path) -> int
             elif a == 255 and (r, g, b) not in colors:
                 off += 1
         if semi:
-            log.warning("SEMI-ALPHA %s: %d semi-transparent color(s) "
-                        "(binarized at render time)", path.relative_to(sprites_dir), semi)
+            log.warning("SEMI-ALPHA %s: %d colour(s) (binarized at render time)",
+                        path.relative_to(sprites_dir), semi)
             warnings += 1
         if off:
-            log.warning("OFF-PALETTE %s: %d color(s) not in master palette "
-                        "(snapped at render time)", path.relative_to(sprites_dir), off)
+            log.warning("OFF-PALETTE %s: %d colour(s) (snapped at render time)",
+                        path.relative_to(sprites_dir), off)
             warnings += 1
 
     for layer in cfg.layers:
@@ -235,13 +277,14 @@ def validate_sprites(cfg: GenConfig, palette: Palette, sprites_dir: Path) -> int
                 for d in dep_layer.traits:
                     rel = layer.sprite_pattern.format(**{layer.name: _snake(t.name),
                                                          deps[0]: _snake(d.name)})
-                    check(sprites_dir / rel, layer.name)
+                    check(sprites_dir / rel)
         else:
             for t in layer.traits:
                 if t.sprite_filename:
-                    check(sprites_dir / layer.name / t.sprite_filename, layer.name)
+                    check(sprites_dir / layer.name / t.sprite_filename)
 
-    log.info("checked %d sprites: %d error(s), %d warning(s)", checked, errors, warnings)
+    log.info("[%s profile] checked %d sprites: %d error(s), %d warning(s)",
+             profile.name, checked, errors, warnings)
     return errors
 
 
@@ -251,34 +294,38 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--validate-sprites", action="store_true")
-    ap.add_argument("--sample", type=int, metavar="N", help="roll and render N sample NFTs")
-    ap.add_argument("--seed", default="sample", help="sample mode: deterministic seed")
-    ap.add_argument("--zone", default=None,
-                    help="zone sub-palette for backgrounds in sample mode (default: cycle)")
-    ap.add_argument("--render-manifest", metavar="FILE", help="render a chest manifest")
+    ap.add_argument("--sample", type=int, metavar="N")
+    ap.add_argument("--seed", default="sample")
+    ap.add_argument("--zone", default=None)
+    ap.add_argument("--render-manifest", metavar="FILE")
     ap.add_argument("--outdir", default="output/renders")
-    ap.add_argument("--sizes", default="48,2048,4000",
-                    help="comma list of output sizes (default 48,2048,4000)")
-    ap.add_argument("--scale-mode", choices=["exact", "integer"], default="exact")
+    ap.add_argument("--profile", choices=["pixel", "illustration"], default=None,
+                    help="override config/render.json active_profile")
+    ap.add_argument("--sizes", default=None, help="comma list; default = profile outputs")
+    ap.add_argument("--scale-mode", choices=["exact", "integer"], default="exact",
+                    help="pixel profile only: integer adds symmetric padding")
     ap.add_argument("--sprites-dir", default=str(SPRITES_DIR))
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
     cfg = GenConfig()
     palette = Palette()
+    profile = load_profile(args.profile)
     sprites_dir = Path(args.sprites_dir)
+    log.info("render profile: %s (master %dpx, binarize=%s, snap=%s, resample=%s)",
+             profile.name, profile.master_px, profile.binarize_alpha,
+             profile.palette_snap, profile.resample)
 
     if args.validate_sprites:
-        errors = validate_sprites(cfg, palette, sprites_dir)
-        return 1 if errors else 0
+        return 1 if validate_sprites(cfg, palette, profile, sprites_dir) else 0
 
-    store = SpriteStore(cfg, palette, sprites_dir)
-    sizes = [int(s) for s in args.sizes.split(",")]
+    store = SpriteStore(cfg, palette, profile, sprites_dir)
+    sizes = ([int(s) for s in args.sizes.split(",")] if args.sizes else profile.outputs)
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
     zones = cfg.tiers_doc["depth_zones"]
 
-    jobs: list[tuple[str, dict, str]] = []  # (name, traits, zone)
+    jobs = []
     if args.sample:
         engine = RollEngine(cfg)
         salt = hashlib.sha256(f"render-sample:{args.seed}".encode()).digest()
@@ -290,18 +337,16 @@ def main() -> int:
         manifest = load_json(Path(args.render_manifest))
         zone = manifest["zone"]
         for e in manifest["nfts"]:
-            if e["type"] != "generated":
-                continue  # grails are hand-made 1/1s, not composited
-            jobs.append((f"nft_{e['global_index']:05d}", e["traits"], zone))
+            if e["type"] == "generated":
+                jobs.append((f"nft_{e['global_index']:05d}", e["traits"], zone))
     else:
         ap.error("choose one of --validate-sprites / --sample / --render-manifest")
 
     for name, traits, zone in jobs:
         img = compose(store, traits, zone)
         for size in sizes:
-            out = img if size == store.master_px else upscale(img, size, args.scale_mode)
-            path = outdir / f"{name}_{size}.png"
-            out.save(path)
+            out = resize_to(img, size, profile, args.scale_mode)
+            out.save(outdir / f"{name}_{size}.png")
         log.info("rendered %s (%s) at %s", name, zone, ",".join(map(str, sizes)))
     log.info("done: %d NFT(s) -> %s", len(jobs), outdir)
     return 0

@@ -1,10 +1,12 @@
 # sprites/eyes — Eyes
 
-z-order: 8 | required: True | dimensions: 48x48 RGBA PNG, alpha strictly 0/255, master-palette colors only
+z-order: 8 | required: True | dimensions: 2048x2048 RGBA PNG (illustration profile)
 
 > **PLACEHOLDERS**: every PNG currently in this directory is a generated
-> placeholder (solid fill + accent stripe + checker notch). Replace with
-> final art file-for-file; names and dimensions must not change.
+> placeholder (solid fill + accent stripe + checker notch), nearest-upscaled
+> to the illustration profile's 2048px master. Replace with final art
+> (Amano illustration per docs/art-reference/ART-DIRECTION.md) file-for-file;
+> filenames must not change. Real illustration art is authored at native res.
 
 | file | trait |
 |---|---|

@@ -84,13 +84,20 @@ change, not a structural one:
   filigree, the Diver Helmet, the Halo/Horns "Torn").
 - **aura** — the curling-smoke/ink flourish, tuned per aura trait.
 
-## OQ-11 — the medium decision (owner's call)
+## OQ-11 — RESOLVED: full Amano illustration (owner decision 2026-07-10)
 
-**The references are anti-aliased fine-line illustration. The spec mandates
+**The owner chose Path B — full Amano illustration.** Minted art is
+illustration authored at native 2048/4000 with anti-aliasing, not 48×48
+pixel. This is an authorized override of the spec's pixel-format clause,
+recorded in [ADR-0008](../adr/ADR-0008-art-medium-full-amano-illustration.md).
+The trait system, rarity tuning, fairness core, and CHIP-0007 metadata are
+medium-independent and unchanged; only the render medium changes (render_engine
+gains an `illustration` profile). The paths below are retained for the record.
+
+**The references are anti-aliased fine-line illustration. The spec mandated
 48×48 masters, nearest-neighbour upscale, _no anti-aliasing_.** These are not
 simultaneously satisfiable — Amano filigree cannot survive 48×48 hard-edged
-pixels. This is a real fork, not a detail, so it is flagged rather than
-guessed (per the build rule "if the spec is ambiguous, stop and ask"):
+pixels. The fork, as presented to the owner:
 
 - **Path A — Pixel-translate (spec-literal).** Keep 48×48 no-AA pixel art;
   use the references as *mood, palette, subject, and silhouette* guides only.

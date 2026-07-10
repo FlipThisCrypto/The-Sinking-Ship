@@ -2,10 +2,13 @@
 
 > *Hope never sinks.*
 
-A 44,444-supply pixel art NFT collection on the **Chia blockchain**.
-48×48 master pixels, nearest-neighbor upscaled to 2048×2048 and 4000×4000 —
-no anti-aliasing, ever. Blind mint via Secure the Mint + offer files, with a
-verifiable commit–reveal fairness scheme.
+A 44,444-supply hand-drawn NFT collection on the **Chia blockchain**, in a
+Yoshitaka Amano-style ink-illustration idiom (see
+[docs/art-reference/ART-DIRECTION.md](docs/art-reference/ART-DIRECTION.md) and
+[ADR-0008](docs/adr/ADR-0008-art-medium-full-amano-illustration.md) — the owner
+chose illustration over the spec's original 48×48 pixel format; the render
+engine supports both profiles). Blind mint via Secure the Mint + offer files,
+with a verifiable commit–reveal fairness scheme.
 
 **The world sees a sinking ship. You see a salvage operation.**
 
@@ -43,7 +46,8 @@ python engine/validate_configs.py
 #    use replicates — the mythic tier has ~5% single-run Poisson noise)
 python engine/simulate.py --profile sellout --seed check --replicates 5 --check
 
-# 3. Generate placeholder sprites (clearly marked, 48×48) and validate
+# 3. Generate placeholder sprites for the active render profile and validate
+#    (illustration by default per config/render.json; --profile pixel also works)
 python scripts/gen_placeholder_sprites.py
 python engine/render_engine.py --validate-sprites
 

@@ -74,10 +74,9 @@ def main() -> int:
 
     if not args.skip_render:
         run("3. validate sprites", ["engine/render_engine.py", "--validate-sprites"])
-        run(f"3b. render {args.samples} samples",
+        run(f"3b. render {args.samples} samples (active render profile)",
             ["engine/render_engine.py", "--sample", str(args.samples),
-             "--seed", "pipeline-samples", "--outdir", str(OUT / "renders"),
-             "--sizes", "48,2048,4000"])
+             "--seed", "pipeline-samples", "--outdir", str(OUT / "renders")])
 
     run("4. provenance commitment",
         ["engine/chest_roller.py", "commit", "--salt-file", str(salt_file),
@@ -124,10 +123,10 @@ def main() -> int:
               f"torn {len(m['the_torn_indices'])}, pity {len(m['pity_upgraded_slots'])}) "
               f"hash {m['manifest_hash'][:12]}…")
     meta_files = list((OUT / "metadata").glob("*.json"))
-    renders = list((OUT / "renders").glob("*_48.png")) if not args.skip_render else []
+    renders = list((OUT / "renders").glob("sample_*_2048.png")) if not args.skip_render else []
     print(f"metadata files emitted:        {len(meta_files)} (= {total_nfts} generated NFTs)")
     if not args.skip_render:
-        print(f"sample renders (48/2048/4000): {len(renders)} NFTs")
+        print(f"sample renders (active profile): {len(renders)} NFTs")
     print(f"all chests verified:           True")
     print("outputs in output/pipeline/ (gitignored)")
     return 0

@@ -91,12 +91,20 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--force", action="store_true", help="overwrite existing files")
+    ap.add_argument("--profile", choices=["pixel", "illustration"], default=None,
+                    help="target render profile (default: config/render.json active_profile). "
+                         "Placeholders are drawn at 48px then nearest-upscaled to the "
+                         "profile master size so the chosen pipeline runs end-to-end.")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
     cfg = GenConfig()
     palette = load_json(CONFIG_DIR / "palette.json")
     master = [tuple(int(c["hex"][i:i + 2], 16) for i in (1, 3, 5)) for c in palette["master"]]
+
+    render_doc = load_json(CONFIG_DIR / "render.json")
+    profile_name = args.profile or render_doc["active_profile"]
+    out_px = int(render_doc["profiles"][profile_name]["master_px"])
 
     written = skipped = 0
     for layer in cfg.layers:
@@ -123,6 +131,8 @@ def main() -> int:
                 skipped += 1
                 continue
             img = draw_placeholder(layer.name, f"{layer.name}/{fname}", master)
+            if out_px != PX:
+                img = img.resize((out_px, out_px), Image.NEAREST)
             img.save(path)
             written += 1
 
@@ -130,11 +140,13 @@ def main() -> int:
             f"# sprites/{layer.name} — {layer.display_name}",
             "",
             f"z-order: {layer.z_order} | required: {layer.required} | "
-            f"dimensions: {PX}x{PX} RGBA PNG, alpha strictly 0/255, master-palette colors only",
+            f"dimensions: {out_px}x{out_px} RGBA PNG ({profile_name} profile)",
             "",
             "> **PLACEHOLDERS**: every PNG currently in this directory is a generated",
-            "> placeholder (solid fill + accent stripe + checker notch). Replace with",
-            "> final art file-for-file; names and dimensions must not change.",
+            "> placeholder (solid fill + accent stripe + checker notch), nearest-upscaled",
+            f"> to the {profile_name} profile's {out_px}px master. Replace with final art",
+            "> (Amano illustration per docs/art-reference/ART-DIRECTION.md) file-for-file;",
+            "> filenames must not change. Real illustration art is authored at native res.",
             "",
             "| file | trait |",
             "|---|---|",

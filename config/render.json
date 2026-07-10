@@ -1,0 +1,28 @@
+{
+  "$schema": "./schemas/render.schema.json",
+  "config_name": "render",
+  "version": "1.0.0",
+  "spec_reference": "ADR-0008 (art medium: full Amano illustration, owner override of the spec pixel clause)",
+  "active_profile": "illustration",
+  "notes": [
+    "active_profile selects how render_engine composites and validates. The owner chose full Amano illustration (ADR-0008), so 'illustration' is active.",
+    "The 'pixel' profile is retained verbatim (the original spec behaviour) so a hybrid pixel side-line is a one-word switch.",
+    "Real illustration art is authored at master_px; other output sizes are LANCZOS-resampled from it. Bump master_px to 4000 and author there if maximum fidelity at 4000 is required (heavier)."
+  ],
+  "profiles": {
+    "pixel": {
+      "master_px": 48,
+      "binarize_alpha": true,
+      "palette_snap": true,
+      "resample": "nearest",
+      "outputs": [48, 2048, 4000]
+    },
+    "illustration": {
+      "master_px": 2048,
+      "binarize_alpha": false,
+      "palette_snap": false,
+      "resample": "lanczos",
+      "outputs": [512, 2048, 4000]
+    }
+  }
+}

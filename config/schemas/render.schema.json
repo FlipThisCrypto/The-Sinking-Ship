@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "render.schema.json",
+  "title": "The Sinking Ship — render profiles",
+  "type": "object",
+  "required": ["config_name", "version", "active_profile", "profiles"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "config_name": {"const": "render"},
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "spec_reference": {"type": "string"},
+    "notes": {"type": "array", "items": {"type": "string"}},
+    "active_profile": {"enum": ["pixel", "illustration"]},
+    "profiles": {
+      "type": "object",
+      "required": ["pixel", "illustration"],
+      "properties": {
+        "pixel": {"$ref": "#/$defs/profile"},
+        "illustration": {"$ref": "#/$defs/profile"}
+      }
+    }
+  },
+  "$defs": {
+    "profile": {
+      "type": "object",
+      "required": ["master_px", "binarize_alpha", "palette_snap", "resample", "outputs"],
+      "properties": {
+        "master_px": {"type": "integer", "minimum": 8},
+        "binarize_alpha": {"type": "boolean"},
+        "palette_snap": {"type": "boolean"},
+        "resample": {"enum": ["nearest", "lanczos"]},
+        "outputs": {"type": "array", "items": {"type": "integer"}, "minItems": 1}
+      }
+    }
+  }
+}
