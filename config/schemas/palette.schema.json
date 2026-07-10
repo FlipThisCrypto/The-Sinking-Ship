@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "palette.schema.json",
+  "title": "The Sinking Ship — master palette + zone sub-palettes",
+  "type": "object",
+  "required": ["config_name", "version", "master", "zones", "background_layers"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "config_name": {"const": "palette"},
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "spec_reference": {"type": "string"},
+    "notes": {"type": "array", "items": {"type": "string"}},
+    "master": {
+      "type": "array",
+      "minItems": 32,
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "required": ["name", "hex"],
+        "properties": {
+          "name": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+          "hex": {"type": "string", "pattern": "^#[0-9a-f]{6}$"}
+        }
+      }
+    },
+    "zones": {
+      "type": "object",
+      "required": ["surface", "sunlight", "twilight", "midnight", "abyssal", "hadal"],
+      "properties": {
+        "surface":  {"type": "array", "minItems": 12, "maxItems": 12, "items": {"type": "string"}},
+        "sunlight": {"type": "array", "minItems": 12, "maxItems": 12, "items": {"type": "string"}},
+        "twilight": {"type": "array", "minItems": 12, "maxItems": 12, "items": {"type": "string"}},
+        "midnight": {"type": "array", "minItems": 12, "maxItems": 12, "items": {"type": "string"}},
+        "abyssal":  {"type": "array", "minItems": 12, "maxItems": 12, "items": {"type": "string"}},
+        "hadal":    {"type": "array", "minItems": 12, "maxItems": 12, "items": {"type": "string"}}
+      }
+    },
+    "background_layers": {"type": "array", "items": {"type": "string"}}
+  }
+}
