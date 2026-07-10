@@ -2,11 +2,10 @@
 
 z-order: 11 | required: False | dimensions: 2048x2048 RGBA PNG (illustration profile)
 
-> **PLACEHOLDERS**: every PNG currently in this directory is a generated
-> placeholder (solid fill + accent stripe + checker notch), nearest-upscaled
-> to the illustration profile's 2048px master. Replace with final art
-> (Amano illustration per docs/art-reference/ART-DIRECTION.md) file-for-file;
-> filenames must not change. Real illustration art is authored at native res.
+> **PLACEHOLDERS**: every PNG here is generated stand-in art (gradient/
+> silhouette style sketch with a small corner checker tag). Replace with
+> final Amano illustration per docs/art-reference/ART-DIRECTION.md,
+> file-for-file; filenames must not change.
 
 | file | trait |
 |---|---|
