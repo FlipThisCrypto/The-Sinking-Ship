@@ -4,25 +4,28 @@
    zoneColors for the generated values used at runtime). */
 
 :root {
-  --ink: #0d0d1a;
-  --dark-slate: #2a2a3a;
-  --slate: #55556b;
-  --gray: #8a8a9e;
-  --light: #c8c8d4;
-  --bone: #f2f2ef;
-  --midnight: #0a1a33;
-  --deep-navy: #12294d;
-  --navy: #1d3f73;
-  --sea: #2f5d99;
-  --sky: #4d84bf;
-  --pale: #86b8e0;
-  --chia: #39d98f;
-  --bepe: #74cc44;
-  --gold: #e0c94d;
-  --ember: #cc5833;
-  --sunset: #e08033;
-  --violet: #5c2e8c;
-  --amethyst: #8c53c6;
+  /* palette v2.0.0 — anchored on docs/art-reference/ (Amano gradient-into-navy) */
+  --ink: #0d0d16;
+  --dark-slate: #14183a;
+  --slate: #2e2e46;
+  --gray: #6b6b80;
+  --light: #b8b8c4;
+  --bone: #f4f4f0;
+  --midnight: #0a1428;
+  --deep-navy: #14183a;
+  --navy: #26407a;
+  --sea: #3a5f9e;
+  --sky: #6f92c4;
+  --pale: #a9c6e6;
+  --chia: #2fa86a;
+  --bepe: #52c47e;
+  --gold: #d99a3c;
+  --ember: #d0542a;
+  --crimson: #c8323f;
+  --coral: #e35d5b;
+  --sunset: #d99a3c;
+  --violet: #4a2a6e;
+  --amethyst: #7a4aa8;
   --mono: "Cascadia Mono", "Consolas", "JetBrains Mono", "Courier New", monospace;
 }
 
@@ -67,10 +70,12 @@ h1, h2, h3 { color: var(--bone); letter-spacing: 0.02em; }
 
 /* ---------- hero ---------- */
 .hero { position: relative; min-height: 88vh; display: flex; flex-direction: column; }
+/* the descent, top-down: crimson surface (despair) fading through violet
+   into deep navy and ink (the depths) — the gradient-encodes-depth rule */
 .hero-sky {
   position: absolute; inset: 0;
   background: linear-gradient(180deg,
-    #0d0d1a 0%, #12294d 30%, #1d3f73 55%, #2f5d99 78%, #4d84bf 100%);
+    #c8323f 0%, #a01f2e 12%, #4a2a6e 40%, #14183a 72%, #0a1428 100%);
   z-index: -1;
 }
 .hero-inner {
