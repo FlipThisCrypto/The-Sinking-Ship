@@ -1,0 +1,7 @@
+# Determinism: manifests must be byte-identical across machines.
+# Force LF everywhere; never let git translate line endings.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
