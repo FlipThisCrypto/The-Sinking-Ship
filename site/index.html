@@ -67,18 +67,30 @@
 
 <section class="strip">
   <div class="strip-card">
+    <picture class="strip-art">
+      <source srcset="assets/passes/dive_gear_rack.webp" type="image/webp">
+      <img src="assets/passes/dive_gear_rack.jpg" alt="Dive gear — snorkel to admiral" width="768" height="768" loading="lazy">
+    </picture>
     <div class="strip-num">01</div>
     <h3>Dive</h3>
     <p>Buy a <strong>Dive Pass</strong> — snorkel to submarine to the abyss.
     The deeper the gear, the deeper you go, and the stranger what you find becomes.</p>
   </div>
   <div class="strip-card">
+    <picture class="strip-art">
+      <source srcset="assets/chest/treasure_chest.webp" type="image/webp">
+      <img src="assets/chest/treasure_chest.jpg" alt="Ornate treasure chest" width="768" height="768" loading="lazy">
+    </picture>
     <div class="strip-num">02</div>
     <h3>Open</h3>
     <p>Every pass is a <strong>treasure chest</strong> holding a randomized haul.
     Chest size, Depth Luck, and rarity floors are published before mint — and provable after.</p>
   </div>
   <div class="strip-card">
+    <picture class="strip-art">
+      <source srcset="assets/depths/hadal.webp" type="image/webp">
+      <img src="assets/depths/hadal.jpg" alt="Hadal light below — salvage" width="768" height="768" loading="lazy">
+    </picture>
     <div class="strip-num">03</div>
     <h3>Salvage</h3>
     <p>What you surface is yours: characters, ships, artifacts of a civilization
@@ -100,6 +112,7 @@
   <p class="section-lede">Fixed prices. Published ranges. No hidden math — every number
   below is generated from the same config the mint engine runs on.</p>
   <div class="stat-row" id="supply-stats"></div>
+  <div class="pass-grid" id="pass-grid" aria-label="Dive Pass illustrations"></div>
   <div class="table-wrap">
     <table id="tier-table">
       <thead>

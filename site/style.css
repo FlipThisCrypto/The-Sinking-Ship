@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: MIT
    THE SINKING SHIP — landing page, Amano ink aesthetic (v2 redesign).
-   Self-contained: no external fonts, scripts, or images. Colours trace
-   config/palette.json v2 (gradient-into-navy). The whole page is one
-   continuous descent: crimson surface -> violet -> deep navy -> ink abyss. */
+   No external fonts/CDN. Local art under site/assets/ (depths, passes, chest).
+   Colours trace config/palette.json v2. Page is one continuous descent:
+   crimson surface -> violet -> deep navy -> ink abyss. */
 
 :root {
   --ink: #0a0e1c;
@@ -164,11 +164,20 @@ section { position: relative; }
   gap: 1.4rem; max-width: 1040px; margin: 0 auto; padding: 4rem 1.5rem;
 }
 .strip-card {
-  border: 1px solid rgba(169, 198, 230, 0.16); border-radius: 4px; padding: 1.6rem;
+  border: 1px solid rgba(169, 198, 230, 0.16); border-radius: 4px; padding: 1.2rem 1.4rem 1.6rem;
   background: rgba(10, 14, 28, 0.28); backdrop-filter: blur(3px);
   transition: border-color 0.25s, transform 0.25s;
 }
 .strip-card:hover { border-color: rgba(217,154,60,0.5); transform: translateY(-3px); }
+.strip-art {
+  display: block; width: 100%; margin: 0 0 1rem; border-radius: 4px; overflow: hidden;
+  background: var(--bone); aspect-ratio: 1; border: 1px solid rgba(217,154,60,0.2);
+}
+.strip-art img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform 0.35s ease;
+}
+.strip-card:hover .strip-art img { transform: scale(1.03); }
 .strip-num { font-family: var(--serif); font-size: 1.6rem; color: var(--gold); }
 .strip-card h3 { margin: 0.3rem 0 0.6rem; font-size: 1.3rem; }
 .strip-card p { font-size: 0.92rem; color: var(--ash); }
@@ -178,15 +187,25 @@ section { position: relative; }
 .descent { padding: 3rem 0 1rem; }
 .zone { padding: 2.6rem 1.5rem; }
 .zone-inner {
-  max-width: 860px; margin: 0 auto; display: grid;
-  grid-template-columns: 132px 1fr; gap: 1.6rem; align-items: start;
+  max-width: 960px; margin: 0 auto; display: grid;
+  grid-template-columns: 100px 1fr; gap: 1.4rem; align-items: start;
 }
 .zone-depth {
   font-family: var(--mono); color: rgba(244,244,240,0.55); font-size: 0.74rem;
   letter-spacing: 0.12em; text-align: right; padding-top: 0.4rem;
   border-right: 1px solid rgba(217,154,60,0.3); padding-right: 1rem;
 }
-.zone h3 { font-size: 1.4rem; margin-bottom: 0.4rem; }
+.zone-body {
+  display: grid; grid-template-columns: minmax(140px, 220px) 1fr;
+  gap: 1.4rem; align-items: center;
+}
+.zone-art {
+  display: block; border-radius: 6px; overflow: hidden;
+  background: var(--bone); border: 1px solid rgba(217,154,60,0.28);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.35); aspect-ratio: 1;
+}
+.zone-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.zone-copy h3 { font-size: 1.4rem; margin-bottom: 0.4rem; }
 .zone .beat {
   display: inline-block; font-family: var(--mono); font-size: 0.66rem;
   letter-spacing: 0.18em; text-transform: uppercase; padding: 0.2rem 0.6rem;
@@ -197,10 +216,46 @@ section { position: relative; }
 .zone .swatches { margin-top: 1rem; display: flex; gap: 0; border-radius: 3px;
                   overflow: hidden; width: fit-content; box-shadow: 0 2px 12px rgba(0,0,0,0.35); }
 .zone .swatches span { width: 22px; height: 14px; display: inline-block; }
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .zone-inner { grid-template-columns: 1fr; gap: 0.5rem; }
   .zone-depth { text-align: left; border-right: none;
     border-left: 1px solid rgba(217,154,60,0.3); padding-right: 0; padding-left: 1rem; }
+  .zone-body { grid-template-columns: 1fr; }
+  .zone-art { max-width: 280px; }
+}
+
+/* ---------- dive pass cards ---------- */
+.pass-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem; margin: 0 0 2.4rem;
+}
+.pass-card {
+  border: 1px solid rgba(169,198,230,0.16); border-radius: 6px;
+  background: rgba(6,8,16,0.45); overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.pass-card:hover {
+  border-color: rgba(217,154,60,0.55); transform: translateY(-3px);
+}
+.pass-art {
+  display: block; aspect-ratio: 1; background: var(--bone);
+  border-bottom: 1px solid rgba(217,154,60,0.2);
+}
+.pass-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pass-meta { padding: 0.75rem 0.85rem 1rem; }
+.pass-meta h3 {
+  font-size: 0.95rem; margin: 0 0 0.4rem; line-height: 1.25;
+}
+.pass-meta .zone-chip {
+  font-size: 0.58rem; padding: 0.12rem 0.45rem; border-radius: 2px;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); font-weight: bold;
+}
+.pass-price {
+  margin-top: 0.5rem; font-family: var(--serif); color: var(--pale-gold); font-size: 0.95rem;
+}
+.pass-chest {
+  margin-top: 0.2rem; font-size: 0.68rem; color: var(--slate); letter-spacing: 0.02em;
 }
 
 /* ---------- tiers ---------- */
