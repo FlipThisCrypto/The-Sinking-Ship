@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE SINKING SHIP — Hope never sinks.</title>
+<meta name="description" content="44,444 pixel-art salvage records on the Chia blockchain. Everyone abandoned ship. We went back down for the treasure. Blind mint, provably fair, dive-tier chests.">
+<meta property="og:title" content="THE SINKING SHIP">
+<meta property="og:description" content="Everyone abandoned ship. We went back down for the treasure. 44,444 on Chia. Hope never sinks.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%230a1a33'/><rect x='3' y='9' width='10' height='3' fill='%23cc5833'/><rect x='7' y='3' width='2' height='6' fill='%23f2f2ef'/><rect x='9' y='4' width='4' height='3' fill='%23f2f2ef'/></svg>">
+</head>
+<body>
+
+<nav class="nav">
+  <a class="wordmark" href="#top">THE&nbsp;SINKING&nbsp;SHIP</a>
+  <div class="nav-links">
+    <a href="#descent">The Depths</a>
+    <a href="#tiers">Dive Passes</a>
+    <a href="#fair">Provably Fair</a>
+    <a href="#scuttling">The Scuttling</a>
+    <a href="#faq">FAQ</a>
+    <a href="https://github.com/FlipThisCrypto/The-Sinking-Ship" rel="noopener">GitHub</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="hero-sky"></div>
+  <div class="hero-inner">
+    <p class="kicker">44,444 pixel-art salvage records · Chia blockchain · blind mint</p>
+    <h1>Everyone abandoned ship.<br>We went back down<br>for the treasure.</h1>
+    <p class="sub">The ship went down in the bear market. The tourists left. The press wrote
+    the obituary. But the cargo — the memes, the tools, the culture, the builders —
+    is still down there.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#tiers">Choose your depth</a>
+      <a class="btn" href="#fair">Verify the odds</a>
+    </div>
+    <p class="tagline">HOPE&nbsp;NEVER&nbsp;SINKS.</p>
+  </div>
+  <div class="sea-band">
+    <svg class="pixel-ship" viewBox="0 0 32 20" shape-rendering="crispEdges" aria-hidden="true">
+      <rect x="6"  y="13" width="20" height="2" fill="#2a2a3a"/>
+      <rect x="7"  y="15" width="18" height="2" fill="#0d0d1a"/>
+      <rect x="8"  y="17" width="16" height="1" fill="#0d0d1a"/>
+      <rect x="9"  y="11" width="6"  height="2" fill="#8c2f2f"/>
+      <rect x="17" y="11" width="7"  height="2" fill="#8c2f2f"/>
+      <rect x="15" y="3"  width="1"  height="10" fill="#55556b"/>
+      <rect x="16" y="4"  width="6"  height="5"  fill="#f2f2ef"/>
+      <rect x="16" y="9"  width="4"  height="1"  fill="#c8c8d4"/>
+      <rect x="10" y="9"  width="3"  height="2"  fill="#e08033"/>
+      <rect x="12" y="6"  width="1"  height="3"  fill="#cc5833"/>
+    </svg>
+    <div class="waves" aria-hidden="true"></div>
+  </div>
+</header>
+
+<section class="strip">
+  <div class="strip-card">
+    <div class="strip-num">01</div>
+    <h3>Dive</h3>
+    <p>Buy a <strong>Dive Pass</strong> — snorkel to submarine to the abyss.
+    The deeper the gear, the deeper you go, and the stranger what you find becomes.</p>
+  </div>
+  <div class="strip-card">
+    <div class="strip-num">02</div>
+    <h3>Open</h3>
+    <p>Every pass is a <strong>treasure chest</strong> holding a randomized haul.
+    Chest size, Depth Luck, and rarity floors are published before mint — and provable after.</p>
+  </div>
+  <div class="strip-card">
+    <div class="strip-num">03</div>
+    <h3>Salvage</h3>
+    <p>What you surface is yours: characters, ships, artifacts of a civilization
+    that refused to die. <strong>Rarity = depth.</strong> Grails live in the Hadal zone.</p>
+  </div>
+</section>
+
+<section id="descent" class="descent">
+  <h2 class="section-title">The Five Depths</h2>
+  <p class="section-lede">Six chapters. One descent. The lore, the mint tiers, the odds,
+  and the art all follow the same spine — down.</p>
+  <div id="zones"></div>
+</section>
+
+<section id="tiers" class="tiers">
+  <h2 class="section-title">Dive Passes</h2>
+  <p class="section-lede">Fixed prices. Published ranges. No hidden math — every number
+  below is generated from the same config the mint engine runs on.</p>
+  <div class="stat-row" id="supply-stats"></div>
+  <div class="table-wrap">
+    <table id="tier-table">
+      <thead>
+        <tr><th>Tier</th><th>Zone</th><th>Price</th><th>Chest</th><th>E[haul]</th>
+            <th>Eff. / NFT</th><th>Passes</th><th>Depth&nbsp;Luck</th><th>Floor</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <p class="footnote">Depth Luck multiplies Epic+ odds. Floors are pity guarantees —
+  the minimum rarity a chest can contain. The Wizard of the Deep pass is not for sale;
+  it is earned through the lore puzzle during mint. 5 grails are seeded into the
+  5 Admiral chests; 27 more hide in random chests across tiers 4–8. Even a Deep Sea
+  Diver can strike a grail.</p>
+</section>
+
+<section id="fair" class="fair">
+  <h2 class="section-title">Provably Fair, Not "Trust Us"</h2>
+  <p class="section-lede">Blind mints usually mean blind trust. Ours is a commit–reveal
+  scheme you can check with a hundred lines of code.</p>
+  <ol class="fair-steps">
+    <li><strong>Before mint</strong> we publish one SHA-256 hash committing to the entire
+        generator: trait config, weights, grail placements, RNG algorithm, and a secret salt.</li>
+    <li><strong>When you buy</strong>, your chest is rolled from
+        <code>HMAC-SHA256(salt,&nbsp;your&nbsp;payment&nbsp;coin&nbsp;id)</code> —
+        deterministic, per-purchase, tied to an on-chain identifier neither side can pick.</li>
+    <li><strong>After mint</strong> we reveal the salt and the full config.</li>
+    <li><strong>Anyone</strong> can recompute every chest and confirm nothing was rigged:</li>
+  </ol>
+  <pre class="code"><code>python engine/chest_roller.py verify \
+    --manifest your_chest.json --salt-file revealed.salt
+<span class="ok">VERIFIED: manifest reproduces exactly from salt + coin_id</span></code></pre>
+  <p class="footnote">The roll engine is open source in this repository, deterministic
+  to the byte across machines, and locked by golden-vector tests. Change one weight,
+  one placement, one line — the published hash breaks.</p>
+</section>
+
+<section id="scuttling" class="scuttling">
+  <div class="scuttling-inner">
+    <h2 class="section-title">The Scuttling</h2>
+    <p class="big-quote">"Ships that never sailed are scuttled."</p>
+    <p>When the mint window closes, <strong>all unminted supply is permanently destroyed</strong> —
+    publicly, on-chain, with ceremony. The final collection is exactly what the divers
+    salvaged. Every pass that goes unsold makes every held NFT scarcer. The ocean keeps
+    what nobody came back for.</p>
+    <p class="footnote">The exact procedure — final count publication, generator seed
+    retirement, reserve burn — is published before mint opens.</p>
+  </div>
+</section>
+
+<section class="grails">
+  <div class="grail-cols">
+    <div>
+      <h2 class="section-title">The 44 Grails</h2>
+      <p>Forty-four hand-crafted 1/1s in eleven themed sets of four — The Four Admirals,
+      The Wizards of the Deep, The Lighthouse Keepers, The Ghost Captains, The Torn…
+      Named, lore-canon, and seeded where the spec says they are. 44 grails in a
+      44,444 supply. The symbolism is the point.</p>
+    </div>
+    <div>
+      <h2 class="section-title">Honor, Earned</h2>
+      <p>Diamond Hands isn't a random trait here — it's a record. Badges like
+      <em>Never Jumped</em>, <em>Still Here</em>, and <em>Last Man Aboard</em> are earned
+      by verifiable behavior after mint: holding through reveal, holding six months,
+      minting in the final scuttle hour. Worn forever. Never rolled.</p>
+    </div>
+  </div>
+</section>
+
+<section id="faq" class="faq">
+  <h2 class="section-title">FAQ</h2>
+  <details>
+    <summary>What chain is this on, and what wallet do I need?</summary>
+    <p>Chia. You'll accept your chest as an offer file — the Sage wallet handles this in
+    a couple of clicks, and the mint site walks you through setup in about 60 seconds.
+    A manual offer-file download is always available as a fallback.</p>
+  </details>
+  <details>
+    <summary>What exactly do I get when I buy a pass?</summary>
+    <p>A treasure chest containing a randomized number of NFTs within your tier's
+    published range. Deeper tiers get more NFTs per XCH, wider upside, multiplied
+    Epic+ odds (Depth Luck), and minimum-rarity floors. All odds are published.</p>
+  </details>
+  <details>
+    <summary>How do I know the blind mint isn't rigged?</summary>
+    <p>Your chest is derived from your payment coin's on-chain id and a salt we
+    committed to before mint. After reveal, you can recompute your entire chest
+    yourself and compare hashes. See <a href="#fair">Provably Fair</a>.</p>
+  </details>
+  <details>
+    <summary>44,444 is a lot. What if it doesn't sell out?</summary>
+    <p>Then the ocean keeps the rest. All unminted supply is destroyed on-chain at
+    close (<a href="#scuttling">The Scuttling</a>), so undersell makes the collection
+    scarcer, not overhung. We budget assuming partial sellout — honestly, publicly.</p>
+  </details>
+  <details>
+    <summary>Royalties and treasury?</summary>
+    <p>5% on-chain royalty, minted from the project DID. A 444-NFT treasury reserve
+    (team, collabs, contests) is disclosed up front and included in the public math.</p>
+  </details>
+  <details>
+    <summary>Is this Pepe?</summary>
+    <p>No. Tom Bepe is an original, legally distinct amphibian everyman — original
+    design, original proportions, no protected assets. He cries in a lifeboat on the
+    surface and welds a new keel by wizard-light at 6,000 meters. Same guy. Full arc.</p>
+  </details>
+</section>
+
+<footer class="footer">
+  <div>
+    <span class="wordmark small">THE&nbsp;SINKING&nbsp;SHIP</span>
+    <p class="footnote">Hope never sinks. · Built on Chia · MIT-licensed engine ·
+    <a href="https://github.com/FlipThisCrypto/The-Sinking-Ship" rel="noopener">Source & fairness docs</a></p>
+    <p class="footnote">Nothing on this page is financial advice. Odds are published,
+    variance is real, and the ocean is cold.</p>
+  </div>
+</footer>
+
+<script src="tiers.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
