@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "chip0007.schema.json",
+  "title": "CHIP-0007 off-chain NFT metadata (subset used for validation)",
+  "type": "object",
+  "required": ["format", "name", "description", "minting_tool", "sensitive_content",
+               "series_number", "series_total", "attributes", "collection", "license"],
+  "properties": {
+    "format": {"const": "CHIP-0007"},
+    "name": {"type": "string", "pattern": "^Sinking Ship #\\d{5}$"},
+    "description": {"type": "string"},
+    "minting_tool": {"type": "string"},
+    "sensitive_content": {"type": "boolean"},
+    "series_number": {"type": "integer", "minimum": 1, "maximum": 44444},
+    "series_total": {"const": 44444},
+    "license": {"type": "string"},
+    "attributes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["trait_type", "value"],
+        "properties": {
+          "trait_type": {"type": "string"},
+          "value": {"type": ["string", "integer"]}
+        }
+      }
+    },
+    "collection": {
+      "type": "object",
+      "required": ["id", "name", "attributes"],
+      "properties": {
+        "id": {"type": "string"},
+        "name": {"type": "string"},
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "value"],
+            "properties": {
+              "type": {"type": "string"},
+              "value": {"type": "string"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "collection.schema.json",
+  "title": "The Sinking Ship — CHIP-0007 collection block config",
+  "type": "object",
+  "required": ["config_name", "version", "collection", "minting"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "config_name": {"const": "collection"},
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "collection": {
+      "type": "object",
+      "required": ["id", "name", "description", "icon", "banner", "twitter",
+                   "website", "license_url"],
+      "properties": {
+        "id": {"type": "string"},
+        "name": {"type": "string"},
+        "description": {"type": "string"},
+        "icon": {"type": "string"},
+        "banner": {"type": "string"},
+        "twitter": {"type": "string"},
+        "website": {"type": "string"},
+        "license_url": {"type": "string"}
+      }
+    },
+    "minting": {
+      "type": "object",
+      "required": ["minting_tool", "series_total", "royalty_percentage_basis_points"],
+      "properties": {
+        "minting_tool": {"type": "string"},
+        "series_total": {"const": 44444},
+        "royalty_percentage_basis_points": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "did": {"type": "string"},
+        "royalty_address": {"type": "string"}
+      }
+    },
+    "notes": {"type": "array", "items": {"type": "string"}}
+  }
+}

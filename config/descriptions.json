@@ -1,0 +1,53 @@
+{
+  "$schema": "./schemas/descriptions.schema.json",
+  "config_name": "descriptions",
+  "version": "1.0.0",
+  "notes": [
+    "30 description lines, 5 per depth zone (P6). Selection is deterministic per NFT (hash of coin_id + global index), so metadata regenerates byte-identically.",
+    "Voice: heavy, hopeful, meme-literate, never desperate. No financial claims (spec Risk 3)."
+  ],
+  "lines": {
+    "surface": [
+      "They watched from the lifeboats and called it mercy. The ship kept burning anyway.",
+      "The headlines wrote the obituary before the hull was even cold.",
+      "Everyone swore they'd stay. The horizon is full of people who swore.",
+      "Salvage record, surface zone: laughter carries farther over water than grief.",
+      "The tourists photographed the sinking. Nobody photographed who stayed."
+    ],
+    "sunlight": [
+      "From above you can still see the deck rails. Told-you-so travels at the speed of light.",
+      "Twenty meters down, the wreck is still warm.",
+      "The doubters were right about the sinking. They were wrong about everything after.",
+      "Salvage record, sunlight zone: the water forgives nothing and forgets less.",
+      "Light reaches here. Conviction has to swim deeper."
+    ],
+    "twilight": [
+      "The first divers found the lights still on below deck.",
+      "Loyalty is a kind of pressure tolerance.",
+      "Salvage record, twilight zone: someone kept the boiler fed the whole time.",
+      "Down here the doubt thins out. It can't hold its breath this long.",
+      "Two hundred meters of water between you and the people who said it was over."
+    ],
+    "midnight": [
+      "The crew never left. They just stopped answering the surface.",
+      "Salvage record, midnight zone: found the mess hall laughing at its own jokes.",
+      "No sunlight for a thousand meters and the memes are still posting.",
+      "The pressure down here would crush a tourist. The crew calls it Tuesday.",
+      "They welded a new bulkhead and named it after everyone who left."
+    ],
+    "abyssal": [
+      "The ship isn't sinking. It's being rebuilt where no one bothers to look.",
+      "Salvage record, abyssal zone: sparks look like stars when it's dark enough.",
+      "Four thousand meters down, somebody is measuring twice.",
+      "The forge never asked permission from the surface.",
+      "What the ocean was given, the shipwrights are taking back."
+    ],
+    "hadal": [
+      "At the bottom of everything there is a light, and it is not the sun.",
+      "Salvage record, hadal zone: the wizards were here first and never doubted.",
+      "Hope never sinks. It just goes where the tourists can't follow.",
+      "The source is not a place. It's the ones still holding the torch at 6,000 meters.",
+      "Deeper than despair there is only building."
+    ]
+  }
+}

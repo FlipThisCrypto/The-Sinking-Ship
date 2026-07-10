@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "descriptions.schema.json",
+  "title": "The Sinking Ship — zone description line pool",
+  "type": "object",
+  "required": ["config_name", "version", "lines"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "config_name": {"const": "descriptions"},
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "notes": {"type": "array", "items": {"type": "string"}},
+    "lines": {
+      "type": "object",
+      "required": ["surface", "sunlight", "twilight", "midnight", "abyssal", "hadal"],
+      "properties": {
+        "surface":  {"type": "array", "minItems": 5, "maxItems": 5, "items": {"type": "string"}},
+        "sunlight": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"type": "string"}},
+        "twilight": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"type": "string"}},
+        "midnight": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"type": "string"}},
+        "abyssal":  {"type": "array", "minItems": 5, "maxItems": 5, "items": {"type": "string"}},
+        "hadal":    {"type": "array", "minItems": 5, "maxItems": 5, "items": {"type": "string"}}
+      }
+    }
+  }
+}
