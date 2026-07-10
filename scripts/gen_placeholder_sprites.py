@@ -4,17 +4,14 @@
 Two renderers, chosen by render profile (config/render.json):
 
   pixel        — the original 48x48 solid-block placeholders (kept verbatim).
-  illustration — evocative stand-ins in the ART-DIRECTION.md spirit:
-                 vertical gradients that sink into deep navy, ship and
-                 character silhouettes, wave / smoke / aura flourishes, all
-                 anti-aliased (drawn 2x supersampled, LANCZOS downscaled).
-                 Deterministic per trait (sha256 of the sprite key), colours
-                 drawn from the v2 master palette with keyword-driven moods.
+  illustration — Amano ink stand-ins matching ships_amano/ + ART-DIRECTION:
+                 bone-white ground, vertical gradient linework (warm→navy),
+                 calligraphic hulls, crystals, wave ribbons, gestural figures.
+                 Deterministic per trait (sha256 of the sprite key).
+                 Measured by scripts/style_score.py against ships_amano.
 
-They are still unmistakably placeholders (each sprite carries a small
-corner checker tag, and every layer README says so) — but composites now
-read as moody gradient posters instead of colour blocks, so sample renders
-and contact sheets are presentable while the real Amano art is produced.
+They remain placeholders (corner checker tag + README disclaimer) — replace
+file-for-file with final illustration; filenames must not change.
 
 Usage:
     python scripts/gen_placeholder_sprites.py [--force] [--profile pixel|illustration]
@@ -32,6 +29,29 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "engine"))
 
+from shipgen.amano_ink import (  # noqa: E402
+    DECK_Y,
+    HEAD,
+    HEAD_R,
+    HORIZON,
+    InkCanvas,
+    RAMPS,
+    chain_links,
+    character_profile,
+    crystal,
+    filigree_curl,
+    gun_turret,
+    mast_and_sail,
+    mood_ramp,
+    network_mesh,
+    organic_hull,
+    placeholder_tag,
+    qbez,
+    smoke_flourish,
+    soft_atmosphere,
+    wave_ribbons,
+    catmull,
+)
 from shipgen.config import GenConfig, load_json, CONFIG_DIR  # noqa: E402
 
 log = logging.getLogger("gen_placeholder_sprites")
@@ -39,12 +59,15 @@ ROOT = Path(__file__).resolve().parent.parent
 SPRITES = ROOT / "sprites"
 
 PX_PIXEL = 48
-SS = 2  # illustration supersample factor
+# Draw at this working size then LANCZOS up to master_px (speed + AA).
+WORK_PX = 1024
 
 # ---------------------------------------------------------------- palette
 
-_PALETTE = {c["name"]: tuple(int(c["hex"][i:i + 2], 16) for i in (1, 3, 5))
-            for c in load_json(CONFIG_DIR / "palette.json")["master"]}
+_PALETTE = {
+    c["name"]: tuple(int(c["hex"][i : i + 2], 16) for i in (1, 3, 5))
+    for c in load_json(CONFIG_DIR / "palette.json")["master"]
+}
 
 POOLS = {
     "crimson": ["crimson", "blood_red", "maroon", "ember_orange", "coral"],
@@ -56,7 +79,7 @@ POOLS = {
     "pale": ["bone_white", "ash_gray", "pale_blue", "slate_gray"],
 }
 _KEYWORD_MOODS = [
-    (("blood", "fire", "red", "ember", "meteor"), "crimson"),
+    (("blood", "fire", "red", "ember", "meteor", "burn"), "crimson"),
     (("sunset", "golden", "gold", "solar", "sand", "treasure"), "gold"),
     (("aurora", "emerald", "chia", "green", "biolum", "kelp"), "green"),
     (("purple", "violet", "corrupt", "void", "wizard", "magic", "rune", "sigil"), "violet"),
@@ -65,14 +88,14 @@ _KEYWORD_MOODS = [
 ]
 
 BODY_COLORS = {
-    "Green": ("chia_green", "teal_green"),
-    "Blue": ("sea_blue", "steel_blue"),
-    "Zombie": ("teal_green", "slate_gray"),
-    "Ghost": ("pale_blue", "ash_gray"),
-    "Gold": ("gold", "amber"),
-    "Emerald": ("bright_green", "deep_teal"),
-    "Corrupted": ("amethyst", "deep_violet"),
-    "Chrome": ("ash_gray", "bone_white"),
+    "Green": "green",
+    "Blue": "blue",
+    "Zombie": "green",
+    "Ghost": "pale",
+    "Gold": "gold",
+    "Emerald": "green",
+    "Corrupted": "violet",
+    "Chrome": "pale",
 }
 
 
@@ -104,455 +127,659 @@ def col(name: str) -> tuple[int, int, int]:
     return _PALETTE[name]
 
 
-# ------------------------------------------------------- drawing helpers
-
-def vgrad(size: int, stops: list[tuple[float, tuple[int, int, int]]],
-          y0: float = 0.0, y1: float = 1.0, alpha: int = 255) -> Image.Image:
-    """Vertical gradient band between fractional rows y0..y1 (transparent
-    elsewhere). Cheap row-fill; smooth enough at sprite scale."""
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    top, bot = int(y0 * size), int(y1 * size)
-    span = max(1, bot - top)
-    for row in range(top, bot):
-        t = (row - top) / span
-        for j in range(len(stops) - 1):
-            t0, c0 = stops[j]
-            t1, c1 = stops[j + 1]
-            if t0 <= t <= t1:
-                f = 0 if t1 == t0 else (t - t0) / (t1 - t0)
-                c = tuple(round(c0[k] + (c1[k] - c0[k]) * f) for k in range(3))
-                d.line([(0, row), (size, row)], fill=(*c, alpha))
-                break
-    return img
-
-
-def curve_points(p0, p1, p2, n=32):
-    """Quadratic bezier sample points."""
-    return [((1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * p1[0] + t ** 2 * p2[0],
-             (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * p1[1] + t ** 2 * p2[1])
-            for t in (i / n for i in range(n + 1))]
-
-
-def stroke(d: ImageDraw.ImageDraw, pts, color, width, alpha=255):
-    d.line(pts, fill=(*color, alpha), width=width, joint="curve")
-
-
-def blend(c1, c2, f=0.5):
-    return tuple(round(c1[k] + (c2[k] - c1[k]) * f) for k in range(3))
-
-
-def tag(d: ImageDraw.ImageDraw, size: int, slot: int, color):
-    """Discreet 4-square placeholder checker tag; position varies per layer."""
-    s = max(4, size // 96)
-    x0 = (slot * 7 + 2) * s
-    y0 = size - 3 * s
-    for i in range(4):
-        if i % 2 == 0:
-            d.rectangle([x0 + i * s, y0, x0 + (i + 1) * s - 1, y0 + s - 1],
-                        fill=(*color, 150))
-
-
-# shared composition geometry (fractions of canvas)
-HORIZON = 0.60
-DECK_Y = 0.565
-HEAD = (0.50, 0.415)
-HEAD_R = 0.052
-
-
-def _c(size, fx, fy):
-    return (fx * size, fy * size)
-
-
 # ----------------------------------------------------- layer renderers
 
-def draw_sky(key, name, size) -> Image.Image:
+def draw_sky(key: str, name: str, size: int) -> Image.Image:
+    """Near-white atmosphere — wisps only, never a solid colour block."""
     det = Det(key)
     mood = mood_for(name)
-    a = col(det.pick(POOLS[mood], 0))
-    b = col(det.pick(POOLS[mood], 1))
-    deep = col(det.pick(POOLS["dark"], 2))
-    img = vgrad(size, [(0.0, a), (0.55, blend(b, deep, 0.35)), (1.0, deep)])
-    d = ImageDraw.Draw(img)
-    if det.byte(3) % 3 == 0:  # a sun / moon / eclipse disc
-        cx, cy = _c(size, det.frac(4, 0.6, 0.8), det.frac(5, 0.14, 0.30))
-        r = size * det.frac(6, 0.05, 0.09)
-        disc = blend(col("bone_white"), a, 0.35)
-        for k in range(6, 0, -1):  # soft halo
-            d.ellipse([cx - r - k * 3, cy - r - k * 3, cx + r + k * 3, cy + r + k * 3],
-                      fill=(*disc, 10))
-        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(*disc, 210))
+    stops = mood_ramp(mood)
+    ink = InkCanvas(size, y0=0.05, y1=0.55)
+    soft_atmosphere(ink, stops, density=5 + det.byte(0) % 4, alpha=22 + det.byte(1) % 16)
+    # optional celestial disc as thin gradient ring
+    if det.byte(2) % 3 == 0:
+        cx = size * det.frac(3, 0.62, 0.82)
+        cy = size * det.frac(4, 0.12, 0.28)
+        r = size * det.frac(5, 0.04, 0.08)
+        for k in range(3):
+            ink.ellipse(
+                [cx - r - k * 2, cy - r - k * 2, cx + r + k * 2, cy + r + k * 2],
+                stops, alpha=0, outline_w=max(1, size // 400),
+            )
+        # faint fill
+        ink.ellipse([cx - r * 0.7, cy - r * 0.7, cx + r * 0.7, cy + r * 0.7], stops, 35)
     if "meteor" in name.lower() or "lightning" in name.lower():
         for i in range(3):
-            x = size * det.frac(8 + i, 0.1, 0.9)
-            y = size * det.frac(11 + i, 0.05, 0.35)
-            stroke(d, [(x, y), (x - size * 0.06, y + size * 0.12)],
-                   col("pale_gold"), max(2, size // 300), 190)
-    tag(d, size, 0, blend(a, deep))
-    return img
+            x = size * det.frac(8 + i, 0.15, 0.85)
+            y = size * det.frac(11 + i, 0.08, 0.32)
+            ink.stroke(
+                [(x, y), (x - size * 0.05, y + size * 0.14)],
+                stops, max(1.5, size * 0.002), 180,
+            )
+    if "aurora" in name.lower():
+        for i in range(4):
+            pts = catmull([
+                (size * 0.1, size * (0.15 + i * 0.04)),
+                (size * 0.35, size * (0.10 + i * 0.05)),
+                (size * 0.65, size * (0.18 + i * 0.03)),
+                (size * 0.9, size * (0.12 + i * 0.04)),
+            ], 6)
+            ink.stroke(pts, mood_ramp("green"), max(1.5, size * 0.002), 90)
+    placeholder_tag(ink, 0)
+    return ink.img
 
 
-def draw_sea(key, name, size) -> Image.Image:
+def draw_sea(key: str, name: str, size: int) -> Image.Image:
+    """Flowing wave ribbons on transparent ground — ships_amano / Hokusai water."""
     det = Det(key)
     mood = mood_for(name)
-    tint = col(det.pick(POOLS[mood], 0))
-    deep = col(det.pick(POOLS["dark"], 1))
-    img = vgrad(size, [(0.0, blend(tint, deep, 0.45)), (1.0, col("ink_black"))],
-                y0=HORIZON, y1=1.0)
-    d = ImageDraw.Draw(img)
-    amp = size * det.frac(2, 0.004, 0.014)
-    for w in range(4):
-        yb = size * (HORIZON + 0.05 + w * 0.09)
-        pts = [(x, yb + amp * math.sin(x / size * math.tau * (2 + w) + det.frac(3 + w) * 6))
-               for x in range(0, size + 8, 8)]
-        stroke(d, pts, blend(tint, col("bone_white"), 0.25),
-               max(2, size // 400), 90 - w * 18)
+    stops = mood_ramp(mood if mood != "pale" else "blue")
+    ink = InkCanvas(size, y0=HORIZON - 0.05, y1=0.95)
+    strands = 10 + det.byte(0) % 5
+    wave_ribbons(
+        ink, y_base=HORIZON + 0.01, amp=0.04 + det.frac(1, 0, 0.02),
+        length=1.0, stops=stops, strands=strands,
+        width=max(2.2, size * 0.0035), phase=det.frac(2, 0, 3),
+    )
+    # secondary lower swell denser (cooler end of ramp)
+    wave_ribbons(
+        ink, y_base=0.76, amp=0.045, length=1.0, stops=stops,
+        strands=8, width=max(1.8, size * 0.0028), phase=det.frac(3, 1, 4),
+        x0=0.0, x1=1.0,
+    )
     if "whirlpool" in name.lower():
-        cx, cy = _c(size, 0.5, 0.82)
-        for t in range(120):
-            ang = t / 120 * 3 * math.tau
-            r = size * 0.16 * (1 - t / 130)
-            x, y = cx + r * math.cos(ang), cy + r * math.sin(ang) * 0.4
-            d.ellipse([x - 2, y - 2, x + 2, y + 2], fill=(*blend(tint, deep, 0.2), 120))
-    tag(d, size, 1, blend(tint, deep))
-    return img
+        cx, cy = 0.5 * size, 0.82 * size
+        for t in range(90):
+            ang = t / 90 * 2.8 * math.tau
+            rad = size * 0.18 * (1 - t / 100)
+            x = cx + rad * math.cos(ang)
+            y = cy + rad * math.sin(ang) * 0.45
+            if t > 0:
+                ink.stroke([(px, py), (x, y)], stops, max(1.2, size * 0.002), 160)
+            px, py = x, y
+    if "storm" in name.lower() or "swell" in name.lower():
+        # breaking crest flourish
+        crest = catmull([
+            (size * 0.55, size * 0.62),
+            (size * 0.72, size * 0.48),
+            (size * 0.88, size * 0.40),
+            (size * 0.78, size * 0.55),
+            (size * 0.70, size * 0.68),
+        ], 8)
+        ink.stroke(crest, stops, max(2.0, size * 0.0035), 200)
+        for i in range(8):
+            filigree_curl(
+                ink, size * (0.7 + det.frac(4 + i, -0.08, 0.08)),
+                size * (0.45 + i * 0.02), size * 0.03, stops,
+                turns=1.1, width=max(1.0, size * 0.0015), phase=i,
+            )
+    placeholder_tag(ink, 1)
+    return ink.img
 
 
-def draw_scene(key, name, size, series) -> Image.Image:
+def draw_scene(key: str, name: str, size: int, series: str | None) -> Image.Image:
     det = Det(key)
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    ink = col("deep_ink")
-    accent = {"harbor": col("bronze"), "military": col("slate_gray"),
-              "pirate": col("maroon"), "wizard": col("amethyst"),
-              "crystal": col("pale_blue")}.get(series, col("slate_gray"))
-    side = det.frac(0, 0.06, 0.16)
-    if det.byte(9) % 2:
-        side = 1 - side - 0.05
-    # vertical structures on one flank
-    for i in range(2 + det.byte(1) % 2):
-        x = size * (side + i * 0.045)
-        h = size * det.frac(2 + i, 0.10, 0.28)
-        w = max(3, int(size * 0.012))
-        d.rectangle([x, size * HORIZON - h, x + w, size * (HORIZON + 0.02)],
-                    fill=(*ink, 200))
-        d.ellipse([x - w, size * HORIZON - h - w * 2, x + 2 * w, size * HORIZON - h],
-                  fill=(*accent, 170))
-    if series in ("wizard", "crystal"):  # floating glyphs / shards
-        for i in range(4):
-            x = size * det.frac(6 + i, 0.1, 0.9)
-            y = size * det.frac(10 + i, 0.20, 0.5)
-            r = size * det.frac(14 + i, 0.008, 0.02)
-            d.polygon([(x, y - r), (x + r, y), (x, y + r), (x - r, y)],
-                      fill=(*accent, 150))
-    tag(d, size, 2, accent)
-    return img
-
-
-def draw_ship(key, name, size) -> Image.Image:
-    det = Det(key)
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    ink = blend(col("deep_ink"), col("ink_black"), det.frac(0, 0.0, 0.6))
-    if mood_for(name) == "crimson":
-        ink = blend(ink, col("maroon"), 0.35)
-    half_w = det.frac(1, 0.14, 0.30)
-    hull_top = DECK_Y
-    hull_bot = HORIZON + 0.03
-    cx = 0.5
-    # hull with swept bow/stern
-    pts = [_c(size, cx - half_w, hull_top),
-           _c(size, cx + half_w, hull_top),
-           _c(size, cx + half_w * 0.82, hull_bot),
-           _c(size, cx - half_w * 0.82, hull_bot)]
-    d.polygon(pts, fill=(*ink, 235))
-    bow = curve_points(_c(size, cx + half_w, hull_top),
-                       _c(size, cx + half_w + 0.05 * size / size * size, hull_top * size - 0.05 * size)
-                       if False else (size * (cx + half_w + 0.05), size * (hull_top - 0.05)),
-                       (size * (cx + half_w + 0.015), size * (hull_top - 0.10)))
-    stroke(d, bow, ink, max(3, size // 220), 235)
-    masts = 1 + det.byte(2) % 3
-    for m in range(masts):
-        mx = cx - half_w * 0.55 + m * (half_w * 1.1 / max(1, masts - 1) if masts > 1 else 0)
-        mh = det.frac(3 + m, 0.16, 0.30)
-        x = size * mx
-        d.line([(x, size * hull_top), (x, size * (hull_top - mh))],
-               fill=(*ink, 235), width=max(3, size // 300))
-        # swept sail: curved triangle
-        sail_w = size * det.frac(6 + m, 0.05, 0.10)
-        top = (x, size * (hull_top - mh))
-        foot = (x + sail_w, size * (hull_top - mh * 0.25))
-        mid = (x + sail_w * 0.9, size * (hull_top - mh * 0.72))
-        d.polygon([top, mid, foot, (x, size * (hull_top - mh * 0.2))],
-                  fill=(*blend(ink, col("bone_white"), 0.18), 210))
-    # pennant
-    fx, fy = size * (cx - half_w * 0.55), size * (hull_top - det.frac(3, 0.16, 0.30))
-    d.polygon([(fx, fy), (fx - size * 0.03, fy + size * 0.012), (fx, fy + size * 0.024)],
-              fill=(*col(det.pick(["crimson", "gold", "chia_green", "bone_white"], 9)), 220))
-    tag(d, size, 3, ink)
-    return img
-
-
-def draw_condition(key, name, size) -> Image.Image:
-    det = Det(key)
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    low = name.lower()
-    if "burn" in low or "fire" in low:
-        cx, cy = _c(size, det.frac(0, 0.42, 0.58), DECK_Y - 0.02)
-        for k in range(8, 0, -1):
-            r = size * 0.02 * k
-            d.ellipse([cx - r, cy - r * 1.4, cx + r, cy + r * 0.6],
-                      fill=(*col("ember_orange"), 14))
-        for i in range(5):
-            x = cx + size * det.frac(2 + i, -0.06, 0.06)
-            stroke(d, curve_points((x, cy), (x + size * 0.02, cy - size * 0.08),
-                                   (x - size * 0.01, cy - size * 0.16)),
-                   col("gold"), max(2, size // 400), 120)
-    elif "flood" in low or "sunk" in low or "underwater" in low:
-        depth = 0.10 if "half" in low else (0.16 if "flood" in low else 0.24)
-        band = vgrad(size, [(0.0, col("sea_blue")), (1.0, col("deep_navy"))],
-                     y0=HORIZON - depth, y1=HORIZON + 0.04, alpha=110)
-        img.alpha_composite(band)
-    elif "ghost" in low:
-        veil = vgrad(size, [(0.0, col("pale_blue")), (1.0, col("ash_gray"))],
-                     y0=0.30, y1=0.70, alpha=48)
-        img.alpha_composite(veil)
-    elif "rebuilt" in low or "salvage" in low:
-        for i in range(6):
-            x, y = _c(size, det.frac(i, 0.36, 0.64), det.frac(6 + i, 0.42, 0.56))
-            d.ellipse([x - 3, y - 3, x + 3, y + 3], fill=(*col("gold"), 200))
-        stroke(d, [_c(size, 0.34, DECK_Y - 0.10), _c(size, 0.66, DECK_Y - 0.13)],
-               col("bronze"), max(2, size // 350), 190)
-    elif "split" in low or "broken" in low:
-        stroke(d, curve_points(_c(size, 0.5, DECK_Y), _c(size, 0.52, HORIZON),
-                               _c(size, 0.47, HORIZON + 0.05)),
-               col("ink_black"), max(3, size // 250), 220)
-    elif "listing" in low:
-        for i in range(4):
-            y = size * (0.30 + i * 0.06)
-            stroke(d, [(size * 0.15, y), (size * 0.35, y + size * 0.03)],
-                   col("slate_gray"), max(2, size // 450), 70)
-    tag(d, size, 4, col("slate_gray"))
-    return img
-
-
-def draw_body(key, variant, pose, size) -> Image.Image:
-    det = Det(key)
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    c1, c2 = (col(a) for a in BODY_COLORS.get(variant, ("chia_green", "teal_green")))
-    alpha = 150 if variant == "Ghost" else 235
-    dx = {"On Bow": 0.07, "Back Turned": -0.02}.get(pose, 0.0)
-    dy = {"Sitting": 0.035, "Looking Down": 0.012}.get(pose, 0.0)
-    hx, hy = HEAD[0] + dx, HEAD[1] + dy
-    r = HEAD_R
-    # torso: teardrop that dissolves toward the deck (art-direction nod)
-    torso = curve_points(_c(size, hx - r * 0.9, hy + r),
-                         _c(size, hx - r * 1.7, hy + r * 4.2),
-                         _c(size, hx, hy + r * 5.0)) + \
-            curve_points(_c(size, hx, hy + r * 5.0),
-                         _c(size, hx + r * 1.7, hy + r * 4.2),
-                         _c(size, hx + r * 0.9, hy + r))
-    d.polygon(torso, fill=(*blend(c1, c2, 0.45), alpha))
-    # dissolving tendrils at the base
-    for i in range(3):
-        bx = hx + (i - 1) * r * 0.9
-        stroke(d, curve_points(_c(size, bx, hy + r * 4.6),
-                               _c(size, bx + det.frac(i, -0.02, 0.02), hy + r * 5.8),
-                               _c(size, bx - det.frac(3 + i, -0.03, 0.03), hy + r * 6.6)),
-               blend(c2, col("deep_navy"), 0.4), max(2, size // 350), alpha - 60)
-    # head
-    d.ellipse([size * (hx - r), size * (hy - r), size * (hx + r), size * (hy + r)],
-              fill=(*c1, alpha))
-    # tousled hair arc (black, Amano cue)
-    hair = curve_points(_c(size, hx - r, hy - r * 0.2),
-                        _c(size, hx - r * 0.2, hy - r * 1.9),
-                        _c(size, hx + r * 1.05, hy - r * 0.45))
-    stroke(d, hair, col("ink_black"), max(4, int(size * r * 0.55)), 245)
-    if pose == "Saluting":
-        stroke(d, [_c(size, hx + r * 1.1, hy + r * 2.2), _c(size, hx + r * 1.9, hy + r * 0.4)],
-               blend(c1, c2, 0.45), max(3, size // 260), alpha)
-    tag(d, size, 5, c2)
-    return img
-
-
-def draw_clothing(key, name, size) -> Image.Image:
-    det = Det(key)
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    mood = mood_for(name)
-    base = col(det.pick(POOLS[mood], 0)) if mood != "blue" else \
-        col(det.pick(["navy", "deep_navy", "steel_blue", "bronze", "maroon"], 0))
-    hx, hy, r = HEAD[0], HEAD[1], HEAD_R
-    torso = curve_points(_c(size, hx - r * 0.95, hy + r * 1.1),
-                         _c(size, hx - r * 1.55, hy + r * 3.9),
-                         _c(size, hx, hy + r * 4.5)) + \
-            curve_points(_c(size, hx, hy + r * 4.5),
-                         _c(size, hx + r * 1.55, hy + r * 3.9),
-                         _c(size, hx + r * 0.95, hy + r * 1.1))
-    d.polygon(torso, fill=(*base, 200))
-    # gold filigree collar — the signature ornament
-    collar = curve_points(_c(size, hx - r * 0.95, hy + r * 1.05),
-                          _c(size, hx, hy + r * 1.55),
-                          _c(size, hx + r * 0.95, hy + r * 1.05))
-    stroke(d, collar, col("gold"), max(3, size // 260), 235)
-    tag(d, size, 6, base)
-    return img
-
-
-def draw_eyes(key, name, size) -> Image.Image:
-    det = Det(key)
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    low = name.lower()
-    color = col("bone_white")
-    if "laser" in low or "heart" in low:
-        color = col("crimson")
-    elif "xch" in low or "wizard" in low:
-        color = col("bright_green")
-    elif "diamond" in low or "star" in low:
-        color = col("pale_blue")
-    elif "dead" in low or "closed" in low or "sleepy" in low:
-        color = col("slate_gray")
-    hx, hy, r = HEAD[0], HEAD[1], HEAD_R
-    er = r * det.frac(0, 0.18, 0.26)
-    for sgn in (-1, 1):
-        x, y = size * (hx + sgn * r * 0.42), size * (hy - r * 0.05)
-        if "closed" in low or "dead" in low:
-            stroke(d, [(x - er * size / size * 8, y), (x + 8, y)], color,
-                   max(2, size // 400), 220)
-        else:
-            d.ellipse([x - er * size, y - er * size, x + er * size, y + er * size],
-                      fill=(*color, 235))
-            d.ellipse([x - er * size * 0.3, y - er * size * 0.5,
-                       x + er * size * 0.1, y - er * size * 0.1],
-                      fill=(*col("ink_black"), 200))
-    tag(d, size, 7, color)
-    return img
-
-
-def draw_mouth(key, name, size) -> Image.Image:
-    det = Det(key)
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    hx, hy, r = HEAD[0], HEAD[1], HEAD_R
-    mx, my = hx + r * 0.55, hy + r * 0.45
-    low = name.lower()
-    item = col(det.pick(["bronze", "sand", "maroon", "slate_gray"], 0))
-    stroke(d, [_c(size, mx, my), _c(size, mx + r * 0.9, my - r * 0.15)],
-           item, max(3, size // 300), 230)
-    if any(k in low for k in ("cig", "pipe")):
-        d.ellipse([size * (mx + r * 0.86) - 4, size * (my - r * 0.15) - 4,
-                   size * (mx + r * 0.86) + 4, size * (my - r * 0.15) + 4],
-                  fill=(*col("ember_orange"), 235))
-        # ornate curling smoke — the Amano flourish
-        sx, sy = mx + r * 0.95, my - r * 0.3
+    mood = {
+        "harbor": "gold", "military": "blue", "pirate": "crimson",
+        "wizard": "violet", "crystal": "blue",
+    }.get(series or "", mood_for(name))
+    stops = mood_ramp(mood)
+    ink = InkCanvas(size, y0=0.2, y1=HORIZON + 0.05)
+    side = det.frac(0, 0.06, 0.14)
+    if det.byte(1) % 2:
+        side = 1.0 - side - 0.08
+    # pier / ruin posts as thin calligraphic uprights
+    for i in range(2 + det.byte(2) % 2):
+        x = (side + i * 0.04) * size
+        h = size * det.frac(3 + i, 0.12, 0.28)
+        ink.stroke([(x, HORIZON * size), (x, HORIZON * size - h)], stops,
+                   max(1.5, size * 0.0025), 200)
+        filigree_curl(ink, x, HORIZON * size - h, size * 0.025, stops, width=1.5)
+    if series in ("wizard", "crystal") or "crystal" in (name or "").lower():
         for i in range(3):
-            pts = curve_points(_c(size, sx, sy),
-                               _c(size, sx + det.frac(2 + i, -0.10, 0.14),
-                                  sy - 0.10 - i * 0.05),
-                               _c(size, sx + det.frac(6 + i, -0.06, 0.10),
-                                  sy - 0.20 - i * 0.07))
-            stroke(d, pts, col("ash_gray"), max(2, size // 400), 110 - i * 25)
-    tag(d, size, 8, item)
-    return img
+            crystal(
+                ink,
+                size * det.frac(8 + i, 0.15, 0.85),
+                size * det.frac(12 + i, 0.28, 0.48),
+                size * det.frac(16 + i, 0.04, 0.09),
+                size * det.frac(20 + i, 0.015, 0.035),
+                stops, tilt=det.frac(24 + i, -0.3, 0.3),
+            )
+    if series == "pirate":
+        # crescent moon filigree
+        cx, cy = size * 0.78, size * 0.22
+        for a in range(20):
+            t0, t1 = a / 20 * math.pi, (a + 1) / 20 * math.pi
+            ink.stroke([
+                (cx + size * 0.08 * math.cos(t0), cy + size * 0.08 * math.sin(t0)),
+                (cx + size * 0.08 * math.cos(t1), cy + size * 0.08 * math.sin(t1)),
+            ], stops, max(1.5, size * 0.002), 180)
+    placeholder_tag(ink, 2)
+    return ink.img
 
 
-def draw_hat(key, name, size) -> Image.Image:
+def _ship_crystals(ink: InkCanvas, cx: float, top_y: float, stops, det: Det, n: int = 4) -> None:
+    for i in range(n):
+        crystal(
+            ink,
+            (cx + det.frac(10 + i, -0.08, 0.08)) * ink.size,
+            top_y * ink.size - i * ink.size * 0.02,
+            ink.size * det.frac(14 + i, 0.05, 0.12),
+            ink.size * det.frac(18 + i, 0.018, 0.04),
+            stops,
+            tilt=det.frac(22 + i, -0.35, 0.35),
+            fill_alpha=160 + det.byte(i) % 50,
+        )
+
+
+def draw_ship(key: str, name: str, size: int) -> Image.Image:
+    """Ornate gradient-ink vessel — primary ships_amano grammar target."""
     det = Det(key)
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    hx, hy, r = HEAD[0], HEAD[1], HEAD_R
     low = name.lower()
-    gold, ink = col("gold"), col("deep_ink")
+    mood = mood_for(name)
+    if "ghost" in low:
+        mood = "pale"
+    elif "wizard" in low:
+        mood = "violet"
+    elif "blockchain" in low:
+        mood = "violet" if det.byte(0) % 2 else "crimson"
+    elif "pirate" in low:
+        mood = "crimson"
+    stops = mood_ramp(mood)
+    # capital-ship ramps locked to ships_amano exemplars
+    if "battleship" in low:
+        stops = RAMPS["coral_navy"]
+    elif "blockchain" in low:
+        stops = RAMPS["crimson_navy"] if det.byte(1) % 2 else RAMPS["green_navy"]
+    elif "aircraft" in low or "carrier" in low:
+        stops = RAMPS["crimson_navy"]
+
+    ink = InkCanvas(size, y0=0.18, y1=0.78)
+    cx = 0.50
+    deck = DECK_Y
+    half_w = {
+        "raft": 0.12, "lifeboat": 0.13, "fishing": 0.16, "tug": 0.15,
+        "cargo": 0.22, "steam": 0.20, "yacht": 0.18, "cruiser": 0.24,
+        "battleship": 0.28, "aircraft": 0.32, "submarine": 0.22,
+        "pirate": 0.22, "ghost": 0.20, "ark": 0.26, "wizard": 0.20,
+        "blockchain": 0.24,
+    }
+    hw = 0.20
+    for k, v in half_w.items():
+        if k in low:
+            hw = v
+            break
+    depth = 0.10 if "raft" in low or "lifeboat" in low else 0.14
+
+    organic_hull(ink, cx, deck, hw, depth, stops,
+                 bow_lift=0.05 + det.frac(2, 0, 0.04),
+                 fill_alpha=10 if "ghost" not in low else 6)
+
+    # class-specific superstructure
+    if "battleship" in low or "cruiser" in low:
+        for i, gx in enumerate((cx - hw * 0.45, cx - hw * 0.05, cx + hw * 0.35)):
+            gun_turret(ink, gx, deck - 0.03 - i * 0.01, 0.022 + i * 0.004, stops,
+                       angle=-0.25 + i * 0.05)
+        # tower
+        ink.stroke(
+            [(cx * size, deck * size), (cx * size, (deck - 0.18) * size)],
+            stops, max(2.0, size * 0.003), 220,
+        )
+        for ty in (0.06, 0.10, 0.14):
+            ink.stroke(
+                [((cx - 0.04) * size, (deck - ty) * size),
+                 ((cx + 0.05) * size, (deck - ty) * size)],
+                stops, max(1.2, size * 0.002), 180,
+            )
+        _ship_crystals(ink, cx, deck - 0.20, stops, det, n=5)
+        # organic armor swirls — density toward ships_amano plating
+        for i in range(14):
+            filigree_curl(
+                ink, (cx + det.frac(5 + i, -hw, hw) * 0.85) * size,
+                (deck + 0.01 + (i % 7) * 0.018) * size, size * (0.028 + (i % 3) * 0.008),
+                stops, turns=1.3 + (i % 3) * 0.2,
+                width=max(1.2, size * 0.0018), phase=i * 0.55, n=36,
+            )
+
+    elif "aircraft" in low or "carrier" in low:
+        # flat deck line
+        ink.stroke(
+            [((cx - hw) * size, deck * size), ((cx + hw) * size, (deck - 0.02) * size)],
+            stops, max(2.5, size * 0.004), 230,
+        )
+        # island superstructure
+        ix = (cx + hw * 0.55) * size
+        for h in (0.08, 0.14, 0.20):
+            ink.stroke([(ix, deck * size), (ix, (deck - h) * size)], stops,
+                       max(2.0, size * 0.003), 210)
+        ink.stroke(
+            [(ix - size * 0.04, (deck - 0.14) * size),
+             (ix + size * 0.05, (deck - 0.14) * size)],
+            stops, max(1.5, size * 0.002), 190,
+        )
+        # jets as chevrons
+        for i in range(5):
+            jx = (cx - hw * 0.6 + i * 0.08) * size
+            jy = (deck - 0.04 - det.frac(8 + i, 0, 0.03)) * size
+            ink.stroke(
+                [(jx, jy), (jx + size * 0.035, jy - size * 0.008),
+                 (jx, jy - size * 0.004)],
+                stops, max(1.2, size * 0.002), 170,
+            )
+        _ship_crystals(ink, cx - 0.05, deck - 0.08, stops, det, n=4)
+
+    elif "blockchain" in low:
+        # mesh sail
+        nodes = []
+        for i in range(5):
+            for j in range(4):
+                nodes.append((
+                    cx - 0.08 + i * 0.05 + det.frac(i * 4 + j, -0.01, 0.01),
+                    deck - 0.28 + j * 0.06 + det.frac(20 + i + j, -0.01, 0.01),
+                ))
+        network_mesh(ink, nodes, stops, width=max(1.2, size * 0.0018))
+        # mast poles
+        for mx in (cx - 0.08, cx + 0.12):
+            ink.stroke(
+                [(mx * size, deck * size), (mx * size, (deck - 0.32) * size)],
+                stops, max(1.5, size * 0.0025), 200,
+            )
+        chain_links(ink, (cx - 0.15, deck + 0.02), (cx + 0.18, deck + 0.08), 8, stops)
+        # cubes
+        for i in range(4):
+            bx = (cx + det.frac(30 + i, -0.15, 0.15)) * size
+            by = (deck + 0.06 + det.frac(34 + i, 0, 0.06)) * size
+            s = size * 0.02
+            ink.stroke(
+                [(bx, by), (bx + s, by - s * 0.3), (bx + s, by + s * 0.7),
+                 (bx, by + s), (bx, by)],
+                stops, max(1.2, size * 0.0018), 190,
+            )
+        _ship_crystals(ink, cx - 0.05, deck - 0.22, stops, det, n=5)
+        smoke_flourish(ink, (cx - 0.2, deck - 0.05), stops, strands=3, height=0.2)
+
+    elif "pirate" in low or "ghost" in low:
+        masts = 3 if "pirate" in low else 2
+        for m in range(masts):
+            mx = cx - hw * 0.55 + m * (hw * 1.0 / max(1, masts - 1))
+            mh = 0.22 + det.frac(4 + m, 0, 0.08)
+            mast_and_sail(ink, mx, deck, mh, 0.08 + det.frac(8 + m, 0, 0.04),
+                          stops, billow=0.7 + det.frac(12 + m, 0, 0.3))
+        # crescent / filigree moon for pirate
+        if "pirate" in low:
+            filigree_curl(ink, size * 0.78, size * 0.22, size * 0.09, stops,
+                          turns=1.6, width=max(1.5, size * 0.0025))
+        if "ghost" in low:
+            smoke_flourish(ink, (cx, deck - 0.15), stops, strands=5, height=0.25)
+        _ship_crystals(ink, cx, deck - 0.18, stops, det, n=2)
+
+    elif "submarine" in low:
+        # elongated body already hull; conning tower
+        ink.stroke(
+            [(cx * size, deck * size), (cx * size, (deck - 0.08) * size)],
+            stops, max(2.5, size * 0.004), 220,
+        )
+        ink.ellipse(
+            [(cx - 0.03) * size, (deck - 0.10) * size,
+             (cx + 0.03) * size, (deck - 0.04) * size],
+            stops, 50,
+        )
+        for i in range(4):
+            fx = (cx - hw * 0.5 + i * 0.08) * size
+            ink.ellipse([fx - 4, deck * size + 8, fx + 4, deck * size + 16], stops, 100)
+
+    elif "wizard" in low or "ark" in low:
+        for m in range(2):
+            mx = cx - 0.08 + m * 0.14
+            mast_and_sail(ink, mx, deck, 0.26, 0.10, stops, billow=0.9)
+        for i in range(6):
+            filigree_curl(
+                ink, size * det.frac(10 + i, 0.3, 0.7),
+                size * det.frac(16 + i, 0.25, 0.45), size * 0.04, stops,
+                turns=1.5, width=1.5, phase=i,
+            )
+        _ship_crystals(ink, cx, deck - 0.22, stops, det, n=4)
+
+    else:
+        # generic small craft: 1–2 masts or cabin
+        if any(k in low for k in ("yacht", "steam", "cargo", "fishing", "tug")):
+            ink.stroke(
+                [((cx - 0.04) * size, deck * size),
+                 ((cx - 0.04) * size, (deck - 0.10) * size)],
+                stops, max(2.0, size * 0.003), 210,
+            )
+            ink.stroke(
+                [((cx - 0.08) * size, (deck - 0.06) * size),
+                 ((cx + 0.06) * size, (deck - 0.06) * size)],
+                stops, max(1.5, size * 0.002), 180,
+            )
+            if "steam" in low:
+                smoke_flourish(ink, (cx - 0.04, deck - 0.10), stops, strands=3, height=0.18)
+            if "yacht" in low or "cargo" in low:
+                mast_and_sail(ink, cx + 0.06, deck, 0.16, 0.07, stops)
+        else:
+            mast_and_sail(ink, cx, deck, 0.12, 0.06, stops)
+
+    # waterline flourish under hull
+    wave_ribbons(
+        ink, y_base=deck + depth - 0.01, amp=0.02, length=1.0, stops=stops,
+        strands=3, width=max(1.5, size * 0.002), phase=det.frac(0, 0, 2),
+        x0=cx - hw - 0.05, x1=cx + hw + 0.08,
+    )
+    placeholder_tag(ink, 3)
+    return ink.img
+
+
+def draw_condition(key: str, name: str, size: int) -> Image.Image:
+    det = Det(key)
+    low = name.lower()
+    ink = InkCanvas(size, y0=0.25, y1=0.75)
+    if "burn" in low or "fire" in low:
+        stops = mood_ramp("crimson")
+        for i in range(6):
+            smoke_flourish(
+                ink,
+                (0.42 + det.frac(i, -0.08, 0.12), DECK_Y - 0.02),
+                stops, strands=2, height=0.12 + det.frac(6 + i, 0, 0.08),
+                phase=i,
+            )
+        for i in range(4):
+            crystal(
+                ink, size * (0.45 + i * 0.04), size * (DECK_Y - 0.05),
+                size * 0.03, size * 0.012, stops, fill_alpha=100,
+            )
+    elif "flood" in low or "sunk" in low or "underwater" in low:
+        stops = mood_ramp("blue")
+        depth = 0.08 if "half" in low else (0.12 if "flood" in low else 0.18)
+        wave_ribbons(
+            ink, y_base=HORIZON - depth, amp=0.025, length=1.0, stops=stops,
+            strands=6, width=max(1.5, size * 0.0025),
+        )
+    elif "ghost" in low:
+        stops = mood_ramp("pale")
+        smoke_flourish(ink, (0.5, DECK_Y - 0.1), stops, strands=6, height=0.3)
+    elif "rebuilt" in low or "salvage" in low:
+        stops = mood_ramp("gold")
+        for i in range(5):
+            x = size * (0.38 + i * 0.05)
+            y = size * (DECK_Y - 0.04)
+            ink.stroke([(x, y), (x + 8, y - 12), (x - 4, y - 10), (x, y)],
+                       stops, 1.5, 200)
+        ink.stroke(
+            [(size * 0.35, size * (DECK_Y - 0.08)),
+             (size * 0.65, size * (DECK_Y - 0.12))],
+            stops, max(2.0, size * 0.003), 200,
+        )
+    elif "split" in low or "broken" in low:
+        stops = mood_ramp("dark")
+        ink.stroke(
+            qbez(
+                (size * 0.5, size * DECK_Y),
+                (size * 0.55, size * HORIZON),
+                (size * 0.42, size * (HORIZON + 0.06)),
+                20,
+            ),
+            stops, max(2.5, size * 0.004), 220,
+        )
+    elif "listing" in low:
+        stops = mood_ramp("blue")
+        for i in range(5):
+            y = size * (0.32 + i * 0.05)
+            ink.stroke(
+                [(size * 0.12, y), (size * 0.32, y + size * 0.025)],
+                stops, max(1.2, size * 0.002), 100,
+            )
+    else:
+        stops = mood_ramp("blue")
+        soft_atmosphere(ink, stops, density=3, alpha=20)
+    placeholder_tag(ink, 4)
+    return ink.img
+
+
+def draw_body(key: str, variant: str, pose: str, size: int) -> Image.Image:
+    det = Det(key)
+    mood = BODY_COLORS.get(variant, "green")
+    stops = mood_ramp(mood)
+    ink = InkCanvas(size, y0=0.25, y1=0.75)
+    dx = {"On Bow": 0.06, "Back Turned": -0.03}.get(pose, 0.0)
+    dy = {"Sitting": 0.04, "Looking Down": 0.015}.get(pose, 0.0)
+    facing = -1.0 if pose == "Back Turned" else 1.0
+    character_profile(
+        ink, HEAD[0] + dx, HEAD[1] + dy, HEAD_R * (1.05 if variant != "Ghost" else 1.0),
+        stops, facing=facing, hair=True, dissolve=True,
+        fill_alpha=30 if variant == "Ghost" else 55,
+    )
+    if pose == "Saluting":
+        hx, hy, r = (HEAD[0] + dx) * size, (HEAD[1] + dy) * size, HEAD_R * size
+        ink.stroke(
+            qbez(
+                (hx + facing * r * 1.2, hy + r * 2.0),
+                (hx + facing * r * 2.0, hy + r * 0.8),
+                (hx + facing * r * 1.6, hy - r * 0.2),
+                16,
+            ),
+            stops, max(2.0, size * 0.003), 210,
+        )
+    placeholder_tag(ink, 5)
+    return ink.img
+
+
+def draw_clothing(key: str, name: str, size: int) -> Image.Image:
+    det = Det(key)
+    mood = mood_for(name)
+    stops = mood_ramp(mood if mood != "blue" else "ink")
+    ink = InkCanvas(size, y0=0.35, y1=0.72)
+    hx, hy, r = HEAD[0] * size, HEAD[1] * size, HEAD_R * size
+    # open jacket folds — line only
+    left = qbez(
+        (hx - r * 0.9, hy + r * 1.1),
+        (hx - r * 1.6, hy + r * 2.8),
+        (hx - r * 0.4, hy + r * 4.5),
+        20,
+    )
+    right = qbez(
+        (hx + r * 0.9, hy + r * 1.1),
+        (hx + r * 1.5, hy + r * 2.8),
+        (hx + r * 0.3, hy + r * 4.5),
+        20,
+    )
+    ink.stroke(left, stops, max(2.0, size * 0.003), 210)
+    ink.stroke(right, stops, max(2.0, size * 0.003), 210)
+    # collar folds
+    for i in range(3):
+        ink.stroke(
+            qbez(
+                (hx - r * 0.7, hy + r * (1.2 + i * 0.15)),
+                (hx, hy + r * (1.5 + i * 0.2)),
+                (hx + r * 0.7, hy + r * (1.2 + i * 0.15)),
+                12,
+            ),
+            stops, max(1.2, size * 0.002), 160,
+        )
+    # gold filigree collar — signature ornament
+    gold = mood_ramp("gold")
+    collar = qbez(
+        (hx - r * 1.0, hy + r * 1.05),
+        (hx, hy + r * 1.65),
+        (hx + r * 1.0, hy + r * 1.05),
+        20,
+    )
+    ink.stroke(collar, gold, max(2.5, size * 0.0035), 230)
+    for i in range(4):
+        filigree_curl(
+            ink, hx + (i - 1.5) * r * 0.45, hy + r * 1.35, r * 0.2, gold,
+            turns=1.0, width=max(1.0, size * 0.0015), phase=i,
+        )
+    placeholder_tag(ink, 6)
+    return ink.img
+
+
+def draw_eyes(key: str, name: str, size: int) -> Image.Image:
+    det = Det(key)
+    low = name.lower()
+    if "laser" in low or "heart" in low:
+        stops = mood_ramp("crimson")
+    elif "xch" in low or "wizard" in low:
+        stops = mood_ramp("green")
+    elif "diamond" in low or "star" in low:
+        stops = mood_ramp("blue")
+    else:
+        stops = mood_ramp("pale")
+    ink = InkCanvas(size, y0=0.30, y1=0.45)
+    hx, hy, r = HEAD[0] * size, HEAD[1] * size, HEAD_R * size
+    er = r * det.frac(0, 0.22, 0.32)
+    for sgn in (-1, 1):
+        x, y = hx + sgn * r * 0.42, hy - r * 0.05
+        if "closed" in low or "dead" in low:
+            ink.stroke([(x - er, y), (x + er, y)], stops, max(1.5, size * 0.0025), 220)
+        else:
+            ink.ellipse([x - er, y - er * 0.85, x + er, y + er * 0.85], stops, 50)
+            ink.ellipse([x - er, y - er * 0.85, x + er, y + er * 0.85], stops, 0,
+                        outline_w=max(1, size // 400))
+            ink.ellipse(
+                [x - er * 0.25, y - er * 0.3, x + er * 0.15, y + er * 0.05],
+                [(13, 13, 22)] * 3, 230,
+            )
+    placeholder_tag(ink, 7)
+    return ink.img
+
+
+def draw_mouth(key: str, name: str, size: int) -> Image.Image:
+    det = Det(key)
+    low = name.lower()
+    stops = mood_ramp(mood_for(name))
+    ink = InkCanvas(size, y0=0.35, y1=0.70)
+    hx, hy, r = HEAD[0] * size, HEAD[1] * size, HEAD_R * size
+    mx, my = hx + r * 0.55, hy + r * 0.45
+    ink.stroke([(mx, my), (mx + r * 0.95, my - r * 0.12)], stops,
+               max(2.0, size * 0.003), 230)
+    if any(k in low for k in ("cig", "pipe", "cigarette")):
+        ink.ellipse(
+            [mx + r * 0.85 - 3, my - r * 0.15 - 3, mx + r * 0.85 + 3, my - r * 0.15 + 3],
+            mood_ramp("crimson"), 230,
+        )
+        smoke_flourish(
+            ink, ((mx + r * 0.9) / size, (my - r * 0.35) / size),
+            mood_ramp("crimson"), strands=4, height=0.22, phase=det.frac(0, 0, 2),
+        )
+    placeholder_tag(ink, 8)
+    return ink.img
+
+
+def draw_hat(key: str, name: str, size: int) -> Image.Image:
+    det = Det(key)
+    low = name.lower()
+    stops = mood_ramp(mood_for(name))
+    gold = mood_ramp("gold")
+    ink = InkCanvas(size, y0=0.22, y1=0.45)
+    hx, hy, r = HEAD[0] * size, HEAD[1] * size, HEAD_R * size
     top = hy - r * 1.15
-    if "halo" in low and "horn" not in low:
-        d.ellipse([size * (hx - r * 0.8), size * (top - r * 0.9),
-                   size * (hx + r * 0.8), size * (top - r * 0.3)],
-                  outline=(*col("pale_gold"), 235), width=max(3, size // 250))
-    elif "torn" in low:
-        d.ellipse([size * (hx - r * 0.8), size * (top - r * 0.9),
-                   size * (hx + r * 0.8), size * (top - r * 0.3)],
-                  outline=(*col("pale_gold"), 235), width=max(3, size // 250))
-        for sgn in (-1, 1):
-            d.polygon([_c(size, hx + sgn * r * 0.75, top + r * 0.35),
-                       _c(size, hx + sgn * r * 1.15, top - r * 0.45),
-                       _c(size, hx + sgn * r * 0.45, top + r * 0.15)],
-                      fill=(*col("maroon"), 235))
+    if "halo" in low:
+        ink.ellipse(
+            [hx - r * 0.85, top - r * 0.95, hx + r * 0.85, top - r * 0.25],
+            gold, 0, outline_w=max(2, size // 280),
+        )
+        if "torn" in low or "horn" in low:
+            for sgn in (-1, 1):
+                ink.stroke(
+                    qbez(
+                        (hx + sgn * r * 0.7, top + r * 0.2),
+                        (hx + sgn * r * 1.2, top - r * 0.5),
+                        (hx + sgn * r * 0.5, top - r * 0.9),
+                        12,
+                    ),
+                    mood_ramp("crimson"), max(2.0, size * 0.003), 230,
+                )
     elif "horn" in low:
         for sgn in (-1, 1):
-            d.polygon([_c(size, hx + sgn * r * 0.75, top + r * 0.35),
-                       _c(size, hx + sgn * r * 1.15, top - r * 0.45),
-                       _c(size, hx + sgn * r * 0.45, top + r * 0.15)],
-                      fill=(*col("maroon"), 235))
+            ink.stroke(
+                qbez(
+                    (hx + sgn * r * 0.7, top + r * 0.2),
+                    (hx + sgn * r * 1.2, top - r * 0.5),
+                    (hx + sgn * r * 0.5, top - r * 0.9),
+                    12,
+                ),
+                mood_ramp("crimson"), max(2.0, size * 0.003), 230,
+            )
     elif "crown" in low:
         pts = []
         for i in range(5):
             x = hx - r * 0.7 + i * r * 0.35
-            pts += [_c(size, x, top + (0 if i % 2 else r * 0.5))]
-        d.polygon(pts + [_c(size, hx + r * 0.7, top + r * 0.7),
-                         _c(size, hx - r * 0.7, top + r * 0.7)],
-                  fill=(*gold, 235))
+            y = top + (0 if i % 2 else r * 0.45)
+            pts.append((x, y))
+        pts += [(hx + r * 0.7, top + r * 0.7), (hx - r * 0.7, top + r * 0.7)]
+        ink.stroke(pts + [pts[0]], gold, max(2.0, size * 0.003), 230)
     elif "wizard" in low:
-        d.polygon([_c(size, hx - r * 0.9, top + r * 0.6),
-                   _c(size, hx + det.frac(0, 0.01, 0.05), top - r * 1.6),
-                   _c(size, hx + r * 0.9, top + r * 0.6)],
-                  fill=(*col("deep_violet"), 235))
-        d.ellipse([size * (hx + r * 0.3) - 4, size * (top - r * 1.2) - 4,
-                   size * (hx + r * 0.3) + 4, size * (top - r * 1.2) + 4],
-                  fill=(*col("pale_gold"), 235))
+        ink.stroke(
+            [(hx - r * 0.9, top + r * 0.55), (hx + r * 0.05, top - r * 1.55),
+             (hx + r * 0.9, top + r * 0.55)],
+            mood_ramp("violet"), max(2.0, size * 0.003), 230,
+        )
+        filigree_curl(ink, hx + r * 0.2, top - r * 0.8, r * 0.25, gold, turns=1.2)
     elif "diver" in low:
-        d.ellipse([size * (hx - r * 1.15), size * (hy - r * 1.15),
-                   size * (hx + r * 1.15), size * (hy + r * 1.15)],
-                  outline=(*col("bronze"), 220), width=max(4, size // 180))
-    else:  # generic band / cap family
-        cap = col(det.pick(["navy", "maroon", "bronze", "slate_gray", "deep_teal"], 1))
-        d.chord([size * (hx - r * 1.02), size * (top - r * 0.4),
-                 size * (hx + r * 1.02), size * (top + r * 1.4)],
-                180, 360, fill=(*cap, 235))
+        ink.ellipse(
+            [hx - r * 1.2, hy - r * 1.2, hx + r * 1.2, hy + r * 1.2],
+            mood_ramp("gold"), 0, outline_w=max(3, size // 200),
+        )
+    else:
+        # band / cap outline
+        ink.stroke(
+            catmull([
+                (hx - r * 1.05, top + r * 0.55),
+                (hx - r * 0.6, top - r * 0.15),
+                (hx + r * 0.6, top - r * 0.15),
+                (hx + r * 1.05, top + r * 0.55),
+            ], 6),
+            stops, max(2.0, size * 0.003), 220,
+        )
         if any(k in low for k in ("captain", "admiral", "pirate", "pilot")):
-            stroke(d, [_c(size, hx - r * 1.05, top + r * 0.52),
-                       _c(size, hx + r * 1.05, top + r * 0.52)],
-                   gold, max(3, size // 300), 235)
-    tag(d, size, 9, ink)
-    return img
+            ink.stroke(
+                [(hx - r * 1.1, top + r * 0.55), (hx + r * 1.1, top + r * 0.55)],
+                gold, max(2.0, size * 0.003), 230,
+            )
+    placeholder_tag(ink, 9)
+    return ink.img
 
 
-def draw_aura(key, name, size) -> Image.Image:
+def draw_aura(key: str, name: str, size: int) -> Image.Image:
     det = Det(key)
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
     low = name.lower()
-    color = col("bright_green")
     if "purple" in low or "corrupt" in low:
-        color = col("amethyst")
+        mood = "violet"
     elif "crystal" in low:
-        color = col("pale_blue")
+        mood = "blue"
     elif "halo" in low or "golden" in low:
-        color = col("pale_gold")
+        mood = "gold"
     elif "laser" in low:
-        color = col("crimson")
+        mood = "crimson"
     elif "ghost" in low:
-        color = col("ash_gray")
-    elif "chia" in low:
-        color = col("chia_green")
-    cx, cy = HEAD[0], HEAD[1] + HEAD_R * 2.2
-    # two interleaved swirl arcs around the character
-    for k in range(2):
+        mood = "pale"
+    elif "chia" in low or "green" in low:
+        mood = "green"
+    else:
+        mood = "green"
+    stops = mood_ramp(mood)
+    ink = InkCanvas(size, y0=0.2, y1=0.75)
+    cx, cy = HEAD[0], HEAD[1] + HEAD_R * 2.0
+    for k in range(3):
         pts = []
-        for t in range(64):
-            ang = t / 63 * math.tau * 0.8 + k * math.pi + det.frac(k, 0, 0.8)
-            rad = (0.16 + 0.05 * math.sin(t / 9 + k)) * (1 + 0.15 * k)
-            pts.append((size * (cx + rad * math.cos(ang)),
-                        size * (cy + rad * 0.75 * math.sin(ang))))
-        stroke(d, pts, color, max(3, size // 300), 90)
-    if "static" in low:
-        for i in range(14):
-            x, y = _c(size, det.frac(i, 0.3, 0.7), det.frac(i + 14, 0.25, 0.65))
-            d.rectangle([x, y, x + 4, y + 4], fill=(*color, 160))
-    tag(d, size, 10, color)
-    return img
+        for t in range(56):
+            ang = t / 55 * math.tau * 0.85 + k * 2.0 + det.frac(k, 0, 1)
+            rad = (0.14 + 0.05 * math.sin(t / 8 + k)) * (1 + 0.12 * k)
+            pts.append((
+                size * (cx + rad * math.cos(ang)),
+                size * (cy + rad * 0.72 * math.sin(ang)),
+            ))
+        ink.stroke(pts, stops, max(1.5, size * 0.0025), 100 - k * 15)
+    smoke_flourish(ink, (cx - 0.1, cy - 0.05), stops, strands=3, height=0.2, phase=1.2)
+    if "crystal" in low:
+        for i in range(3):
+            crystal(
+                ink, size * (0.4 + i * 0.1), size * 0.35, size * 0.04, size * 0.015,
+                stops, fill_alpha=100,
+            )
+    placeholder_tag(ink, 10)
+    return ink.img
 
 
 # ------------------------------------------------- legacy pixel renderer
@@ -596,43 +823,58 @@ def draw_pixel_placeholder(layer: str, key: str, master_colors) -> Image.Image:
 
 # ----------------------------------------------------------------- main
 
-def render_illustration(layer_name: str, key: str, trait_name: str,
-                        series: str | None, body_variant: str | None,
-                        pose: str | None, out_px: int) -> Image.Image:
-    size = out_px * SS
+def render_illustration(
+    layer_name: str,
+    key: str,
+    trait_name: str,
+    series: str | None,
+    body_variant: str | None,
+    pose: str | None,
+    out_px: int,
+) -> Image.Image:
+    work = min(WORK_PX, out_px)
     if layer_name == "sky":
-        img = draw_sky(key, trait_name, size)
+        img = draw_sky(key, trait_name, work)
     elif layer_name == "sea":
-        img = draw_sea(key, trait_name, size)
+        img = draw_sea(key, trait_name, work)
     elif layer_name == "scene_element":
-        img = draw_scene(key, trait_name, size, series)
+        img = draw_scene(key, trait_name, work, series)
     elif layer_name == "ship_class":
-        img = draw_ship(key, trait_name, size)
+        img = draw_ship(key, trait_name, work)
     elif layer_name == "ship_condition":
-        img = draw_condition(key, trait_name, size)
+        img = draw_condition(key, trait_name, work)
     elif layer_name == "body":
-        img = draw_body(key, body_variant, pose, size)
+        img = draw_body(key, body_variant or "Green", pose or "Standing", work)
     elif layer_name == "clothing":
-        img = draw_clothing(key, trait_name, size)
+        img = draw_clothing(key, trait_name, work)
     elif layer_name == "eyes":
-        img = draw_eyes(key, trait_name, size)
+        img = draw_eyes(key, trait_name, work)
     elif layer_name == "mouth":
-        img = draw_mouth(key, trait_name, size)
+        img = draw_mouth(key, trait_name, work)
     elif layer_name == "hat":
-        img = draw_hat(key, trait_name, size)
+        img = draw_hat(key, trait_name, work)
     elif layer_name == "aura":
-        img = draw_aura(key, trait_name, size)
+        img = draw_aura(key, trait_name, work)
     else:
         raise ValueError(f"no renderer for layer {layer_name}")
-    return img.resize((out_px, out_px), Image.LANCZOS)
+    if work != out_px:
+        img = img.resize((out_px, out_px), Image.LANCZOS)
+    return img
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     ap.add_argument("--force", action="store_true", help="overwrite existing files")
-    ap.add_argument("--profile", choices=["pixel", "illustration"], default=None,
-                    help="target render profile (default: config/render.json active_profile)")
+    ap.add_argument(
+        "--profile", choices=["pixel", "illustration"], default=None,
+        help="target render profile (default: config/render.json active_profile)",
+    )
+    ap.add_argument(
+        "--only-layer", default=None,
+        help="regenerate a single layer name (faster style iteration)",
+    )
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
@@ -646,15 +888,18 @@ def main() -> int:
     for layer in cfg.layers:
         if layer.rendered_via:
             continue
+        if args.only_layer and layer.name != args.only_layer:
+            continue
         ldir = SPRITES / layer.name
         ldir.mkdir(parents=True, exist_ok=True)
         jobs: list[tuple[str, str, str | None, str | None, str | None]] = []
-        # (filename, trait/desc, series, body_variant, pose)
         if layer.sprite_pattern:
             pose_layer = cfg.layer_by_name["pose"]
             for t in layer.traits:
                 for p in pose_layer.traits:
-                    rel = layer.sprite_pattern.format(body=_snake(t.name), pose=_snake(p.name))
+                    rel = layer.sprite_pattern.format(
+                        body=_snake(t.name), pose=_snake(p.name),
+                    )
                     jobs.append((Path(rel).name, f"{t.name} x {p.name}", None, t.name, p.name))
         else:
             for t in layer.traits:
@@ -673,9 +918,10 @@ def main() -> int:
                 if out_px != PX_PIXEL:
                     img = img.resize((out_px, out_px), Image.NEAREST)
             else:
-                img = render_illustration(layer.name, key, trait_name, series,
-                                          variant, pose, out_px)
-            img.save(path)
+                img = render_illustration(
+                    layer.name, key, trait_name, series, variant, pose, out_px,
+                )
+            img.save(path, optimize=True)
             written += 1
 
         lines = [
@@ -684,19 +930,23 @@ def main() -> int:
             f"z-order: {layer.z_order} | required: {layer.required} | "
             f"dimensions: {out_px}x{out_px} RGBA PNG ({profile_name} profile)",
             "",
-            "> **PLACEHOLDERS**: every PNG here is generated stand-in art (gradient/",
-            "> silhouette style sketch with a small corner checker tag). Replace with",
-            "> final Amano illustration per docs/art-reference/ART-DIRECTION.md,",
-            "> file-for-file; filenames must not change.",
+            "> **PLACEHOLDERS**: procedural Amano-ink stand-ins (gradient linework",
+            "> on transparent ground; corner checker tag). Match ships_amano/ +",
+            "> docs/art-reference/ART-DIRECTION.md and CLAUDE-STYLE-PACK.md.",
+            "> Replace file-for-file with final art; filenames must not change.",
             "",
             "| file | trait |",
             "|---|---|",
         ]
         lines += [f"| `{f}` | {dsc} |" for f, dsc, *_ in jobs]
-        (ldir / "README.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+        (ldir / "README.md").write_text(
+            "\n".join(lines) + "\n", encoding="utf-8", newline="\n",
+        )
 
-    log.info("placeholders (%s profile, %dpx): %d written, %d kept",
-             profile_name, out_px, written, skipped)
+    log.info(
+        "placeholders (%s profile, %dpx): %d written, %d kept",
+        profile_name, out_px, written, skipped,
+    )
     return 0
 
 

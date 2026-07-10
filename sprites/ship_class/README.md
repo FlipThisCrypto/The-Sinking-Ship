@@ -2,10 +2,10 @@
 
 z-order: 4 | required: True | dimensions: 2048x2048 RGBA PNG (illustration profile)
 
-> **PLACEHOLDERS**: every PNG here is generated stand-in art (gradient/
-> silhouette style sketch with a small corner checker tag). Replace with
-> final Amano illustration per docs/art-reference/ART-DIRECTION.md,
-> file-for-file; filenames must not change.
+> **PLACEHOLDERS**: procedural Amano-ink stand-ins (gradient linework
+> on transparent ground; corner checker tag). Match ships_amano/ +
+> docs/art-reference/ART-DIRECTION.md and CLAUDE-STYLE-PACK.md.
+> Replace file-for-file with final art; filenames must not change.
 
 | file | trait |
 |---|---|

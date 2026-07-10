@@ -199,15 +199,38 @@ def _snake(name: str) -> str:
 
 # ---------------------------------------------------------------- composite
 
+def _zone_ramp_name(zone: str | None) -> str:
+    """Map depth zone → ships_amano vertical ink ramp (always warm→cool)."""
+    return {
+        "surface": "crimson_navy",
+        "sunlight": "gold_navy",
+        "twilight": "violet_navy",
+        "midnight": "green_navy",
+        "abyssal": "ember_ink",
+        "hadal": "green_navy",
+    }.get(zone or "", "crimson_navy")
+
+
 def compose(store: SpriteStore, traits: dict, zone: str | None) -> Image.Image:
     size = store.master_px
-    canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    # Illustration: bone-white ground (ships_amano / ART-DIRECTION). Pixel: clear.
+    if store.profile.name == "illustration":
+        bone = store.palette.master.get("bone_white", (244, 244, 240))
+        canvas = Image.new("RGBA", (size, size), (*bone, 255))
+    else:
+        canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     layers = sorted((l for l in store.cfg.layers if l.z_order is not None),
                     key=lambda l: l.z_order)
     for layer in layers:
         sprite = store.get(layer.name, traits, zone)
         if sprite is not None:
             canvas.alpha_composite(sprite)
+    if store.profile.name == "illustration":
+        # Global vertical ink grade — the ships_amano signature on every mint.
+        from shipgen.amano_ink import RAMPS, grade_vertical_ink
+        canvas = grade_vertical_ink(
+            canvas, stops=RAMPS[_zone_ramp_name(zone)], strength=0.84,
+        )
     return canvas
 
 

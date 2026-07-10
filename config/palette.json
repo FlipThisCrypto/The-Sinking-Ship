@@ -4,10 +4,10 @@
   "version": "2.0.0",
   "spec_reference": "sinking-ship-master-spec.md Section 7 (palette discipline); art direction from docs/art-reference/",
   "notes": [
-    "v2.0.0 re-anchored on the owner-supplied Amano-style references (docs/art-reference/pirate-ship/ and tom-bepe-amano/): flowing ink line-art with a vertical colour gradient that fades into deep navy, on a bone-white ground.",
+    "v2.0.0 re-anchored on Amano-style references (docs/art-reference/ + ships_amano/): flowing ink line-art with a vertical colour gradient on the strokes, on a bone-white ground.",
     "THE ORGANISING IDEA: gradient hue encodes depth. Crimson / fire / blood sit at the Surface (despair); the ramp cools through gold and violet into deep navy and ink at the Hadal floor. Chia-green and gold are the recurring accent hues (the Chia-coded pieces, treasure light).",
-    "One 32-colour master palette; every sprite snaps to it. Six 12-colour zone sub-palettes (strict subsets of the master); background layers (sky, sea) snap to the NFT's zone sub-palette.",
-    "STYLE CAVEAT / OQ-11: the references are fine-line anti-aliased illustration; the spec mandates 48x48 no-anti-alias pixel art. This palette serves the pixel pipeline (a limited, snap-able ramp set) while carrying the references' hues. Whether final art stays 48x48 pixel, becomes Amano line-art, or a hybrid is the open medium decision — see docs/art-reference/ART-DIRECTION.md.",
+    "One 32-colour master palette. Pixel profile: sprites snap to it. Illustration profile (ADR-0008): palette is a soft guide; ships_amano ramps live in engine/shipgen/amano_ink.py; composites use bone_white ground.",
+    "OQ-11 RESOLVED (ADR-0008): full Amano illustration is the mint medium. Style acceptance: scripts/style_score.py ≥ 92% vs ships_amano + art-reference.",
     "Working palette: swap any hex freely; render_engine and validators read only this file."
   ],
   "master": [

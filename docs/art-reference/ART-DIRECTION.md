@@ -1,18 +1,46 @@
 # Art Direction — THE SINKING SHIP
 
 Derived from the owner-supplied references in this folder
-(`pirate-ship/`, `tom-bepe-amano/`), 2026-07-10. This is the authoritative
+(`pirate-ship/`, `tom-bepe-amano/`) and the capital-ship golden set
+**`ships_amano/`** (repo root), 2026-07-10. This is the authoritative
 description of the intended look. Where it refines the spec's art notes, it
-does so **within** the spec's mandate — except for one genuine conflict
-flagged as **OQ-11** below, which is the owner's to resolve.
+does so **within** the spec's mandate — medium decision **OQ-11** is resolved
+in ADR-0008 (full Amano illustration).
+
+**Operational prompt pack for production / Claude:**
+[CLAUDE-STYLE-PACK.md](./CLAUDE-STYLE-PACK.md). Style acceptance is measurable:
+`python scripts/style_score.py --threshold 92`.
 
 ## The one-line look
 
 **Yoshitaka Amano-flavoured aquatic ink illustration: elegant, melancholic,
-flowing linework with ornate filigree, a vertical colour gradient that fades
-into deep navy, on a bone-white ground.** Final-Fantasy-era JRPG melancholy —
-exactly the mood the spec calls for — rendered as if drawn in one breath of
-brush ink.
+flowing linework with ornate filigree, a vertical colour gradient that lives
+on the ink strokes (warm top → deep navy bottom), on a bone-white ground.**
+Final-Fantasy-era JRPG melancholy — tattoo-clean, not a flat poster — rendered
+as if drawn in one breath of brush ink.
+
+## ships_amano visual grammar (primary ship canon)
+
+The files in `ships_amano/` (Battleship, Aircraft Carrier, Blockchain Ship
+variants) are the **style floor** for capital ships. Measured DNA:
+
+| Property | ships_amano truth | Anti-pattern (old placeholders) |
+|---|---|---|
+| Ground | ~75% near-white | Full-bleed sky/sea colour blocks |
+| Structure | Dense calligraphic edges (~15% edge pixels) | Flat geometric silhouettes |
+| Colour | Gradient **on the stroke** red/coral/green → navy | Solid navy fills, grey posters |
+| Detail | Filigree plating, crystals, mesh sails, ribbon waves | 3-rectangle hull + triangle sails |
+| Fills | Selective (crystals, soft hull shadow only) | Opaque blocks |
+
+Class signatures to preserve when authoring final art:
+
+- **Battleship** — organic armor, gun turrets, crystal crown, coral→navy.
+- **Aircraft carrier** — long deck, island tower, jets, crystal cluster, red→navy.
+- **Blockchain ship** — network-mesh sails, chains, cubes, crystal masts.
+
+Procedural stand-ins in `scripts/gen_placeholder_sprites.py` (illustration
+profile) implement this grammar via `engine/shipgen/amano_ink.py` so composites
+and contact sheets read as the right *medium* while real art is produced.
 
 ## Tom Bepe (character sheet, from references)
 
@@ -116,15 +144,29 @@ pixels. The fork, as presented to the owner:
   the brand world wears the Amano coat. Lowest risk to the built engine,
   highest brand payoff.
 
-Until the owner rules, the pipeline keeps producing 48×48 pixel output; only
-the palette and site styling have been re-anchored (both safely reversible and
-useful under any path).
+## Tooling (style floor + measurement)
+
+| Tool | Role |
+|---|---|
+| `engine/shipgen/amano_ink.py` | Shared ink primitives + vertical grade |
+| `scripts/gen_placeholder_sprites.py --profile illustration` | Procedural stand-ins matching ships_amano grammar |
+| `scripts/style_score.py --threshold 92` | Measure composites vs `ships_amano/` |
+| `scripts/style_loop.py` | Regen sprites → sample → score in one shot |
+| `render_engine.compose` (illustration) | Bone-white canvas + zone vertical ink grade |
+
+Acceptance for a style batch: **mean overall ≥ 92%** on
+`output/style_loop/` against `ships_amano/`. Golden refs self-score ~97%.
+
+These placeholders are the **style floor** for Claude / human illustrators —
+replace `sprites/**/*.png` file-for-file; re-run `style_loop.py` after each
+batch so quality cannot silently regress.
 
 ## Reference provenance / licensing
 
-The images in `pirate-ship/` and `tom-bepe-amano/` are **style references
-only**, supplied by the owner. Per spec Risk 2 the shipped art must be an
-original, legally distinct design: adapt mood, motif, and palette — never
-trace or reproduce a specific reference. If any reference carries third-party
-rights or a visible watermark, it must not be redistributed as project art.
-These files live under `docs/` and are excluded from the generation path.
+The images in `ships_amano/`, `pirate-ship/`, and `tom-bepe-amano/` are
+**style references only**, supplied by the owner. Per spec Risk 2 the shipped
+art must be an original, legally distinct design: adapt mood, motif, and
+palette — never trace or reproduce a specific reference. If any reference
+carries third-party rights or a visible watermark, it must not be redistributed
+as project art. Art-reference files under `docs/` are excluded from the mint
+generation path; `ships_amano/` is the scoring golden set, not a sprite source.
