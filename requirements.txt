@@ -1,0 +1,6 @@
+# Core engine: stdlib + Pillow + numpy only. No network calls in the generation path.
+Pillow>=10.0
+numpy>=1.26
+
+# Development / tests
+pytest>=8.0

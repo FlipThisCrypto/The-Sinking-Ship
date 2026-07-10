@@ -1,0 +1,28 @@
+# Output artifacts — never committed
+output/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets — the mint salt must NEVER be committed
+*.salt
+secrets/
+.env
+.env.*
+
+# OS / editor noise
+Thumbs.db
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Windows shortcut used locally to reach the skills library
+*.lnk
