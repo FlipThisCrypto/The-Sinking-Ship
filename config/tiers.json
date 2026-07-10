@@ -1,0 +1,106 @@
+{
+  "$schema": "./schemas/tiers.schema.json",
+  "config_name": "tiers",
+  "version": "1.0.0",
+  "spec_reference": "sinking-ship-master-spec.md Section 5.2 (tier table), 5.3 (Scuttling), 4.3/5.2 (grails)",
+  "supply": {
+    "cap": 44444,
+    "treasury_reserve": 444,
+    "grail_count": 44,
+    "generated_pool": 44400,
+    "public_mint_budget": 44000,
+    "notes": [
+      "public_mint_budget = cap - treasury_reserve. OPEN QUESTION OQ-1: full-sellout expected consumption from the tier table is 44,239, which EXCEEDS this budget by 239; the spec's own '~44,239 + 444 reserve = ~44,444' arithmetic is actually 44,683. simulate.py --full-sellout quantifies this. Needs an owner ruling: shrink a tier's passes, shrink the reserve, or hard-cap late chests.",
+      "Under The Scuttling (spec 5.3), all unminted supply is destroyed at mint close; undersell is the expected base case."
+    ]
+  },
+  "depth_zones": ["surface", "sunlight", "twilight", "midnight", "abyssal", "hadal"],
+  "tiers": [
+    {
+      "id": 1, "name": "castaway", "display_name": "Castaway", "zone": "surface",
+      "price_xch": "0.10", "chest_min": 1, "chest_max": 1, "expected_mints": 1,
+      "passes": 4444, "expected_supply": 4444,
+      "depth_luck": "1.0", "depth_luck_permille": 1000,
+      "guarantee": null
+    },
+    {
+      "id": 2, "name": "snorkeler", "display_name": "Snorkeler", "zone": "sunlight",
+      "price_xch": "0.25", "chest_min": 2, "chest_max": 4, "expected_mints": 3,
+      "passes": 3000, "expected_supply": 9000,
+      "depth_luck": "1.0", "depth_luck_permille": 1000,
+      "guarantee": null
+    },
+    {
+      "id": 3, "name": "scuba_diver", "display_name": "Scuba Diver", "zone": "sunlight",
+      "price_xch": "0.40", "chest_min": 4, "chest_max": 6, "expected_mints": 5,
+      "passes": 1600, "expected_supply": 8000,
+      "depth_luck": "1.1", "depth_luck_permille": 1100,
+      "guarantee": null
+    },
+    {
+      "id": 4, "name": "deep_sea_diver", "display_name": "Deep Sea Diver", "zone": "twilight",
+      "price_xch": "0.75", "chest_min": 8, "chest_max": 12, "expected_mints": 10,
+      "passes": 700, "expected_supply": 7000,
+      "depth_luck": "1.25", "depth_luck_permille": 1250,
+      "guarantee": {"min_tier": "rare", "count": 1}
+    },
+    {
+      "id": 5, "name": "salvage_crew", "display_name": "Salvage Crew", "zone": "twilight",
+      "price_xch": "1.10", "chest_min": 13, "chest_max": 17, "expected_mints": 15,
+      "passes": 300, "expected_supply": 4500,
+      "depth_luck": "1.4", "depth_luck_permille": 1400,
+      "guarantee": {"min_tier": "rare", "count": 1}
+    },
+    {
+      "id": 6, "name": "submarine_captain", "display_name": "Submarine Captain", "zone": "midnight",
+      "price_xch": "1.80", "chest_min": 22, "chest_max": 28, "expected_mints": 25,
+      "passes": 160, "expected_supply": 4000,
+      "depth_luck": "1.6", "depth_luck_permille": 1600,
+      "guarantee": {"min_tier": "epic", "count": 1}
+    },
+    {
+      "id": 7, "name": "shipwright", "display_name": "Shipwright", "zone": "abyssal",
+      "price_xch": "3.20", "chest_min": 45, "chest_max": 55, "expected_mints": 50,
+      "passes": 70, "expected_supply": 3500,
+      "depth_luck": "2.0", "depth_luck_permille": 2000,
+      "guarantee": {"min_tier": "epic", "count": 2}
+    },
+    {
+      "id": 8, "name": "harbormaster", "display_name": "Harbormaster", "zone": "abyssal",
+      "price_xch": "4.40", "chest_min": 90, "chest_max": 110, "expected_mints": 100,
+      "passes": 25, "expected_supply": 2500,
+      "depth_luck": "2.5", "depth_luck_permille": 2500,
+      "guarantee": {"min_tier": "legendary", "count": 1}
+    },
+    {
+      "id": 9, "name": "admiral", "display_name": "Admiral", "zone": "hadal",
+      "price_xch": "5.00", "chest_min": 230, "chest_max": 270, "expected_mints": 250,
+      "passes": 5, "expected_supply": 1250,
+      "depth_luck": "3.0", "depth_luck_permille": 3000,
+      "guarantee": {"min_tier": "legendary", "count": 1, "grail_lottery": true}
+    },
+    {
+      "id": 10, "name": "wizard_of_the_deep", "display_name": "Wizard of the Deep", "zone": "hadal",
+      "price_xch": null, "chest_min": 44, "chest_max": 44, "expected_mints": 45,
+      "passes": 1, "expected_supply": 45,
+      "depth_luck": null, "depth_luck_permille": 10000,
+      "guarantee": {"guaranteed_grail": true},
+      "notes": "Not for sale — earned via the lore puzzle / community quest. Spec shows Depth Luck as infinity; implemented as a finite 10.0x multiplier (OQ-2). chest is 44 generated mints + 1 guaranteed named grail = 45."
+    }
+  ],
+  "chest_quantity_distribution": "uniform_inclusive",
+  "grail_seeding": {
+    "wizard_of_the_deep": 1,
+    "admiral_chests": 5,
+    "mid_tier_chests": 27,
+    "mid_tier_range": [4, 8],
+    "auction": 11,
+    "notes": [
+      "OPEN QUESTION OQ-4: spec 5.2 says 5 seeded into Admiral chests + 12 auctioned + 27 seeded across tiers 4-8 (= 44), but tier 10 separately guarantees 1 named grail. Resolved here by taking the Wizard grail from the auction pool (12 -> 11) pending owner ruling.",
+      "Admiral seeding: each of the 5 grails is independently assigned to one of the 5 Admiral passes at commit time — a chest can hold 0..5 (a genuine lottery, matching 'grail lottery ticket').",
+      "Mid-tier seeding: 27 distinct (tier, pass_ordinal) slots drawn without replacement across all 1,255 passes of tiers 4-8 at commit time.",
+      "All placements derive from HMAC-SHA256(salt, 'grail-placement-v1') and are covered by the provenance commitment; published at reveal."
+    ]
+  },
+  "revenue_model_xch_full_sellout": "3336.40"
+}

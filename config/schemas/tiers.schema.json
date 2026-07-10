@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tiers.schema.json",
+  "title": "The Sinking Ship — dive tier table",
+  "type": "object",
+  "required": ["config_name", "version", "supply", "depth_zones", "tiers",
+               "chest_quantity_distribution", "grail_seeding"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "config_name": {"const": "tiers"},
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "spec_reference": {"type": "string"},
+    "supply": {
+      "type": "object",
+      "required": ["cap", "treasury_reserve", "grail_count", "generated_pool", "public_mint_budget"],
+      "properties": {
+        "cap": {"const": 44444},
+        "treasury_reserve": {"type": "integer", "minimum": 0},
+        "grail_count": {"const": 44},
+        "generated_pool": {"type": "integer"},
+        "public_mint_budget": {"type": "integer"},
+        "notes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "depth_zones": {"type": "array", "items": {"type": "string"}, "minItems": 6},
+    "tiers": {
+      "type": "array",
+      "minItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "display_name", "zone", "price_xch", "chest_min",
+                     "chest_max", "expected_mints", "passes", "expected_supply",
+                     "depth_luck", "depth_luck_permille", "guarantee"],
+        "properties": {
+          "id": {"type": "integer", "minimum": 1},
+          "name": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+          "display_name": {"type": "string"},
+          "zone": {"enum": ["surface", "sunlight", "twilight", "midnight", "abyssal", "hadal"]},
+          "price_xch": {"type": ["string", "null"]},
+          "chest_min": {"type": "integer", "minimum": 1},
+          "chest_max": {"type": "integer", "minimum": 1},
+          "expected_mints": {"type": "integer", "minimum": 1},
+          "passes": {"type": "integer", "minimum": 1},
+          "expected_supply": {"type": "integer", "minimum": 1},
+          "depth_luck": {"type": ["string", "null"]},
+          "depth_luck_permille": {"type": "integer", "minimum": 1000},
+          "guarantee": {
+            "type": ["object", "null"],
+            "properties": {
+              "min_tier": {"enum": ["rare", "epic", "legendary"]},
+              "count": {"type": "integer", "minimum": 1},
+              "grail_lottery": {"type": "boolean"},
+              "guaranteed_grail": {"type": "boolean"}
+            }
+          },
+          "notes": {"type": "string"}
+        }
+      }
+    },
+    "chest_quantity_distribution": {"const": "uniform_inclusive"},
+    "grail_seeding": {
+      "type": "object",
+      "required": ["wizard_of_the_deep", "admiral_chests", "mid_tier_chests",
+                   "mid_tier_range", "auction"],
+      "properties": {
+        "wizard_of_the_deep": {"type": "integer"},
+        "admiral_chests": {"type": "integer"},
+        "mid_tier_chests": {"type": "integer"},
+        "mid_tier_range": {"type": "array", "items": {"type": "integer"}},
+        "auction": {"type": "integer"},
+        "notes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "revenue_model_xch_full_sellout": {"type": "string"}
+  }
+}

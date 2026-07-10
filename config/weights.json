@@ -1,0 +1,305 @@
+{
+  "$schema": "./schemas/weights.schema.json",
+  "config_name": "weights",
+  "version": "1.0.0",
+  "method": {
+    "generator": "scripts/tune_weights.py",
+    "adr": "ADR-0006",
+    "base_weights_milli": {
+      "common": 100000,
+      "uncommon": 40000,
+      "rare": 15000,
+      "epic": 5000,
+      "legendary": 1500,
+      "mythic": 400
+    },
+    "description": "per-trait weight = spec 4.2 bucket base weight x global bucket scale, in integer milli-units; None weights hold the design None-shares; scales calibrated analytically then polished through the real roll engine on full-sellout Monte Carlo (see polish_report)",
+    "tuning_objective": "depth-luck-weighted FULL-SELLOUT mixture matches spec 4.1 proportions (interpretation decision OQ-5: 4.1 describes the final collection, which is minted through luck-bearing tiers, not a luck-free pool)",
+    "polish_report": [
+      {
+        "iteration": 0,
+        "seeds": [
+          "tune-0-0",
+          "tune-0-1",
+          "tune-0-2"
+        ],
+        "measured": {
+          "common": 0.429106,
+          "uncommon": 0.270999,
+          "rare": 0.18007,
+          "epic": 0.077032,
+          "legendary": 0.033883,
+          "mythic": 0.00891
+        },
+        "worst_rel_err": 0.0228
+      }
+    ]
+  },
+  "targets": {
+    "common": 0.427927928,
+    "uncommon": 0.27027027,
+    "rare": 0.18018018,
+    "epic": 0.078828829,
+    "legendary": 0.033783784,
+    "mythic": 0.009009009
+  },
+  "none_shares_permille": {
+    "scene_element": 600,
+    "mouth": 400,
+    "hat": 250,
+    "aura": 925
+  },
+  "bucket_scales_permille": {
+    "common": 1000,
+    "uncommon": 82,
+    "rare": 97,
+    "epic": 11,
+    "legendary": 77,
+    "mythic": 53
+  },
+  "weights": {
+    "sky": {
+      "Calm Blue": 100000,
+      "Overcast": 100000,
+      "Orange Sunset": 3297,
+      "Golden Sunset": 3297,
+      "Moonlit": 3297,
+      "Heavy Rain": 3297,
+      "Fog": 3297,
+      "Lightning": 1461,
+      "Purple Storm": 1461,
+      "Aurora": 1461,
+      "Green Aurora": 1461,
+      "Meteor Shower": 57,
+      "Blood Moon": 57,
+      "Fire Sky": 57,
+      "Solar Eclipse": 115
+    },
+    "sea": {
+      "Calm": 100000,
+      "Storm Swell": 3297,
+      "Black Sea": 3297,
+      "Frozen": 1461,
+      "Emerald Water": 1461,
+      "Red Water": 1461,
+      "Whirlpool": 57,
+      "Glass Sea": 57,
+      "Abyss": 57,
+      "Bioluminescent": 115,
+      "Chia-Green Tide": 21
+    },
+    "scene_element": {
+      "None": 367869,
+      "Abandoned Harbor": 100000,
+      "Broken Pier": 100000,
+      "Storm Harbor": 3297,
+      "Ship Graveyard": 3297,
+      "Dry Dock": 3297,
+      "Lighthouse": 1461,
+      "Military Port": 1461,
+      "Pirate Cove": 1461,
+      "Wizard Harbor": 57,
+      "Convoy Silhouettes": 3297,
+      "Artillery Smoke": 3297,
+      "Searchlights": 1461,
+      "Signal Flags": 1461,
+      "Cargo Drop": 57,
+      "Helicopter": 57,
+      "Black Flag": 3297,
+      "Fog Fleet": 3297,
+      "Crow's Nest": 3297,
+      "Hidden Cove": 1461,
+      "Treasure Island": 1461,
+      "Ghost Fleet": 57,
+      "Skeleton Crew": 57,
+      "Green Magic": 1461,
+      "Purple Magic": 1461,
+      "Magic Lanterns": 1461,
+      "Spell Circle": 57,
+      "Floating Runes": 57,
+      "Summoning Circle": 57,
+      "Blockchain Sigils": 115,
+      "Offer File Scroll": 115,
+      "Emerald Horizon": 1461,
+      "Crystal Reef": 1461,
+      "Crystal Moon": 57,
+      "Fractured": 57,
+      "Black": 57,
+      "Ruby": 115,
+      "Sapphire": 115,
+      "Corrupted": 115,
+      "Void": 115,
+      "Chia Crystal": 21
+    },
+    "ship_class": {
+      "Raft": 100000,
+      "Lifeboat": 100000,
+      "Fishing Boat": 100000,
+      "Tug Boat": 100000,
+      "Cargo Ship": 3297,
+      "Steam Ship": 3297,
+      "Luxury Yacht": 1461,
+      "Cruiser": 1461,
+      "Battleship": 1461,
+      "Aircraft Carrier": 57,
+      "Submarine": 57,
+      "Pirate Ship": 57,
+      "Ghost Ship": 57,
+      "The Ark": 115,
+      "Wizard Ship": 115,
+      "Blockchain Ship": 21
+    },
+    "ship_condition": {
+      "Floating": 100000,
+      "Listing": 3297,
+      "Half Sunk": 3297,
+      "Flooded": 3297,
+      "Broken Mast": 1461,
+      "Burning": 1461,
+      "Being Salvaged": 1461,
+      "Split Hull": 57,
+      "Fully Underwater": 57,
+      "Ghost": 57,
+      "Rebuilt": 115
+    },
+    "body": {
+      "Green": 100000,
+      "Blue": 3297,
+      "Zombie": 1461,
+      "Ghost": 57,
+      "Corrupted": 57,
+      "Gold": 115,
+      "Emerald": 115,
+      "Chrome": 21
+    },
+    "pose": {
+      "Standing": 100000,
+      "Saluting": 100000,
+      "Sitting": 100000,
+      "On Bow": 100000,
+      "Back Turned": 100000,
+      "Looking Down": 100000
+    },
+    "clothing": {
+      "Yellow Jacket": 100000,
+      "Rain Jacket": 100000,
+      "Life Vest": 100000,
+      "Hoodie": 100000,
+      "Farmer Overalls": 3297,
+      "Suit": 3297,
+      "Military Coat": 1461,
+      "Captain Jacket": 1461,
+      "Scuba Suit": 1461,
+      "Pirate Coat": 1461,
+      "Admiral Uniform": 57,
+      "Hazmat": 57,
+      "Deep Sea Suit": 57,
+      "Wizard Robe": 57
+    },
+    "eyes": {
+      "Normal": 100000,
+      "Sleepy": 100000,
+      "Closed": 100000,
+      "Determined": 3297,
+      "Scared": 3297,
+      "Crying": 3297,
+      "Hopeful": 3297,
+      "Looking to Horizon": 3297,
+      "Dead": 1461,
+      "Heart": 1461,
+      "Laser": 1461,
+      "Middle Finger Pupils": 57,
+      "Pixel Stars": 57,
+      "Wizard": 57,
+      "Diamond": 115,
+      "XCH": 115
+    },
+    "mouth": {
+      "None": 140804,
+      "Cigarette": 100000,
+      "Bubble Gum": 100000,
+      "Toothpick": 3297,
+      "Cigar": 3297,
+      "Pipe": 1461,
+      "Whistle": 1461,
+      "Flask": 1461,
+      "Rose": 57,
+      "Radio": 57,
+      "Kazoo": 115
+    },
+    "hat": {
+      "None": 38225,
+      "Headband": 100000,
+      "Beanie": 3297,
+      "Beret": 3297,
+      "Helmet": 3297,
+      "Pilot Cap": 1461,
+      "Captain Hat": 1461,
+      "Pirate Hat": 1461,
+      "Diver Helmet": 57,
+      "Wizard Hat": 57,
+      "Admiral Hat": 57,
+      "Halo": 57,
+      "Horns": 57,
+      "Crown": 115,
+      "The Torn": 0
+    },
+    "aura": {
+      "None": 6154,
+      "Green Magic Glow": 57,
+      "Purple Magic Glow": 57,
+      "Crystal Shimmer": 57,
+      "Halo Light": 57,
+      "Laser Bloom": 57,
+      "Ghost Fade": 57,
+      "Golden Radiance": 115,
+      "Chia Bloom": 21,
+      "Corruption Static": 21
+    }
+  },
+  "depth_luck": {
+    "castaway": 1000,
+    "snorkeler": 1000,
+    "scuba_diver": 1100,
+    "deep_sea_diver": 1250,
+    "salvage_crew": 1400,
+    "submarine_captain": 1600,
+    "shipwright": 2000,
+    "harbormaster": 2500,
+    "admiral": 3000,
+    "wizard_of_the_deep": 10000
+  },
+  "guarantees": {
+    "castaway": null,
+    "snorkeler": null,
+    "scuba_diver": null,
+    "deep_sea_diver": {
+      "min_tier": "rare",
+      "count": 1
+    },
+    "salvage_crew": {
+      "min_tier": "rare",
+      "count": 1
+    },
+    "submarine_captain": {
+      "min_tier": "epic",
+      "count": 1
+    },
+    "shipwright": {
+      "min_tier": "epic",
+      "count": 2
+    },
+    "harbormaster": {
+      "min_tier": "legendary",
+      "count": 1
+    },
+    "admiral": {
+      "min_tier": "legendary",
+      "count": 1,
+      "grail_lottery": true
+    },
+    "wizard_of_the_deep": {
+      "guaranteed_grail": true
+    }
+  }
+}

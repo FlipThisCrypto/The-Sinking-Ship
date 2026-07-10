@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "weights.schema.json",
+  "title": "The Sinking Ship — rarity weights",
+  "type": "object",
+  "required": ["config_name", "version", "method", "targets", "none_shares_permille",
+               "bucket_scales_permille", "weights", "depth_luck", "guarantees"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "config_name": {"const": "weights"},
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "method": {"type": "object"},
+    "targets": {"type": "object"},
+    "none_shares_permille": {"type": "object"},
+    "bucket_scales_permille": {"type": "object"},
+    "weights": {
+      "type": "object",
+      "description": "layer name -> { trait name -> integer milli-weight }; cross-checked against traits.json by shipgen.config (every trait exactly once, no unknowns)"
+    },
+    "depth_luck": {
+      "type": "object",
+      "description": "tier name -> depth luck in permille; must equal tiers.json depth_luck_permille (validated)"
+    },
+    "guarantees": {
+      "type": "object",
+      "description": "tier name -> guarantee object or null; must equal tiers.json guarantee (validated)"
+    }
+  }
+}
