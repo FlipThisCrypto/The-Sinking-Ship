@@ -99,6 +99,29 @@ def test_torn_override_applies_at_committed_index(engine, placements):
     assert slot in m["the_torn_indices"]
 
 
+def test_torn_survives_pity_in_guaranteed_chest(engine, placements, cfg):
+    """Regression: pity re-roll must never destroy a committed Torn placement.
+    Force a torn index into a guaranteed tier's chest across many coins and
+    assert the manifest stays internally consistent."""
+    slot = placements["torn_slots"][0]
+    seen_torn_in_guaranteed = 0
+    for i in range(60):
+        # start the chest so its first generated NFT is the committed torn slot
+        m = engine.roll_chest(TEST_SALT, coin(7000 + i), "deep_sea_diver",
+                              1 + i % cfg.tiers["deep_sea_diver"]["passes"],
+                              slot, placements, "prov")
+        listed = set(m["the_torn_indices"])
+        flagged = {e["global_index"] for e in m["nfts"]
+                   if e["type"] == "generated" and e.get("the_torn")}
+        assert listed == flagged, "the_torn_indices disagrees with nft flags"
+        for e in m["nfts"]:
+            if e.get("the_torn"):
+                assert e["traits"]["hat"] == "The Torn"
+                assert not e["pity_upgraded"], "a committed Torn NFT was pity-re-rolled"
+                seen_torn_in_guaranteed += 1
+    assert seen_torn_in_guaranteed > 0, "test never exercised a torn-in-chest case"
+
+
 def test_grail_placement_counts(placements):
     g = placements["grails"]
     admiral = sum(len(v) for v in g["admiral"]["by_pass"].values())

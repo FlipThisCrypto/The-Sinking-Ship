@@ -20,6 +20,15 @@ Rule of engagement: **concepts and architecture are adapted; code is always
 re-implemented fresh** in this repo under this project's license. Nothing is
 copied, imported, or symlinked from the reference tree.
 
+> **Responsible-disclosure note.** BEPE LOVE is a live production system owned
+> by the same team. Any specific hardening gaps observed during the survey
+> have been raised with that team privately. This public ADR describes only
+> the *architecture and rationale* for THE SINKING SHIP's choices in general
+> terms — it deliberately avoids step-by-step reproduction of any weakness in
+> a live system. Where a past reference gap motivated a decision, it is stated
+> as a design principle ("client claims must not be trusted as settlement"),
+> not as an exploit recipe.
+
 ## Decision
 
 ### A. Adopted (proven, carried over as architecture)
@@ -113,19 +122,19 @@ copied, imported, or symlinked from the reference tree.
    transactional store (SQLite; per-token rows, uniqueness constraints);
    any blob/KV copy is a read model, never the source of truth.
 
-2. **Chain-truth source.** BEPE depends solely on MintGarden and maps NFT
-   identity by regexing `#NNNN` out of display names — fragile and silently
-   corruptible. We track `launcher_id`/`coin_id` explicitly from
-   Secure-the-Mint generation time (we need `coin_id` for HMAC rolls anyway)
-   and require the reconciler to *fail closed* — never shrink the confirmed
-   set from an incomplete scan (BEPE's reconciler can, on a mid-pagination
-   failure).
+2. **Chain-truth source.** Deriving NFT identity by pattern-matching indexer
+   display names is fragile and silently corruptible. We track
+   `launcher_id`/`coin_id` explicitly from Secure-the-Mint generation time
+   (we need `coin_id` for HMAC rolls anyway) and require the reconciler to
+   *fail closed* — an incomplete chain scan may grow, but never shrink, the
+   confirmed set, so a transient indexer hiccup can never return sold offers
+   to the pool.
 
-3. **Claim-token idempotency.** BEPE issues single-use claim tokens but the
-   confirm endpoint falls through when they're missing ("backwards compat"),
-   leaving an unauthenticated soft-DoS (mark everything pending → fake
-   sell-out). We have no legacy clients: claim-token validation is
-   **mandatory**, with expiry and rate limiting.
+3. **Claim-token idempotency.** Single-use claim tokens are only as good as
+   their enforcement; an advisory (skippable) check is equivalent to none.
+   With no legacy clients to support, our claim-token validation is
+   **mandatory**, with expiry and rate limiting — the confirm path rejects
+   any request lacking a valid, unredeemed token.
 
 4. **Admin auth.** Timing-safe secret comparison (not `===`), audit log of
    admin actions.

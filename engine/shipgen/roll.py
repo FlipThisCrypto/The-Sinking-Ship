@@ -363,6 +363,12 @@ class RollEngine:
         def qualifies(e):
             if e["type"] == "grail":
                 return True  # a grail outranks every floor
+            if e.get("the_torn"):
+                # The Torn is a committed quota placement and sub-grail meme tier
+                # (spec 3). It is immutable: counting it as qualifying keeps pity
+                # from ever selecting and re-rolling it, which would otherwise
+                # strip its Halo+Horns and contradict manifest.the_torn_indices.
+                return True
             return RARITY_RANK[e["rarity_tier"]] >= need_rank
 
         have = sum(1 for e in entries if qualifies(e))

@@ -68,6 +68,17 @@ per-NFT HMAC-DRBG stream (ADR-0002); layers roll in the fixed `roll_order`
 list; candidate lists come from config arrays (never dict iteration);
 rejection uses an explicit nonce ladder.
 
+## Open interpretation questions
+
+- **OQ-10 — "Ghost body forces Ghost Fade aura eligibility" (spec 3).** This
+  is encoded as an 8× weight *bias* (`p_ghost_body_ghost_fade`), so Ghost Fade
+  can still appear on non-Ghost bodies at its base rate. If "eligibility" was
+  meant as *exclusivity* (Ghost Fade allowed **only** on Ghost bodies), it
+  should instead be a hard gate (exclude Ghost Fade unless body = Ghost). Both
+  readings are defensible; flagged for the owner. Changing it is a one-line
+  config edit (convert the `bias` rule to an `exclude`-family rule) plus a
+  simulation re-run — no engine change.
+
 ## Consequences
 
 - The published fairness page can explain the whole engine in four sentences

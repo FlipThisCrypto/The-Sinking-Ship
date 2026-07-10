@@ -45,6 +45,20 @@ tier counts the 44,444-run Monte Carlo must hit within ±5%. Three problems:
   is documented in the CLI help so nobody mistakes one unlucky draw for a
   broken generator.
 
+## Authoritative artifact vs. diagnostics
+
+The `weights` block in `weights.json` is the **authoritative** committed
+artifact — the provenance commitment (ADR-0002) hashes it byte-exactly, and
+all rolls read it directly. The `bucket_scales_permille` field is a
+human-readable, **display-rounded** diagnostic and must NOT be used to
+recompute the weights (permille rounding loses ~3–4% precision, so
+`base × permille/1000` will not reproduce the committed per-trait values).
+An in-browser or third-party verifier must read the `weights` block itself,
+not re-derive it. The generator also emits `bucket_scales` (full-precision
+`repr` of the float scales) so a re-run is exactly reproducible; the
+committed v1.0.0 file predates that field, which is immaterial because the
+`weights` block — not the scales — is what gets committed and rolled.
+
 ## Consequences
 
 - Rarity is tunable by re-running one script after any config change; the

@@ -159,6 +159,10 @@ def write_weights(cfg: GenConfig, weights: dict, scales: dict[str, float],
         },
         "targets": {k: round(v, 9) for k, v in targets.items()},
         "none_shares_permille": NONE_SHARES_PERMILLE,
+        # bucket_scales is the AUTHORITATIVE full-precision reproduction value;
+        # bucket_scales_permille is a rounded, human-readable diagnostic ONLY
+        # (do not recompute weights from it — it loses ~3-4% precision).
+        "bucket_scales": {b: repr(s) for b, s in scales.items()},
         "bucket_scales_permille": {b: round(s * 1000) for b, s in scales.items()},
         "weights": weights,
         "depth_luck": {t["name"]: t["depth_luck_permille"] for t in cfg.tiers_doc["tiers"]},

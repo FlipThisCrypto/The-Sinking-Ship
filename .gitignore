@@ -17,6 +17,9 @@ secrets/
 .env
 .env.*
 
+# Local Claude Code settings (machine-specific; may hold absolute paths)
+.claude/settings.local.json
+
 # OS / editor noise
 Thumbs.db
 .DS_Store
