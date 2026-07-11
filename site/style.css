@@ -171,10 +171,10 @@ section { position: relative; }
 .strip-card:hover { border-color: rgba(217,154,60,0.5); transform: translateY(-3px); }
 .strip-art {
   display: block; width: 100%; margin: 0 0 1rem; border-radius: 4px; overflow: hidden;
-  background: var(--bone); aspect-ratio: 1; border: 1px solid rgba(217,154,60,0.2);
+  aspect-ratio: 1; border: 1px solid rgba(217,154,60,0.2);
 }
 .strip-art img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
+  width: 100%; height: 100%; object-fit: contain; display: block;
   transition: transform 0.35s ease;
 }
 .strip-card:hover .strip-art img { transform: scale(1.03); }
@@ -239,10 +239,10 @@ section { position: relative; }
   border-color: rgba(217,154,60,0.55); transform: translateY(-3px);
 }
 .pass-art {
-  display: block; aspect-ratio: 1; background: var(--bone);
+  display: block; aspect-ratio: 1;
   border-bottom: 1px solid rgba(217,154,60,0.2);
 }
-.pass-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pass-art img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .pass-meta { padding: 0.75rem 0.85rem 1rem; }
 .pass-meta h3 {
   font-size: 0.95rem; margin: 0 0 0.4rem; line-height: 1.25;

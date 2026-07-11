@@ -99,8 +99,7 @@ if (passGrid) {
     card.className = "pass-card";
     card.innerHTML = `
       <picture class="pass-art">
-        <source srcset="assets/passes/${slug}.webp" type="image/webp">
-        <img src="assets/passes/${slug}.jpg" alt="${t.name} dive pass" width="768" height="768" loading="lazy">
+        <img src="assets/passes/${slug}-removebg.png" alt="${t.name} dive pass" width="768" height="768" loading="lazy">
       </picture>
       <div class="pass-meta">
         <h3>${t.name}</h3>
