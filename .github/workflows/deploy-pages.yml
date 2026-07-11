@@ -32,6 +32,23 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      # GitHub Pages serves style.css / main.js / tiers.js with a 10-min
+      # browser cache and no content-hashed filenames, so edits can appear
+      # "stuck" behind a stale cache. Stamp the commit SHA onto those asset
+      # links at deploy time so every release has unique URLs and browsers
+      # always fetch the new code. Only the deployed artifact is rewritten;
+      # the committed site/index.html stays clean for local development.
+      - name: Cache-bust versioned asset links
+        run: |
+          V="${GITHUB_SHA}"
+          sed -i \
+            -e "s|href=\"style.css\"|href=\"style.css?v=${V}\"|g" \
+            -e "s|src=\"tiers.js\"|src=\"tiers.js?v=${V}\"|g" \
+            -e "s|src=\"main.js\"|src=\"main.js?v=${V}\"|g" \
+            site/index.html
+          echo "Stamped asset version ${V}:"
+          grep -nE 'style.css|main.js|tiers.js' site/index.html
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
