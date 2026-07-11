@@ -60,21 +60,21 @@
     },
     {
       "id": 7, "name": "shipwright", "display_name": "Shipwright", "zone": "abyssal",
-      "price_xch": "3.20", "chest_min": 45, "chest_max": 55, "expected_mints": 50,
+      "price_xch": "3.50", "chest_min": 45, "chest_max": 55, "expected_mints": 50,
       "passes": 70, "expected_supply": 3500,
       "depth_luck": "2.0", "depth_luck_permille": 2000,
       "guarantee": {"min_tier": "epic", "count": 2}
     },
     {
       "id": 8, "name": "harbormaster", "display_name": "Harbormaster", "zone": "abyssal",
-      "price_xch": "4.40", "chest_min": 90, "chest_max": 110, "expected_mints": 100,
+      "price_xch": "5.50", "chest_min": 90, "chest_max": 110, "expected_mints": 100,
       "passes": 25, "expected_supply": 2500,
       "depth_luck": "2.5", "depth_luck_permille": 2500,
       "guarantee": {"min_tier": "legendary", "count": 1}
     },
     {
       "id": 9, "name": "admiral", "display_name": "Admiral", "zone": "hadal",
-      "price_xch": "5.00", "chest_min": 230, "chest_max": 270, "expected_mints": 250,
+      "price_xch": "10.00", "chest_min": 230, "chest_max": 270, "expected_mints": 250,
       "passes": 5, "expected_supply": 1250,
       "depth_luck": "3.0", "depth_luck_permille": 3000,
       "guarantee": {"min_tier": "legendary", "count": 1, "grail_lottery": true}
@@ -102,5 +102,6 @@
       "All placements derive from HMAC-SHA256(salt, 'grail-placement-v1') and are covered by the provenance commitment; published at reveal."
     ]
   },
-  "revenue_model_xch_full_sellout": "3336.40"
+  "revenue_model_xch_full_sellout": "3409.90",
+  "pricing_note": "Deep-tier prices revised 2026-07-11 (owner) for a cleaner monotonic effective-cost regression: eff cost/NFT descends 0.100 -> 0.040 across sold tiers. Changed: Shipwright 3.20->3.50 (0.070/NFT), Harbormaster 4.40->5.50 (0.055/NFT), Admiral 5.00->10.00 (0.040/NFT). Full-sellout revenue 3336.40 -> 3409.90 XCH (+73.50). See spec Section 5.2 and ADR-0004."
 }

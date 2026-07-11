@@ -67,7 +67,7 @@ const SHIP_DATA = {
     {
       "name": "Shipwright",
       "zone": "abyssal",
-      "price": "3.20",
+      "price": "3.50",
       "chest": "45–55",
       "expected": 50,
       "passes": 70,
@@ -77,7 +77,7 @@ const SHIP_DATA = {
     {
       "name": "Harbormaster",
       "zone": "abyssal",
-      "price": "4.40",
+      "price": "5.50",
       "chest": "90–110",
       "expected": 100,
       "passes": 25,
@@ -87,7 +87,7 @@ const SHIP_DATA = {
     {
       "name": "Admiral",
       "zone": "hadal",
-      "price": "5.00",
+      "price": "10.00",
       "chest": "230–270",
       "expected": 250,
       "passes": 5,

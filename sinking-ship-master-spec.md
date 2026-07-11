@@ -179,14 +179,15 @@ Themed sets of 4 across 11 concepts, e.g.: The Four Admirals, The Four Wizards o
 | 4 | Deep Sea Diver | Twilight | 0.75 | 8–12 | 10 | 0.075 | 700 | 7,000 | 1.25× | ≥1 Rare |
 | 5 | Salvage Crew | Twilight | 1.10 | 13–17 | 15 | 0.073 | 300 | 4,500 | 1.4× | ≥1 Rare |
 | 6 | Submarine Captain | Midnight | 1.80 | 22–28 | 25 | 0.072 | 160 | 4,000 | 1.6× | ≥1 Epic |
-| 7 | Shipwright | Abyssal | 3.20 | 45–55 | 50 | 0.064 | 70 | 3,500 | 2.0× | ≥2 Epic |
-| 8 | Harbormaster | Abyssal | 4.40 | 90–110 | 100 | 0.044 | 25 | 2,500 | 2.5× | ≥1 Legendary |
-| 9 | Admiral | Hadal | 5.00 | 230–270 | 250 | 0.020 | 5 | 1,250 | 3.0× | ≥1 Legendary + Grail lottery ticket |
+| 7 | Shipwright | Abyssal | 3.50 | 45–55 | 50 | 0.070 | 70 | 3,500 | 2.0× | ≥2 Epic |
+| 8 | Harbormaster | Abyssal | 5.50 | 90–110 | 100 | 0.055 | 25 | 2,500 | 2.5× | ≥1 Legendary |
+| 9 | Admiral | Hadal | 10.00 | 230–270 | 250 | 0.040 | 5 | 1,250 | 3.0× | ≥1 Legendary + Grail lottery ticket |
 | 10 | Wizard of the Deep | Hadal | Not for sale | 44 + 1 Grail | 45 | — | 1 | 45 | ∞ | Guaranteed named Grail |
 
 - **Treasury reserve:** 444 NFTs (team, collabs, contests). Symbolic number, disclose it publicly.
 - **Expected supply if fully sold:** ~44,239 + 444 reserve ≈ 44,444 with variance absorbed by The Scuttling (below).
-- **Full sellout revenue:** ~3,336 XCH. Model 25% / 50% / 75% sellout scenarios before committing to any spend.
+- **Full sellout revenue:** ~3,410 XCH. Model 25% / 50% / 75% sellout scenarios before committing to any spend.
+- **Pricing revision (2026-07-11):** deep-tier prices raised so effective cost/NFT descends in a clean monotonic regression (0.100 → 0.040 across the sold tiers): Shipwright 3.20→3.50 (0.070/NFT), Harbormaster 4.40→5.50 (0.055/NFT), Admiral 5.00→10.00 (0.040/NFT). Full-sellout revenue rises 3,336.40 → 3,409.90 XCH.
 - **Wizard of the Deep** is earned, not bought — awarded via a lore puzzle / community quest during mint. This is the marketing centerpiece.
 - **Admiral grail lottery:** 5 of the 44 grails are seeded randomly into the 5 Admiral chests. 12 are auctioned post-mint. 27 are seeded into random chests across tiers 4–8 (published odds), so even a Deep Sea Diver can strike a grail — the "anyone can find treasure" hook.
 

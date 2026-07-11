@@ -50,12 +50,12 @@ def test_golden_manifest_hash(engine, placements):
     is public; bump the engine version and re-commit instead."""
     m = roll(engine, placements, COIN_A, tier="castaway", ordinal=7, start=42)
     assert m["manifest_hash"] == \
-        "43fbe7511559df485945d80b0c4f40e8a57838f70e9f5605cc629136a4fc5df0"
+        "099e2d13bc7b2a75114fadb85299ce0d1d2fd9d7b43c3fac11485b9328b8ac7b"
 
 
 def test_golden_commitment_hash(commitment):
     assert commitment["commitment_hash"] == \
-        "3bbba168684c6e487942db206f7cd3261ceb3267e20c5b83a40f61df6c81b3df"
+        "9bb37be7ccd975455fd3a27c4365a3977c027d472098cdee98ce8cdc348e6ef2"
 
 
 def test_placements_deterministic(cfg):

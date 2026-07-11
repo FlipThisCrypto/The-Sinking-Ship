@@ -30,7 +30,11 @@ def test_tier_table_matches_spec_sums(cfg):
     assert sum(t["passes"] for t in tiers) == 4444 + 3000 + 1600 + 700 + 300 + 160 + 70 + 25 + 5 + 1
     assert sum(t["expected_supply"] for t in tiers) == 44239
     revenue = sum(float(t["price_xch"]) * t["passes"] for t in tiers if t["price_xch"])
-    assert round(revenue, 2) == 3336.40
+    assert round(revenue, 2) == 3409.90  # deep-tier pricing revised 2026-07-11
+    # effective cost/NFT must descend monotonically across the sold tiers
+    sold = [t for t in tiers if t["price_xch"]]
+    eff = [float(t["price_xch"]) / t["expected_mints"] for t in sold]
+    assert all(eff[i] >= eff[i + 1] - 1e-9 for i in range(len(eff) - 1)), eff
 
 
 def test_schema_validator_negatives():

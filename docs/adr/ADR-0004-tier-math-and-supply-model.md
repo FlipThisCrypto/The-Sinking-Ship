@@ -62,8 +62,10 @@ reserves a `supply_budget` check hook.
 - tiers.json is the single source of truth; weights.json carries copies of
   depth_luck/guarantees for P3-prompt compatibility, and the config loader
   fails hard on any divergence between the two.
-- Revenue at full sellout computes to 3,336.40 XCH from config — matching
-  the spec's "~3,336" — so the 25/50/75% sellout scenario modeling asked
-  for in spec 5.2 can run off tiers.json without new code.
+- Revenue at full sellout computes to 3,409.90 XCH from config (deep-tier
+  prices revised by the owner 2026-07-11: Shipwright 3.50, Harbormaster 5.50,
+  Admiral 10.00, for a monotonic 0.100→0.040 effective-cost regression) —
+  matching the spec's "~3,410" — so the 25/50/75% sellout scenario modeling
+  asked for in spec 5.2 can run off tiers.json without new code.
 - Every open question is a config edit away from resolution; no code
   changes needed for (a) or (b), one guarded branch for (c).
