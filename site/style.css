@@ -21,7 +21,6 @@
   /* brand accent: shifted from chia-green to aqua (2026-07-11) */
   --chia: #12bcc6;
   --chia-bright: #38dfe8;
-  --depth-aqua: #1098a0; /* Five Depths tile background (matches surface art) */
   --violet: #4a2a6e;
   --amethyst: #7a4aa8;
   --bone: #f4f4f0;
@@ -202,11 +201,12 @@ section { position: relative; }
   gap: 1.4rem; align-items: center;
 }
 .zone-art {
-  display: block; border-radius: 6px; overflow: hidden;
-  background: var(--depth-aqua); border: 1px solid rgba(217,154,60,0.28);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.35); aspect-ratio: 1;
+  display: block; aspect-ratio: 1;
 }
-.zone-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.zone-art img {
+  width: 100%; height: 100%; object-fit: contain; display: block;
+  filter: drop-shadow(0 10px 22px rgba(0,0,0,0.5));
+}
 .zone-copy h3 { font-size: 1.4rem; margin-bottom: 0.4rem; }
 .zone .beat {
   display: inline-block; font-family: var(--mono); font-size: 0.66rem;
