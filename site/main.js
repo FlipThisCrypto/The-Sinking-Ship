@@ -61,8 +61,7 @@ for (const z of ZONES) {
       <div class="zone-depth">${z.label.split("·")[0].trim()}<br>${z.depth}</div>
       <div class="zone-body">
         <picture class="zone-art">
-          <source srcset="${z.art}.webp" type="image/webp">
-          <img src="${z.art}.jpg" alt="${z.chapter} — ${z.label}" width="768" height="768" loading="lazy">
+          <img src="${z.art}-removebg.png" alt="${z.chapter} — ${z.label}" width="768" height="768" loading="lazy">
         </picture>
         <div class="zone-copy">
           <h3 style="color:${zoneAccent(colors)}">${z.chapter}</h3>
