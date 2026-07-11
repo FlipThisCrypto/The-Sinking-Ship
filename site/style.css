@@ -18,8 +18,9 @@
   --ember: #d0542a;
   --gold: #d99a3c;
   --pale-gold: #ecc873;
-  --chia: #2fa86a;
-  --chia-bright: #52c47e;
+  /* brand accent: shifted from chia-green to aqua (2026-07-11) */
+  --chia: #12bcc6;
+  --chia-bright: #38dfe8;
   --violet: #4a2a6e;
   --amethyst: #7a4aa8;
   --bone: #f4f4f0;
