@@ -29,7 +29,7 @@ engine/shipgen shared library (config loading, deterministic RNG, roll core)
 sprites/       one directory per layer; README per layer lists required files
 tests/         pytest suite (determinism is the highest-priority property)
 scripts/       helper CLIs (placeholder sprites, weight tuning, pipeline runner)
-site/          static landing page (self-contained, no external deps)
+site/          public landing + project dashboard (dashboard.html)
 docs/          ADRs + P7/P8 TODO design docs
 output/        gitignored render/metadata/manifest output
 ```
@@ -95,11 +95,18 @@ and anyone can recompute every chest with `chest_roller.py verify`. See
 
 ## Status
 
-Technical core (P2–P6) built and tested. P7 (fulfillment daemon) and P8
-(reveal web app) are interface stubs with design docs — see
-[docs/TODO-P7-fulfillment.md](docs/TODO-P7-fulfillment.md) and
+Technical core (P2–P6) built and tested. P7 fulfillment has a SQLite ledger +
+fixture tick path (`engine/fulfillment/`, dry-run safe); live coin-set polling
+and Sage mint are still TODO — see
+[docs/TODO-P7-fulfillment.md](docs/TODO-P7-fulfillment.md). P8 (reveal web app)
+is a design brief only —
 [docs/TODO-P8-reveal-app.md](docs/TODO-P8-reveal-app.md).
-Sprites are **placeholders** pending final art.
+Art direction locked (Amano illustration); layered production still in progress.
+Landing page live on GitHub Pages.
+
+**Single-pane project view (direction + full task list):**
+[site/dashboard.html](site/dashboard.html) — also deployed at
+https://flipthiscrypto.github.io/The-Sinking-Ship/dashboard.html
 
 ## License
 

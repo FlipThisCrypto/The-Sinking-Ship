@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Dashboard — THE SINKING SHIP</title>
+<meta name="description" content="Single-page project dashboard: direction, status, full task list, and instructions for THE SINKING SHIP.">
+<meta name="robots" content="noindex">
+<style>
+/* Self-contained dashboard — matches landing palette, separate surface for ops. */
+:root {
+  --ink: #0a0e1c;
+  --abyss: #06060d;
+  --deep: #14183a;
+  --navy: #26407a;
+  --sea: #3a5f9e;
+  --pale: #a9c6e6;
+  --crimson: #c8323f;
+  --gold: #d99a3c;
+  --pale-gold: #ecc873;
+  --chia: #2fa86a;
+  --chia-bright: #52c47e;
+  --violet: #7a4aa8;
+  --bone: #f4f4f0;
+  --ash: #b8b8c4;
+  --slate: #8a8a9e;
+  --done: #2fa86a;
+  --wip: #d99a3c;
+  --todo: #6b6b80;
+  --blocked: #c8323f;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --mono: "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: linear-gradient(180deg, #14183a 0%, #0a0e1c 40%, #06060d 100%);
+  color: var(--bone);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.55;
+  min-height: 100vh;
+}
+a { color: var(--chia-bright); text-decoration: none; }
+a:hover { color: var(--pale-gold); }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 1.25rem 1.25rem 4rem; }
+
+/* top bar */
+.top {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem;
+  align-items: center; justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: rgba(6, 8, 16, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(217, 154, 60, 0.3);
+}
+.brand { font-family: var(--serif); letter-spacing: 0.18em; font-size: 0.95rem; }
+.brand span { color: var(--pale-gold); }
+.top-nav { display: flex; flex-wrap: wrap; gap: 0.85rem; font-size: 0.72rem; letter-spacing: 0.04em; }
+.top-nav a { color: var(--ash); }
+.top-nav a:hover { color: var(--pale-gold); }
+.badge {
+  font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.25rem 0.55rem; border-radius: 2px;
+  border: 1px solid rgba(47,168,106,0.45); color: var(--chia-bright);
+  background: rgba(47,168,106,0.08);
+}
+
+/* hero */
+.hero {
+  margin: 1.75rem 0 1.5rem;
+  padding: 1.5rem 1.4rem;
+  border: 1px solid rgba(217,154,60,0.28);
+  border-radius: 6px;
+  background: rgba(20,24,58,0.45);
+}
+.hero h1 {
+  font-family: var(--serif); font-weight: 500; font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+  margin-bottom: 0.5rem;
+}
+.hero .thesis {
+  font-family: var(--serif); font-style: italic; color: var(--pale-gold);
+  font-size: 1.05rem; margin-bottom: 0.85rem;
+}
+.hero p { color: var(--ash); max-width: 70ch; margin-bottom: 0.65rem; }
+.meta-row {
+  display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem;
+}
+.pill {
+  font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0.35rem 0.65rem; border-radius: 999px;
+  border: 1px solid rgba(169,198,230,0.2); color: var(--pale);
+  background: rgba(0,0,0,0.25);
+}
+.pill strong { color: var(--pale-gold); font-weight: normal; }
+
+/* progress */
+.progress-panel {
+  display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center;
+  margin: 1.25rem 0 1.75rem; padding: 1rem 1.2rem;
+  border: 1px solid rgba(169,198,230,0.15); border-radius: 6px;
+  background: rgba(6,8,16,0.4);
+}
+.bar {
+  height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+.bar > i {
+  display: block; height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--chia), var(--pale-gold));
+  transition: width 0.35s ease;
+}
+.progress-label { font-size: 0.78rem; color: var(--ash); text-align: right; white-space: nowrap; }
+.progress-label b { color: var(--pale-gold); font-weight: normal; }
+
+/* sections */
+section { margin: 2.25rem 0; }
+.section-head {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: 0.5rem; margin-bottom: 0.9rem;
+  border-bottom: 1px solid rgba(217,154,60,0.25); padding-bottom: 0.45rem;
+}
+.section-head h2 {
+  font-family: var(--serif); font-weight: 500; font-size: 1.25rem; letter-spacing: 0.02em;
+}
+.section-head .hint { font-size: 0.72rem; color: var(--slate); }
+
+/* cards grid */
+.grid {
+  display: grid; gap: 0.85rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+.card {
+  border: 1px solid rgba(169,198,230,0.14); border-radius: 6px;
+  background: rgba(10,14,28,0.5); padding: 1rem 1.05rem;
+}
+.card h3 { font-family: var(--serif); font-size: 1rem; margin-bottom: 0.4rem; color: var(--bone); }
+.card p, .card li { color: var(--ash); font-size: 0.82rem; }
+.card ul { margin: 0.4rem 0 0 1.1rem; }
+.card .status {
+  display: inline-block; margin-bottom: 0.45rem;
+  font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.15rem 0.45rem; border-radius: 2px;
+}
+.st-done { background: rgba(47,168,106,0.15); color: var(--done); border: 1px solid rgba(47,168,106,0.35); }
+.st-wip { background: rgba(217,154,60,0.12); color: var(--wip); border: 1px solid rgba(217,154,60,0.4); }
+.st-todo { background: rgba(107,107,128,0.15); color: var(--ash); border: 1px solid rgba(107,107,128,0.35); }
+.st-blocked { background: rgba(200,50,63,0.12); color: #e35d5b; border: 1px solid rgba(200,50,63,0.4); }
+
+/* tasklist */
+.filters {
+  display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.85rem;
+}
+.filters button {
+  font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em;
+  text-transform: uppercase; cursor: pointer;
+  padding: 0.35rem 0.65rem; border-radius: 2px;
+  border: 1px solid rgba(169,198,230,0.2); background: transparent; color: var(--ash);
+}
+.filters button:hover, .filters button.active {
+  border-color: var(--gold); color: var(--pale-gold); background: rgba(217,154,60,0.08);
+}
+.task {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 0.75rem 1rem;
+  align-items: start;
+  padding: 0.85rem 1rem; margin-bottom: 0.45rem;
+  border: 1px solid rgba(169,198,230,0.12); border-radius: 5px;
+  background: rgba(6,8,16,0.35);
+}
+.task:hover { border-color: rgba(217,154,60,0.35); }
+.task.hidden { display: none; }
+.task input[type=checkbox] {
+  width: 1.05rem; height: 1.05rem; margin-top: 0.15rem; accent-color: var(--chia); cursor: pointer;
+}
+.task.checked { opacity: 0.55; }
+.task.checked .task-title { text-decoration: line-through; color: var(--slate); }
+.task-id {
+  font-size: 0.68rem; color: var(--gold); letter-spacing: 0.08em; margin-bottom: 0.2rem;
+}
+.task-title { font-family: var(--serif); font-size: 1rem; color: var(--bone); margin-bottom: 0.35rem; }
+.task-body { color: var(--ash); font-size: 0.8rem; }
+.task-body ul { margin: 0.35rem 0 0 1.1rem; }
+.task-body code, .howto code, .docs code {
+  font-size: 0.78rem; color: var(--pale); background: rgba(0,0,0,0.35);
+  padding: 0.05rem 0.3rem; border-radius: 2px;
+}
+.task-meta {
+  display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem;
+}
+.tag {
+  font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.12rem 0.4rem; border-radius: 2px;
+  border: 1px solid rgba(169,198,230,0.2); color: var(--slate);
+}
+.tag.track-art { border-color: rgba(122,74,168,0.5); color: #b79ad6; }
+.tag.track-engine { border-color: rgba(47,168,106,0.45); color: var(--chia-bright); }
+.tag.track-chain { border-color: rgba(217,154,60,0.45); color: var(--pale-gold); }
+.tag.track-content { border-color: rgba(200,50,63,0.4); color: #e35d5b; }
+.tag.track-launch { border-color: rgba(169,198,230,0.4); color: var(--pale); }
+.task-status-col { text-align: right; min-width: 5.5rem; }
+.task-status-col .status { font-size: 0.62rem; }
+
+/* instructions */
+.howto {
+  display: grid; gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+.howto .card h3 { color: var(--pale-gold); }
+.howto ol { margin: 0.4rem 0 0 1.15rem; color: var(--ash); font-size: 0.82rem; }
+.howto li { margin-bottom: 0.35rem; }
+
+/* docs table */
+.docs { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.docs th, .docs td {
+  text-align: left; padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid rgba(169,198,230,0.1);
+  vertical-align: top;
+}
+.docs th {
+  font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--pale-gold); background: rgba(20,24,58,0.5);
+}
+.docs td { color: var(--ash); }
+.docs td:first-child { color: var(--bone); white-space: nowrap; }
+
+/* legend */
+.legend {
+  display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem;
+  font-size: 0.72rem; color: var(--slate); margin-top: 0.5rem;
+}
+.legend i {
+  display: inline-block; width: 0.55rem; height: 0.55rem; border-radius: 50%;
+  margin-right: 0.35rem; vertical-align: middle;
+}
+.legend .d { background: var(--done); }
+.legend .w { background: var(--wip); }
+.legend .t { background: var(--todo); }
+.legend .b { background: var(--blocked); }
+
+.foot {
+  margin-top: 2.5rem; padding-top: 1rem;
+  border-top: 1px solid rgba(169,198,230,0.12);
+  color: var(--slate); font-size: 0.72rem;
+}
+.actions {
+  display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0 0;
+}
+.actions button {
+  font-family: var(--mono); font-size: 0.7rem; cursor: pointer;
+  padding: 0.4rem 0.7rem; border-radius: 2px;
+  border: 1px solid rgba(169,198,230,0.25); background: transparent; color: var(--ash);
+}
+.actions button:hover { border-color: var(--gold); color: var(--pale-gold); }
+
+@media (max-width: 700px) {
+  .task { grid-template-columns: auto 1fr; }
+  .task-status-col { grid-column: 2; text-align: left; }
+  .progress-panel { grid-template-columns: 1fr; }
+  .progress-label { text-align: left; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">THE&nbsp;SINKING&nbsp;SHIP <span>· Dashboard</span></div>
+  <nav class="top-nav">
+    <a href="index.html">← Landing</a>
+    <a href="#direction">Direction</a>
+    <a href="#tracks">Tracks</a>
+    <a href="#tasks">Task list</a>
+    <a href="#howto">How to work</a>
+    <a href="#docs">Docs map</a>
+    <a href="https://github.com/FlipThisCrypto/The-Sinking-Ship" rel="noopener">GitHub</a>
+  </nav>
+  <span class="badge" id="sync-badge">local checkboxes</span>
+</header>
+
+<main class="wrap">
+
+  <div class="hero" id="direction">
+    <h1>Project direction — one place</h1>
+    <p class="thesis">The world sees a sinking ship. You see a salvage operation. Hope never sinks.</p>
+    <p>
+      <strong style="color:var(--bone)">What this is:</strong> a 44,444-cap NFT collection on
+      <strong style="color:var(--bone)">Chia</strong>, minting as blind Dive Pass chests via Secure the Mint + offer files,
+      with a <strong style="color:var(--bone)">commit–reveal</strong> fairness scheme anyone can verify.
+    </p>
+    <p>
+      <strong style="color:var(--bone)">Art medium (ADR-0008):</strong> Yoshitaka Amano / FF7-era ink illustration
+      on bone-white ground — not 48×48 pixel. Layered compositor still drives 44k combinations;
+      final layer art replaces placeholders file-for-file under <code>sprites/</code>.
+    </p>
+    <p>
+      <strong style="color:var(--bone)">Source of truth:</strong> if code and docs disagree,
+      <code>sinking-ship-master-spec.md</code> wins (except where an ADR records an owner override — e.g. full illustration).
+    </p>
+    <div class="meta-row">
+      <span class="pill">Chain <strong>Chia</strong></span>
+      <span class="pill">Supply <strong>44,444</strong></span>
+      <span class="pill">Mint <strong>blind chests</strong></span>
+      <span class="pill">Fairness <strong>HMAC commit–reveal</strong></span>
+      <span class="pill">Art <strong>Amano illustration</strong></span>
+      <span class="pill">Repo <strong>MIT</strong></span>
+    </div>
+  </div>
+
+  <div class="progress-panel">
+    <div>
+      <div class="bar"><i id="progress-bar"></i></div>
+    </div>
+    <div class="progress-label">
+      Checklist: <b id="progress-text">0 / 0</b> marked done<br>
+      <span style="font-size:0.68rem">Ticks save in this browser (localStorage)</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><i class="d"></i> Done / shipped</span>
+    <span><i class="w"></i> In progress</span>
+    <span><i class="t"></i> Not started</span>
+    <span><i class="b"></i> Blocked / needs owner</span>
+  </div>
+
+  <!-- ========== TRACKS ========== -->
+  <section id="tracks">
+    <div class="section-head">
+      <h2>Status by track</h2>
+      <span class="hint">Snapshot as of dashboard publish · update as you ship</span>
+    </div>
+    <div class="grid">
+      <article class="card">
+        <span class="status st-done">Done</span>
+        <h3>Engine core (P2–P6)</h3>
+        <p>Traits, weights, simulate, render profiles, chest roller, CHIP-0007 metadata, pytest determinism suite.</p>
+        <ul>
+          <li><code>config/*</code> + JSON Schemas</li>
+          <li><code>engine/shipgen</code>, roller, metadata</li>
+          <li>Illustration + pixel render profiles</li>
+        </ul>
+      </article>
+      <article class="card">
+        <span class="status st-wip">In progress</span>
+        <h3>Fulfillment (P7)</h3>
+        <p>SQLite ledger + fixture tick path exist. Live coin-set poll + Sage mint still open.</p>
+        <ul>
+          <li>STM = pre-built pass offers + claim delivery</li>
+          <li>Next: CoinsetPollingSource, Sage RPC</li>
+          <li>See <code>docs/TODO-P7-fulfillment.md</code></li>
+        </ul>
+      </article>
+      <article class="card">
+        <span class="status st-todo">Not started</span>
+        <h3>Reveal app (P8)</h3>
+        <p>Design brief only. Underwater chest open, JS shipgen verify, wallet onboarding.</p>
+        <ul>
+          <li>Update brief: illustration chest (not pixel)</li>
+          <li>Mock manifests first</li>
+          <li>See <code>docs/TODO-P8-reveal-app.md</code></li>
+        </ul>
+      </article>
+      <article class="card">
+        <span class="status st-wip">In progress</span>
+        <h3>Art production</h3>
+        <p>Style locked to <code>ships_amano/</code> + Tom Bepe refs. Polished ships/characters + landing assets live; full layered sprite set still to finish.</p>
+        <ul>
+          <li>Style pack: <code>docs/art-reference/</code></li>
+          <li>Score loop: <code>scripts/style_score.py</code></li>
+          <li>Landing art: <code>site/assets/</code></li>
+        </ul>
+      </article>
+      <article class="card">
+        <span class="status st-wip">In progress</span>
+        <h3>Public site</h3>
+        <p>Marketing landing on GitHub Pages. Depths, dive passes, chest art wired. Fairness page (P9) not a separate full doc yet.</p>
+        <ul>
+          <li><a href="https://flipthiscrypto.github.io/The-Sinking-Ship/">Live landing</a></li>
+          <li>This dashboard (ops view)</li>
+        </ul>
+      </article>
+      <article class="card">
+        <span class="status st-todo">Not started</span>
+        <h3>Lore &amp; launch (P1, P9–P12)</h3>
+        <p>Lore bible, marketing kit, honor badges, master launch checklist still ahead.</p>
+        <ul>
+          <li>Voice: JRPG melancholy + salvage hope</li>
+          <li>No financial promises</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <!-- ========== NORTH STAR INSTRUCTIONS ========== -->
+  <section id="north-star">
+    <div class="section-head">
+      <h2>Non-negotiables</h2>
+      <span class="hint">Every PR and art batch should respect these</span>
+    </div>
+    <div class="grid">
+      <article class="card">
+        <h3>1. Fairness first</h3>
+        <p>Identical inputs → byte-identical manifests. Commitment before mint; salt reveal after. Never pre-reveal traits before payment settles.</p>
+      </article>
+      <article class="card">
+        <h3>2. Config drives code</h3>
+        <p>No hardcoded trait names, prices, or odds in Python. Change <code>config/</code>, re-validate, re-simulate.</p>
+      </article>
+      <article class="card">
+        <h3>3. Art grammar</h3>
+        <p>Bone-white ground, vertical warm→navy ink, dense calligraphic linework, crystals/filigree. Match <code>ships_amano/</code> and Tom Bepe refs — never Pepe IP.</p>
+      </article>
+      <article class="card">
+        <h3>4. Testnet first</h3>
+        <p>Anything that touches chain: testnet11 dry run before mainnet. Dry-run flags on fulfillment.</p>
+      </article>
+      <article class="card">
+        <h3>5. Spec &gt; improvisation</h3>
+        <p>Ambiguity → open question / ADR. Owner rulings recorded (OQ-1, OQ-2, OQ-4, ADR-0008, STM surface).</p>
+      </article>
+      <article class="card">
+        <h3>6. Thesis</h3>
+        <p>Builders create value after everyone leaves. Marketing is conviction and salvage, not hopium or guaranteed returns.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ========== TASK LIST ========== -->
+  <section id="tasks">
+    <div class="section-head">
+      <h2>Master task list</h2>
+      <span class="hint">P1–P12 + art + ops · filter · check off as you go</span>
+    </div>
+    <div class="filters" id="filters">
+      <button type="button" data-filter="all" class="active">All</button>
+      <button type="button" data-filter="todo">Open</button>
+      <button type="button" data-filter="wip">In progress</button>
+      <button type="button" data-filter="done">Shipped</button>
+      <button type="button" data-filter="engine">Engine</button>
+      <button type="button" data-filter="chain">Chain</button>
+      <button type="button" data-filter="art">Art</button>
+      <button type="button" data-filter="content">Content</button>
+      <button type="button" data-filter="launch">Launch</button>
+    </div>
+    <div id="task-list"></div>
+    <div class="actions">
+      <button type="button" id="btn-export">Export checklist JSON</button>
+      <button type="button" id="btn-reset">Reset local checks</button>
+    </div>
+  </section>
+
+  <!-- ========== HOW TO ========== -->
+  <section id="howto">
+    <div class="section-head">
+      <h2>How to work this project</h2>
+      <span class="hint">Practical instructions for engineers &amp; art agents</span>
+    </div>
+    <div class="howto">
+      <article class="card">
+        <h3>A. Engine day</h3>
+        <ol>
+          <li><code>pip install -r requirements.txt</code></li>
+          <li><code>python engine/validate_configs.py</code></li>
+          <li><code>python engine/simulate.py --profile sellout --seed check --replicates 5 --check</code></li>
+          <li><code>pytest</code> — determinism is sacred</li>
+          <li>Fulfillment dry run: see <code>docs/TODO-P7-fulfillment.md</code> CLI</li>
+        </ol>
+      </article>
+      <article class="card">
+        <h3>B. Art day</h3>
+        <ol>
+          <li>Read <code>docs/art-reference/ART-DIRECTION.md</code> + <code>CLAUDE-STYLE-PACK.md</code></li>
+          <li>Use <code>ships_amano/</code> and Tom Bepe refs as style floor (don’t redistribute as mint art)</li>
+          <li>Replace <code>sprites/&lt;layer&gt;/*.png</code> file-for-file at illustration master size</li>
+          <li><code>python scripts/style_loop.py</code> or score samples vs golden set</li>
+          <li>Landing art lives in <code>site/assets/</code> (depths, passes, chest)</li>
+        </ol>
+      </article>
+      <article class="card">
+        <h3>C. Landing / demo day</h3>
+        <ol>
+          <li>Local: <code>python -m http.server 8471 --directory site</code></li>
+          <li>Push <code>site/**</code> to <code>main</code> → GitHub Actions deploys Pages</li>
+          <li>Public: <a href="https://flipthiscrypto.github.io/The-Sinking-Ship/">landing</a></li>
+          <li>This page: <a href="dashboard.html">dashboard.html</a> on the same host</li>
+        </ol>
+      </article>
+      <article class="card">
+        <h3>D. Suggested build order</h3>
+        <ol>
+          <li><strong>Done path:</strong> P2 → P3 → P4 → P5 → P6</li>
+          <li><strong>Now:</strong> finish art layers + P7 live chain path</li>
+          <li><strong>Then:</strong> P1 lore → P10 copy → expand P9 fairness docs</li>
+          <li><strong>Then:</strong> P8 reveal → P11 badges → P12 launch checklist</li>
+          <li>Never mainnet until testnet11 go/no-go is green</li>
+        </ol>
+      </article>
+      <article class="card">
+        <h3>E. Owner decisions still open</h3>
+        <ul>
+          <li>OQ-8: final CHIP-0007 collection id format</li>
+          <li>OQ-9: series_total vs Scuttling realized supply messaging</li>
+          <li>Project DID + royalty address in <code>config/collection.json</code></li>
+          <li>Final layer art production plan / budget for ~300 illustration assets</li>
+          <li>Wizard of the Deep puzzle design (marketing centerpiece)</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h3>F. Showing people</h3>
+        <ol>
+          <li>Landing for mood, tiers, art direction</li>
+          <li>This dashboard for “where we are / what’s next”</li>
+          <li>Repo README + ADRs for technical buyers</li>
+          <li>Sample renders under <code>output/</code> (gitignored — generate locally)</li>
+        </ol>
+      </article>
+    </div>
+  </section>
+
+  <!-- ========== DOCS MAP ========== -->
+  <section id="docs">
+    <div class="section-head">
+      <h2>Docs map</h2>
+      <span class="hint">Paths relative to repo root</span>
+    </div>
+    <div style="overflow-x:auto; border:1px solid rgba(169,198,230,0.12); border-radius:6px;">
+      <table class="docs">
+        <thead>
+          <tr><th>Document</th><th>Use it for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>sinking-ship-master-spec.md</code></td><td>Source of truth (product + mint math + risks)</td></tr>
+          <tr><td><code>sinking-ship-prompt-pack.md</code></td><td>P1–P12 build prompts / scope slices</td></tr>
+          <tr><td><code>docs/adr/*</code></td><td>Locked technical decisions (RNG, constraints, art medium…)</td></tr>
+          <tr><td><code>docs/art-reference/ART-DIRECTION.md</code></td><td>Visual north star</td></tr>
+          <tr><td><code>docs/art-reference/CLAUDE-STYLE-PACK.md</code></td><td>Operational art prompts + score targets</td></tr>
+          <tr><td><code>docs/TODO-P7-fulfillment.md</code></td><td>Payment → roll → mint → offer daemon</td></tr>
+          <tr><td><code>docs/TODO-P8-reveal-app.md</code></td><td>Chest-open UX + JS verify contract</td></tr>
+          <tr><td><code>config/*</code></td><td>Live numbers (tiers, weights, palette, collection)</td></tr>
+          <tr><td><code>site/</code></td><td>Public landing + this dashboard</td></tr>
+          <tr><td><code>ships_amano/</code></td><td>Golden ship style references (not mint assets)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="foot">
+    THE SINKING SHIP project dashboard · Hope never sinks ·
+    Checkboxes are local only (not shared) ·
+    Update task statuses in this file when the repo state changes ·
+    <a href="index.html">Back to landing</a>
+  </p>
+</main>
+
+<script>
+"use strict";
+// Task catalog — status reflects repo direction as of dashboard authoring.
+// status: done | wip | todo | blocked
+// track: engine | chain | art | content | launch | site
+const TASKS = [
+  {
+    id: "P1", track: "content", status: "todo",
+    title: "Lore Bible",
+    body: `<p>Origin myth, six depth-zone lore drops, 44 grail bios (11×4), Tom Bepe character sheet, 20-term glossary.</p>
+      <ul><li>Tone: FF7 melancholy + naval myth + crypto meme, never celebrating failure</li>
+      <li>Output: single markdown lore bible (not in repo yet)</li></ul>`
+  },
+  {
+    id: "P2", track: "engine", status: "done",
+    title: "Trait matrix JSON",
+    body: `<p><code>config/traits.json</code> — 9 render layers, exclusions/pairings/quotas (The Torn, etc.).</p>`
+  },
+  {
+    id: "P3", track: "engine", status: "done",
+    title: "Rarity weights + simulate",
+    body: `<p><code>weights.json</code>, Depth Luck, guarantees, <code>engine/simulate.py</code> Monte Carlo ±5% protocol.</p>`
+  },
+  {
+    id: "P4", track: "engine", status: "done",
+    title: "Render engine",
+    body: `<p>Layer compositor with <code>illustration</code> (active) and <code>pixel</code> profiles. Validate-sprites, sample render CLIs.</p>
+      <ul><li>ADR-0008: full Amano illustration is mint medium</li></ul>`
+  },
+  {
+    id: "P5", track: "engine", status: "done",
+    title: "Chest roller (fairness core)",
+    body: `<p>commit / roll / verify — HMAC-SHA256 DRBG, pity, grails, byte-identical determinism tests.</p>`
+  },
+  {
+    id: "P6", track: "engine", status: "done",
+    title: "CHIP-0007 metadata",
+    body: `<p><code>metadata_gen.py</code> + description pools. Collection DID / royalty still TODO placeholders.</p>`
+  },
+  {
+    id: "P7", track: "chain", status: "wip",
+    title: "Fulfillment daemon",
+    body: `<p>Ledger + fixture tick shipped. Remaining:</p>
+      <ul>
+        <li>Fail-closed coin-set polling (testnet11)</li>
+        <li>Optional STM webhook as hint only</li>
+        <li>Sage RPC mint + offer builder (replace dry-run)</li>
+        <li>Load test + ops (reconciler, dead-letter)</li>
+      </ul>
+      <p>Doc: <code>docs/TODO-P7-fulfillment.md</code></p>`
+  },
+  {
+    id: "P8", track: "launch", status: "todo",
+    title: "Reveal web app",
+    body: `<p>Chest open experience, rarity effects, Sage onboarding, JS shipgen verify, share cards.</p>
+      <ul>
+        <li>Update brief for illustration medium (was pixel-chest language)</li>
+        <li>Start with mock manifests</li>
+      </ul>
+      <p>Doc: <code>docs/TODO-P8-reveal-app.md</code></p>`
+  },
+  {
+    id: "P9", track: "content", status: "wip",
+    title: "Provably fair public docs",
+    body: `<p>Landing has a fairness section. Still need full public trust page: plain-language + technical verify steps + complete odds tables + Scuttling commitment.</p>`
+  },
+  {
+    id: "P10", track: "content", status: "todo",
+    title: "Marketing &amp; launch copy kit",
+    body: `<p>One-pager, lore-drop threads, mint-day posts, allowlist, Wizard teaser, evergreen captions, marketplace blurbs. No financial claims.</p>`
+  },
+  {
+    id: "P11", track: "content", status: "todo",
+    title: "Honor badge system",
+    body: `<p>Earn conditions, anti-gaming, NFT vs endorsement, Discord structure, 6-month low-cost engagement calendar.</p>`
+  },
+  {
+    id: "P12", track: "launch", status: "todo",
+    title: "Master test plan &amp; launch checklist",
+    body: `<p>Sprite cohesion review, multi-machine determinism, testnet E2E, commitment publish steps, incident runbook, Scuttling procedure.</p>`
+  },
+  {
+    id: "ART-1", track: "art", status: "done",
+    title: "Art direction lock",
+    body: `<p>ADR-0008 + ART-DIRECTION + CLAUDE-STYLE-PACK. Golden set <code>ships_amano/</code> + Tom Bepe refs. Style score tooling.</p>`
+  },
+  {
+    id: "ART-2", track: "art", status: "wip",
+    title: "Capital ships + character plates",
+    body: `<p>Polished ship classes and Tom Bepe character variants exist as style plates. Full production layer set (~300 assets) still incomplete — replace placeholders under <code>sprites/</code>.</p>`
+  },
+  {
+    id: "ART-3", track: "art", status: "wip",
+    title: "Layered sprite production",
+    body: `<p>Ship-only vs character-only sets started. Remaining: all trait combos at 2048, conditions, auras, scene elements, grail 1/1s.</p>
+      <ul><li>Install helpers: <code>scripts/install_polished_ships.py</code>, <code>install_polished_characters.py</code></li></ul>`
+  },
+  {
+    id: "SITE-1", track: "site", status: "done",
+    title: "Marketing landing page",
+    body: `<p>Hero, depths, dive passes, chest art, fairness blurb, FAQ. Deployed via GitHub Actions from <code>site/</code>.</p>
+      <ul><li><a href="https://flipthiscrypto.github.io/The-Sinking-Ship/">Live site</a></li></ul>`
+  },
+  {
+    id: "SITE-2", track: "site", status: "done",
+    title: "Landing art assets",
+    body: `<p>Six depth plates, ten dive-pass icons (unique salvage crew), treasure chest, strip art under <code>site/assets/</code>.</p>`
+  },
+  {
+    id: "SITE-3", track: "site", status: "done",
+    title: "This project dashboard",
+    body: `<p>Single ops view: direction, tracks, full task list, how-to, docs map.</p>`
+  },
+  {
+    id: "OPS-1", track: "chain", status: "todo",
+    title: "Collection identity for chain",
+    body: `<p>Set project DID, royalty address, final collection id (OQ-8) in <code>config/collection.json</code> before testnet mint.</p>`
+  },
+  {
+    id: "OPS-2", track: "launch", status: "todo",
+    title: "Testnet11 go/no-go",
+    body: `<p>Pay → detect → roll → mint DID → offer → accept → <code>chest_roller.py verify</code>. Load test. Only then mainnet.</p>`
+  },
+  {
+    id: "OPS-3", track: "content", status: "todo",
+    title: "Wizard of the Deep puzzle",
+    body: `<p>Design (not reveal in marketing prematurely). Award path for earned pass + guaranteed grail.</p>`
+  },
+];
+
+const STORAGE_KEY = "tss-dashboard-checks-v1";
+const listEl = document.getElementById("task-list");
+const barEl = document.getElementById("progress-bar");
+const textEl = document.getElementById("progress-text");
+
+function loadChecks() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+  catch { return {}; }
+}
+function saveChecks(map) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+}
+
+const STATUS_LABEL = {
+  done: ["Done", "st-done"],
+  wip: ["In progress", "st-wip"],
+  todo: ["Not started", "st-todo"],
+  blocked: ["Blocked", "st-blocked"],
+};
+
+function trackClass(t) {
+  if (t === "art") return "track-art";
+  if (t === "engine") return "track-engine";
+  if (t === "chain") return "track-chain";
+  if (t === "content") return "track-content";
+  if (t === "launch" || t === "site") return "track-launch";
+  return "";
+}
+
+function render() {
+  const checks = loadChecks();
+  listEl.innerHTML = "";
+  for (const t of TASKS) {
+    const checked = !!checks[t.id] || t.status === "done";
+    // default-check shipped items once
+    if (t.status === "done" && checks[t.id] === undefined) {
+      checks[t.id] = true;
+    }
+    const [label, cls] = STATUS_LABEL[t.status] || STATUS_LABEL.todo;
+    const el = document.createElement("article");
+    el.className = "task" + (checks[t.id] ? " checked" : "");
+    el.dataset.id = t.id;
+    el.dataset.status = t.status;
+    el.dataset.track = t.track;
+    el.innerHTML = `
+      <input type="checkbox" ${checks[t.id] ? "checked" : ""} aria-label="Mark ${t.id} done">
+      <div>
+        <div class="task-id">${t.id}</div>
+        <div class="task-title">${t.title}</div>
+        <div class="task-body">${t.body}</div>
+        <div class="task-meta">
+          <span class="tag ${trackClass(t.track)}">${t.track}</span>
+          <span class="tag">${t.status}</span>
+        </div>
+      </div>
+      <div class="task-status-col"><span class="status ${cls}">${label}</span></div>`;
+    const box = el.querySelector("input");
+    box.addEventListener("change", () => {
+      const m = loadChecks();
+      m[t.id] = box.checked;
+      saveChecks(m);
+      el.classList.toggle("checked", box.checked);
+      updateProgress();
+    });
+    listEl.appendChild(el);
+  }
+  saveChecks(checks);
+  updateProgress();
+  applyFilter(document.querySelector(".filters button.active")?.dataset.filter || "all");
+}
+
+function updateProgress() {
+  const checks = loadChecks();
+  const total = TASKS.length;
+  let done = 0;
+  for (const t of TASKS) if (checks[t.id]) done++;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  barEl.style.width = pct + "%";
+  textEl.textContent = `${done} / ${total} (${pct}%)`;
+}
+
+function applyFilter(key) {
+  for (const el of listEl.querySelectorAll(".task")) {
+    let show = true;
+    if (key === "todo") show = el.dataset.status === "todo" || el.dataset.status === "blocked";
+    else if (key === "wip") show = el.dataset.status === "wip";
+    else if (key === "done") show = el.dataset.status === "done" || el.classList.contains("checked");
+    else if (["engine","chain","art","content","launch"].includes(key)) {
+      show = el.dataset.track === key || (key === "launch" && el.dataset.track === "site");
+    }
+    el.classList.toggle("hidden", !show);
+  }
+}
+
+document.getElementById("filters").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-filter]");
+  if (!btn) return;
+  for (const b of document.querySelectorAll(".filters button")) b.classList.remove("active");
+  btn.classList.add("active");
+  applyFilter(btn.dataset.filter);
+});
+
+document.getElementById("btn-export").addEventListener("click", () => {
+  const checks = loadChecks();
+  const payload = {
+    exported_at: new Date().toISOString(),
+    tasks: TASKS.map(t => ({
+      id: t.id, title: t.title, status: t.status, track: t.track,
+      checked_local: !!checks[t.id],
+    })),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "sinking-ship-dashboard-checklist.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById("btn-reset").addEventListener("click", () => {
+  if (!confirm("Clear local checklist ticks? (Shipped tasks will re-default to checked.)")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
