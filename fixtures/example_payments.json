@@ -1,0 +1,23 @@
+[
+  {
+    "coin_id": "51eb3baa5efe4c9c6985f37b8d7c55c677cf653ac517dcd649446594fbabe1b0",
+    "tier_name": "castaway",
+    "buyer_address": "txch1examplebuyeraddress0000000000000000000000000000000000000",
+    "block_height": 100,
+    "network": "testnet11"
+  },
+  {
+    "coin_id": "1eeffe64ffed560e873c2329ca0da9aa4357d412ff6eea74cefbaa8d841ba44e",
+    "tier_name": "snorkeler",
+    "buyer_address": "txch1examplebuyeraddress0000000000000000000000000000000000001",
+    "block_height": 101,
+    "network": "testnet11"
+  },
+  {
+    "coin_id": "eef70f4158cde69e1d7f9da732a78575689ca0d42fd5fe21de01c0b441cd21ce",
+    "tier_name": "deep_sea_diver",
+    "buyer_address": "txch1examplebuyeraddress0000000000000000000000000000000000002",
+    "block_height": 102,
+    "network": "testnet11"
+  }
+]

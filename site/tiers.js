@@ -3,6 +3,16 @@ const SHIP_DATA = {
   "supply": 44444,
   "reserve": 444,
   "grails": 44,
+  "publicMintBudget": 44000,
+  "generatedPool": 44400,
+  "revenueFullSelloutXch": "3389.90",
+  "grailSeeding": {
+    "admiral": 5,
+    "mid": 27,
+    "auction": 11,
+    "wizard": 1
+  },
+  "rngAlgorithm": "HMAC-SHA256-DRBG-v1",
   "tiers": [
     {
       "name": "Castaway",
@@ -20,7 +30,7 @@ const SHIP_DATA = {
       "price": "0.25",
       "chest": "2–4",
       "expected": 3,
-      "passes": 3000,
+      "passes": 2920,
       "luck": "1.0",
       "guarantee": "—"
     },
@@ -101,7 +111,7 @@ const SHIP_DATA = {
       "chest": "44 + 1 Grail",
       "expected": 45,
       "passes": 1,
-      "luck": null,
+      "luck": "10.0",
       "guarantee": "Guaranteed named Grail"
     }
   ],

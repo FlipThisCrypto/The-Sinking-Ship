@@ -24,6 +24,23 @@ def test_quantity_within_range_all_tiers(engine, placements, cfg):
         assert inline >= 0
 
 
+def test_roll_chest_rejects_invalid_start_index(engine, placements):
+    """Global mint indices are 1-based; 0/-1 previously produced corrupt indices."""
+    for bad in (0, -1, True, 1.5, "1"):
+        with pytest.raises(ValueError, match="start_index"):
+            engine.roll_chest(TEST_SALT, coin(1), "castaway", 1, bad,
+                              placements, "prov")
+
+
+def test_roll_chest_rejects_empty_salt_and_bad_placements(engine, placements):
+    with pytest.raises(ValueError, match="salt"):
+        engine.roll_chest(b"", coin(1), "castaway", 1, 1, placements, "prov")
+    with pytest.raises(ValueError, match="placements"):
+        engine.roll_chest(TEST_SALT, coin(1), "castaway", 1, 1, {}, "prov")
+    with pytest.raises(ValueError, match="provenance_hash"):
+        engine.roll_chest(TEST_SALT, coin(1), "castaway", 1, 1, placements, "")
+
+
 @pytest.mark.parametrize("tier_name,min_tier,count", [
     ("deep_sea_diver", "rare", 1),
     ("salvage_crew", "rare", 1),

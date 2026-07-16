@@ -66,9 +66,23 @@ python engine/metadata_gen.py --manifest "output/chests/<manifest>.json" --outdi
 # 7. Run the whole pipeline end-to-end
 python scripts/run_pipeline.py
 
-# 8. Tests
+# 8. Fulfillment offline smoke (fixture → roll → verify)
+python scripts/smoke_fulfillment.py
+
+# 9. Rebuild site data + fairness vectors
+python scripts/build_site_data.py
+python scripts/export_fairness_vectors.py
+
+# 10. Tests
 pytest
+
+# 11. JS fairness vectors (Node)
+node site/js/verify_vectors.mjs
+
+# 12. Roll load test (p95 target 100ms)
+python scripts/load_test_rolls.py --chests 200
 ```
+
 
 ## Fairness in one paragraph
 
@@ -95,17 +109,24 @@ and anyone can recompute every chest with `chest_roller.py verify`. See
 
 ## Status
 
-Technical core (P2–P6) built and tested. P7 fulfillment has a SQLite ledger +
-fixture tick path (`engine/fulfillment/`, dry-run safe); live coin-set polling
-and Sage mint are still TODO — see
-[docs/TODO-P7-fulfillment.md](docs/TODO-P7-fulfillment.md). P8 (reveal web app)
-is a design brief only —
-[docs/TODO-P8-reveal-app.md](docs/TODO-P8-reveal-app.md).
+Technical core (P2–P6) built and tested.
+
+**P7 fulfillment** (`engine/fulfillment/`): SQLite ledger, fixture + fail-closed
+coinset poll client, STM webhook PENDING hints, CLI (`tick` / `status` /
+`export-refused` / `ingest-hint`), offline smoke
+`scripts/smoke_fulfillment.py`. Sage mTLS mint + live testnet e2e still open —
+[docs/TODO-P7-fulfillment.md](docs/TODO-P7-fulfillment.md).
+
+**P8 / P9 site surfaces:** [site/reveal.html](site/reveal.html),
+[site/fairness.html](site/fairness.html), [site/wallet.html](site/wallet.html),
+[site/fairness_vectors.json](site/fairness_vectors.json). Launch checklist:
+[docs/LAUNCH-CHECKLIST.md](docs/LAUNCH-CHECKLIST.md).
+
 Art direction locked (Amano illustration); layered production still in progress.
 Landing page live on GitHub Pages.
 
-**Single-pane project view (direction + full task list):**
-[site/dashboard.html](site/dashboard.html) — also deployed at
+**Single-pane project view:**
+[site/dashboard.html](site/dashboard.html) — also
 https://flipthiscrypto.github.io/The-Sinking-Ship/dashboard.html
 
 ## License

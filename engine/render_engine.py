@@ -173,13 +173,16 @@ class SpriteStore:
         if img is None:
             if not path.exists():
                 raise FileNotFoundError(f"missing sprite: {path}")
-            img = Image.open(path)
-            if img.size != (self.master_px, self.master_px):
+            # Load fully then close the file handle so long batch renders do not
+            # hold hundreds of open descriptors on Windows/POSIX.
+            with Image.open(path) as raw:
+                loaded = raw.convert("RGBA")
+            if loaded.size != (self.master_px, self.master_px):
                 raise ValueError(f"{path}: expected {self.master_px}x{self.master_px} "
                                  f"for the {self.profile.name} profile, got "
-                                 f"{img.size[0]}x{img.size[1]}")
+                                 f"{loaded.size[0]}x{loaded.size[1]}")
             colors = self.palette.colors_for(layer_name, zone_key)
-            img = prepare_sprite(img, colors, self.profile.binarize_alpha,
+            img = prepare_sprite(loaded, colors, self.profile.binarize_alpha,
                                  self.profile.palette_snap)
             self._cache[key] = img
         return img
@@ -278,7 +281,8 @@ def validate_sprites(cfg: GenConfig, palette: Palette, profile: RenderProfile,
             log.error("MISSING  %s", path.relative_to(sprites_dir))
             errors += 1
             return
-        img = Image.open(path).convert("RGBA")
+        with Image.open(path) as raw:
+            img = raw.convert("RGBA")
         if img.size != (master_px, master_px):
             log.error("BAD SIZE %s: %dx%d (want %dx%d for %s profile)",
                       path.relative_to(sprites_dir), *img.size, master_px, master_px,

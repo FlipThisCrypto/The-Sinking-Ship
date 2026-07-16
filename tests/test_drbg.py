@@ -49,6 +49,23 @@ def test_weighted_index_zero_weights_never_picked():
         d.weighted_index([0, 0])
 
 
+def test_weighted_index_rejects_negative_even_with_precomputed_total():
+    d = Drbg(b"k", "neg")
+    with pytest.raises(ValueError, match="negative"):
+        d.weighted_index([1, -1, 2])
+    with pytest.raises(ValueError, match="negative"):
+        d.weighted_index([1, -1, 2], total=2)  # previously only checked when total is None
+
+
+def test_weighted_index_precomputed_total_matches_naive():
+    """Hot-path total must not change the draw sequence vs computing sum inline."""
+    w = [10, 0, 30, 5]
+    a = Drbg(b"k", "precomp")
+    b = Drbg(b"k", "precomp")
+    assert [a.weighted_index(w, total=sum(w)) for _ in range(50)] == \
+           [b.weighted_index(w) for _ in range(50)]
+
+
 def test_weighted_index_roughly_proportional():
     d = Drbg(b"k", "prop")
     counts = [0, 0]
@@ -62,8 +79,11 @@ def test_sample_distinct():
     s = d.sample_distinct(44_400, 44)
     assert len(s) == len(set(s)) == 44
     assert all(0 <= v < 44_400 for v in s)
+    assert d.sample_distinct(10, 0) == []
     with pytest.raises(ValueError):
         d.sample_distinct(3, 4)
+    with pytest.raises(ValueError):
+        d.sample_distinct(-1, 0)
 
 
 def test_coin_id_normalization():

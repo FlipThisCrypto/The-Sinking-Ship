@@ -49,13 +49,15 @@ def test_golden_manifest_hash(engine, placements):
     longer verify — never update the expected hash after the salt commitment
     is public; bump the engine version and re-commit instead."""
     m = roll(engine, placements, COIN_A, tier="castaway", ordinal=7, start=42)
+    # Bumped when tiers.json notes/OQ resolutions change config_version_hash.
     assert m["manifest_hash"] == \
-        "099e2d13bc7b2a75114fadb85299ce0d1d2fd9d7b43c3fac11485b9328b8ac7b"
+        "87c48dc4d9b0d1a2651f5667f53c4c55a09183eda714b82a3e86226b6efcc710"
 
 
 def test_golden_commitment_hash(commitment):
+    # Bumped when tiers.json notes/OQ resolutions change the config bundle.
     assert commitment["commitment_hash"] == \
-        "9bb37be7ccd975455fd3a27c4365a3977c027d472098cdee98ce8cdc348e6ef2"
+        "65e9a098abaae1a26f96e33eb008457a620188d29451f06ea54979bb58ec8a6e"
 
 
 def test_placements_deterministic(cfg):

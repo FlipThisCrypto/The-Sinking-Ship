@@ -53,6 +53,25 @@ def write_json(path: Path, doc: dict) -> None:
         f.write("\n")
 
 
+# Required fields on a published chest-manifest-v1 for verification.
+_MANIFEST_REQUIRED = (
+    "schema", "coin_id", "tier", "pass_ordinal", "start_index",
+    "manifest_hash", "provenance_commitment", "config_version_hash", "nfts",
+)
+
+
+def _require_manifest_shape(doc: dict) -> list[str]:
+    problems = []
+    if not isinstance(doc, dict):
+        return ["manifest root must be a JSON object"]
+    for key in _MANIFEST_REQUIRED:
+        if key not in doc:
+            problems.append(f"manifest missing required field {key!r}")
+    if doc.get("schema") not in (None, "chest-manifest-v1"):
+        problems.append(f"unsupported manifest schema {doc.get('schema')!r}")
+    return problems
+
+
 def cmd_commit(args) -> int:
     salt = read_salt(args.salt_file)
     cfg = GenConfig()
@@ -74,9 +93,13 @@ def cmd_roll(args) -> int:
     cfg = GenConfig()
     engine = RollEngine(cfg)
     commitment = build_commitment(salt, cfg)
-    manifest = engine.roll_chest(
-        salt, args.coin_id, args.tier, args.pass_ordinal, args.start_index,
-        commitment["commitment"]["placements"], commitment["commitment_hash"])
+    try:
+        manifest = engine.roll_chest(
+            salt, args.coin_id, args.tier, args.pass_ordinal, args.start_index,
+            commitment["commitment"]["placements"], commitment["commitment_hash"])
+    except (ValueError, RuntimeError) as e:
+        log.error("roll failed: %s", e)
+        return 1
     coin8 = manifest["coin_id"][:8]
     out = Path(args.outdir) / f"chest_{args.tier}_{coin8}.json"
     if args.dry_run:
@@ -101,11 +124,20 @@ def cmd_verify(args) -> int:
     salt = read_salt(args.salt_file)
     cfg = GenConfig()
     engine = RollEngine(cfg)
-    with open(args.manifest, encoding="utf-8") as f:
-        published = json.load(f)
+    try:
+        with open(args.manifest, encoding="utf-8") as f:
+            published = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        log.error("FAIL: cannot read manifest %s: %s", args.manifest, e)
+        return 1
+
+    problems = _require_manifest_shape(published)
+    if problems:
+        for p in problems:
+            log.error("FAIL: %s", p)
+        return 1
 
     commitment = build_commitment(salt, cfg)
-    problems = []
     if published.get("config_version_hash") != cfg.config_hash:
         problems.append(
             f"config hash mismatch: manifest has {published.get('config_version_hash')!r}, "
@@ -114,10 +146,16 @@ def cmd_verify(args) -> int:
         problems.append("provenance commitment mismatch: this salt does not produce the "
                         "committed hash embedded in the manifest")
 
-    recomputed = engine.roll_chest(
-        salt, published["coin_id"], published["tier"], published["pass_ordinal"],
-        published["start_index"], commitment["commitment"]["placements"],
-        commitment["commitment_hash"])
+    try:
+        recomputed = engine.roll_chest(
+            salt, published["coin_id"], published["tier"], published["pass_ordinal"],
+            published["start_index"], commitment["commitment"]["placements"],
+            commitment["commitment_hash"])
+    except (ValueError, RuntimeError, KeyError, TypeError) as e:
+        problems.append(f"cannot recompute chest from published fields: {e}")
+        for p in problems:
+            log.error("FAIL: %s", p)
+        return 1
 
     if canon_json(recomputed) != canon_json(published):
         problems.append("recomputed manifest differs from the published manifest")
@@ -151,7 +189,8 @@ def main() -> int:
     p.add_argument("--pass-ordinal", type=int, required=True,
                    help="1-based purchase sequence within the tier (from the mint ledger)")
     p.add_argument("--start-index", type=int, required=True,
-                   help="global generated-NFT counter at fulfillment time (from the ledger)")
+                   help="global generated-NFT counter at fulfillment time (from the ledger); "
+                        "must be >= 1")
     p.add_argument("--outdir", default="output/chests")
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(fn=cmd_roll)
@@ -163,7 +202,11 @@ def main() -> int:
 
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    return args.fn(args)
+    try:
+        return args.fn(args)
+    except (OSError, ValueError, RuntimeError) as e:
+        log.error("%s", e)
+        return 1
 
 
 if __name__ == "__main__":

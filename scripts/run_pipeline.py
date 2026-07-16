@@ -111,7 +111,7 @@ def main() -> int:
           f"(informational — targets apply to the sellout mixture, ADR-0006/OQ-5; "
           f"a luck-free pool runs rarer than the minted collection by design)")
     print(f"sellout supply consumed:       {sell['total_supply_consumed']} "
-          f"(budget 44,000 — overflow is OQ-1)")
+          f"(budget 44,000 — OQ-1 resolved via Snorkeler pass trim)")
     chests = sorted((OUT / "chests").glob("chest_*.json"))
     total_nfts = 0
     for p in chests:

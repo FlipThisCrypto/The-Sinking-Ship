@@ -1,0 +1,39 @@
+{
+  "coin_normalization": {
+    "input": "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "normalized": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "seed_key_hex": "fe14a04ca5586ef423fad788eede5c099f3cc265faed558e7909d81a026f1d9d"
+  },
+  "commitment": {
+    "commitment_hash": "65e9a098abaae1a26f96e33eb008457a620188d29451f06ea54979bb58ec8a6e",
+    "salt_hex": "746573742d73616c742d666f722d7468652d73696e6b696e672d736869702d30303031"
+  },
+  "config_hash": "6215b6aee8d187e469895f7b7935828ecb1806b5952df4ec8e5f2ee21df2bb11",
+  "drbg_kat": {
+    "label": "kat/v1",
+    "rand_below_1e6": [
+      658375,
+      274555,
+      493271,
+      284473,
+      281771
+    ],
+    "seed_key_utf8": "sinking-ship-test-vector"
+  },
+  "engine": "shipgen-1.0.0",
+  "rng_algorithm": "HMAC-SHA256-DRBG-v1",
+  "sample_manifest": {
+    "coin_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "manifest_hash": "87c48dc4d9b0d1a2651f5667f53c4c55a09183eda714b82a3e86226b6efcc710",
+    "pass_ordinal": 7,
+    "provenance_commitment_override": "prov-test",
+    "quantity": 1,
+    "rarity_tiers": [
+      "common"
+    ],
+    "start_index": 42,
+    "tier": "castaway"
+  },
+  "schema": "sinking-ship-fairness-vectors-v1",
+  "verify_cli": "python engine/chest_roller.py verify --manifest <chest.json> --salt-file <revealed.salt>"
+}

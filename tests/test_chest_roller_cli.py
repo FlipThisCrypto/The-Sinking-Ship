@@ -73,15 +73,26 @@ def test_verify_fails_with_wrong_salt(tmp_path, salt_file):
 
 
 def test_roll_rejects_bad_inputs(salt_file, tmp_path):
-    with pytest.raises(ValueError):
-        run_cli(["roll", "--tier", "not_a_tier", "--coin-id", COIN_A,
-                 "--salt-file", salt_file, "--pass-ordinal", "1",
-                 "--start-index", "1", "--outdir", str(tmp_path)])
-    with pytest.raises(ValueError):
-        run_cli(["roll", "--tier", "admiral", "--coin-id", COIN_A,
-                 "--salt-file", salt_file, "--pass-ordinal", "99",
-                 "--start-index", "1", "--outdir", str(tmp_path)])
-    with pytest.raises(ValueError):
-        run_cli(["roll", "--tier", "admiral", "--coin-id", "nothex",
-                 "--salt-file", salt_file, "--pass-ordinal", "1",
-                 "--start-index", "1", "--outdir", str(tmp_path)])
+    # CLI maps ValueError/RuntimeError to exit 1 (structured failure, no traceback).
+    assert run_cli(["roll", "--tier", "not_a_tier", "--coin-id", COIN_A,
+                    "--salt-file", salt_file, "--pass-ordinal", "1",
+                    "--start-index", "1", "--outdir", str(tmp_path)]) == 1
+    assert run_cli(["roll", "--tier", "admiral", "--coin-id", COIN_A,
+                    "--salt-file", salt_file, "--pass-ordinal", "99",
+                    "--start-index", "1", "--outdir", str(tmp_path)]) == 1
+    assert run_cli(["roll", "--tier", "admiral", "--coin-id", "nothex",
+                    "--salt-file", salt_file, "--pass-ordinal", "1",
+                    "--start-index", "1", "--outdir", str(tmp_path)]) == 1
+    assert run_cli(["roll", "--tier", "admiral", "--coin-id", COIN_A,
+                    "--salt-file", salt_file, "--pass-ordinal", "1",
+                    "--start-index", "0", "--outdir", str(tmp_path)]) == 1
+
+
+def test_verify_rejects_malformed_manifest(tmp_path, salt_file):
+    path = tmp_path / "broken.json"
+    path.write_text("{not json", encoding="utf-8")
+    assert run_cli(["verify", "--manifest", str(path),
+                    "--salt-file", salt_file]) == 1
+    path.write_text(json.dumps({"schema": "chest-manifest-v1"}), encoding="utf-8")
+    assert run_cli(["verify", "--manifest", str(path),
+                    "--salt-file", salt_file]) == 1

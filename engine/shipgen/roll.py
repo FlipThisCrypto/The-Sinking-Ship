@@ -311,6 +311,19 @@ class RollEngine:
                    placements: dict, provenance_hash: str) -> dict:
         """Roll a full chest manifest. Deterministic in all arguments."""
         cfg = self.cfg
+        if not isinstance(salt, (bytes, bytearray)) or not salt:
+            raise ValueError("salt must be non-empty bytes")
+        if not isinstance(start_index, int) or isinstance(start_index, bool) \
+                or start_index < 1:
+            raise ValueError(f"start_index must be an integer >= 1, got {start_index!r}")
+        if not isinstance(pass_ordinal, int) or isinstance(pass_ordinal, bool):
+            raise ValueError(f"pass_ordinal must be an integer, got {pass_ordinal!r}")
+        if not isinstance(placements, dict) or "torn_slots" not in placements \
+                or "grails" not in placements:
+            raise ValueError("placements must be a dict with torn_slots and grails "
+                             "(from derive_placements / build_commitment)")
+        if not isinstance(provenance_hash, str) or not provenance_hash:
+            raise ValueError("provenance_hash must be a non-empty string")
         tier = cfg.tiers.get(tier_name)
         if tier is None:
             raise ValueError(f"unknown tier {tier_name!r}; valid: {sorted(cfg.tiers)}")
@@ -414,6 +427,10 @@ class RollEngine:
 
         pity = Drbg(seed_key, "chest/pity")
         eligible_layers = self._layers_with_rank(need_rank)
+        if not eligible_layers:
+            raise RuntimeError(
+                f"pity guarantee requires tier >= {g['min_tier']!r} but no layer "
+                f"has a positive-weight trait at that rank — check weights.json")
         upgraded = []
         for _ in range(need_count - have):
             candidates = [i for i, e in enumerate(entries) if not qualifies(e)]
@@ -428,6 +445,12 @@ class RollEngine:
             new_entry = _nft_entry(entry["slot"], entry["global_index"], nft)
             entries[pick] = new_entry
             upgraded.append(entry["slot"])
+        final = sum(1 for e in entries if qualifies(e))
+        if final < need_count:
+            raise RuntimeError(
+                f"pity guarantee unsatisfied for {tier['name']}: need "
+                f"{need_count}x {g['min_tier']}+, have {final} after upgrades "
+                f"(chest may be too small for the floor)")
         return sorted(upgraded)
 
     def _layers_with_rank(self, min_rank: int) -> list[str]:

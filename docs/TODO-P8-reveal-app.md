@@ -1,62 +1,33 @@
-# TODO — P8: Chest-opening reveal web app (design brief)
+# TODO — P8: Chest-opening reveal web app
 
-**Status:** not built this session. This brief captures the integration
-contract so P8 can be built without re-opening engine decisions.
+**Status:** static mock prototype shipped at `site/reveal.html`.
+Not wired to live manifests or wallet yet.
 
-## Experience (spec P8)
+## Shipped (demo)
 
-Underwater scene matching the buyer's tier zone (palette.json zone
-sub-palettes are the color source of truth) → pixel-art chest on the seabed
-→ chunky no-AA opening animation → NFTs surface one by one with
-rarity-tiered effects:
+- Underwater/chest UI with closed → open asset swap
+- Loads real `demo_chest.json` (chest-manifest-v1 shape from shipgen)
+- Sequential NFT surface cards with rarity-tiered labels/effects copy
+- Share line: “I struck [rarity] at [depth]”
+- Links to fairness page
+- JS DRBG module + browser self-check on fairness page
+  (`site/js/shipgen_drbg.js`, Node: `node site/js/verify_vectors.mjs`)
 
-| Rarity | Effect |
-|---|---|
-| common | bubbles |
-| uncommon | bubble burst + glint |
-| rare | light shaft |
-| epic | zone-colored glow ring |
-| legendary | full-screen shimmer |
-| mythic | full-screen aura + palette flash |
-| grail | bespoke sequence (one per grail set) |
+## Integration contract (unchanged)
 
-Plus: 60-second Sage wallet + offer-acceptance onboarding (spec Risk 4),
-tier odds table rendered from tiers.json + weights.json (transparency,
-spec Risk 3), and a shareable "I struck [rarity] at [depth]" card.
+- **Input:** chest manifest JSON after offer take confirms — never before.
+- **Verification:** DRBG JS port + vectors; full roll port still open.
+- **Art:** `render_engine.py` 2048px outputs.
+- **Odds:** `tiers.js` / fairness page from config (single source of truth).
 
-## Integration contract (fixed by this session's engine)
+## Also shipped
 
-- **Input:** chest manifest JSON (`chest-manifest-v1`) fetched from the
-  fulfillment service by opaque offer id AFTER the take confirms — never
-  before (blind mint).
-- **Verification:** ship a JS re-implementation of `shipgen` (HMAC-SHA256
-  DRBG + roll engine, both pure and documented in ADR-0002/0003) so holders
-  can verify any chest in-browser post-reveal from (salt, coin_id). The
-  golden vectors in `tests/test_drbg.py` and `tests/test_determinism.py`
-  are the cross-language conformance suite.
-- **Art:** `render_engine.py --render-manifest` outputs; reveal pulls
-  2048px PNGs. Pre-reveal placeholder art must live on a short-cache path
-  (reveal-day flip vs immutable image caching — reference-repo scar,
-  ADR-0001 B6/B7).
-- **Odds page data:** generate from tiers.json at build time; never
-  hand-copy numbers (single source of truth).
-
-## Patterns to carry from the reference (ADR-0001)
-
-- Wallet module shape: one `wallet.js`, generic `requestRpc`, session
-  restore, `wallet:change` event bus; **vendored** WalletConnect bundles
-  (no CDN on a page that requests spends).
-- Offer-download fallback for wallets without `chia_takeOffer` — the
-  reference documented it but never shipped it; we ship it.
-- `stats.json`-style pre-aggregated payload so the pre-reveal page never
-  needs (and can never leak) the full manifest.
-- Graceful anonymous degradation: wallet connection unlocks, never gates.
+- [x] Share-card generator: `scripts/gen_share_card.py`
+- [x] Wallet onboarding page: `site/wallet.html` (static 60s guide)
 
 ## Remaining work
 
-1. React prototype with mock manifests (single-file artifact first).
-2. JS shipgen port + conformance run against the Python golden vectors.
-3. Share-card generator (server-side Pillow, reuse the reference's
-   OG-image approach — but showcase tiers/odds, never "rarest pieces").
-4. Production plan: hosting, CDN cache tiers per asset class, reveal-day
-   cache-flip procedure.
+1. Load real manifest by opaque offer id from fulfillment service.
+2. Full JS roll-engine port (DRBG KAT already green).
+3. Live WalletConnect pairing (page is guide-only).
+4. Production CDN cache tiers + reveal-day cache flip.

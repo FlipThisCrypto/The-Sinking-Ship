@@ -1,0 +1,179 @@
+# SPDX-License-Identifier: MIT
+"""Payment confirmation sources: fixture, fail-closed coinset poll, STM webhook hint."""
+from __future__ import annotations
+
+import json
+import urllib.error
+import urllib.request
+from pathlib import Path
+from typing import Callable
+from urllib.parse import urlencode
+
+from shipgen.drbg import normalize_coin_id
+
+from .types import PaymentSource, TierPurchase
+
+# (url) -> response body bytes. Injectable for tests.
+HttpGet = Callable[[str], bytes]
+
+
+def _default_http_get(url: str) -> bytes:
+    req = urllib.request.Request(url, headers={"Accept": "application/json"}, method="GET")
+    with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 — operator-supplied base URL
+        if getattr(resp, "status", 200) != 200:
+            raise RuntimeError(f"HTTP {resp.status} for {url}")
+        return resp.read()
+
+
+class FixturePaymentSource(PaymentSource):
+    """Offline confirmed purchases from a JSON fixture file.
+
+    Fixture schema (list):
+      [{"coin_id": "<64 hex>", "tier_name": "castaway",
+        "buyer_address": "xch1...", "block_height": 1, "network": "testnet11"}, ...]
+    """
+
+    def __init__(self, path: str | Path):
+        self.path = Path(path)
+        raw = json.loads(self.path.read_text(encoding="utf-8"))
+        if not isinstance(raw, list):
+            raise ValueError("fixture root must be a JSON array")
+        self._purchases: list[TierPurchase] = []
+        max_h = 0
+        for i, item in enumerate(raw):
+            try:
+                coin = normalize_coin_id(item["coin_id"])
+                p = TierPurchase(
+                    coin_id=coin,
+                    tier_name=str(item["tier_name"]),
+                    buyer_address=str(item["buyer_address"]),
+                    block_height=int(item["block_height"]),
+                    network=str(item.get("network", "testnet11")),
+                )
+            except (KeyError, TypeError, ValueError) as e:
+                raise ValueError(f"fixture[{i}]: {e}") from e
+            self._purchases.append(p)
+            max_h = max(max_h, p.block_height)
+        self._height = max_h
+
+    def poll_confirmed(self, since_height: int) -> list[TierPurchase]:
+        # Complete scan of a static fixture — never partial.
+        return [p for p in self._purchases if p.block_height >= since_height]
+
+    def current_height(self) -> int:
+        return self._height
+
+
+class CoinsetPollingSource(PaymentSource):
+    """Fail-closed chain confirmation via a coinset-style HTTP API.
+
+    Expected endpoints (operator-configured base_url):
+      GET {base}/height  -> {"height": <int>}
+      GET {base}/purchases?since_height=<n>&complete=1
+          -> {"complete": true, "purchases": [ {...TierPurchase fields...} ]}
+
+    If ``complete`` is missing/false, or the request fails, poll_confirmed
+    **raises** — the ledger must not advance (ADR-0001 fail-closed).
+    """
+
+    def __init__(
+        self,
+        base_url: str,
+        network: str = "testnet11",
+        http_get: HttpGet | None = None,
+    ):
+        self.base_url = base_url.rstrip("/")
+        self.network = network
+        self._http_get = http_get or _default_http_get
+
+    def _get_json(self, path: str, query: dict | None = None) -> dict:
+        url = f"{self.base_url}{path}"
+        if query:
+            url = f"{url}?{urlencode(query)}"
+        try:
+            raw = self._http_get(url)
+        except (urllib.error.URLError, TimeoutError, OSError) as e:
+            raise RuntimeError(f"coinset scan incomplete (transport): {e}") from e
+        try:
+            doc = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as e:
+            raise RuntimeError(f"coinset scan incomplete (bad JSON): {e}") from e
+        if not isinstance(doc, dict):
+            raise RuntimeError("coinset scan incomplete: root must be object")
+        return doc
+
+    def current_height(self) -> int:
+        doc = self._get_json("/height")
+        if "height" not in doc:
+            raise RuntimeError("coinset scan incomplete: /height missing height")
+        return int(doc["height"])
+
+    def poll_confirmed(self, since_height: int) -> list[TierPurchase]:
+        doc = self._get_json(
+            "/purchases",
+            {"since_height": since_height, "complete": "1"},
+        )
+        if doc.get("complete") is not True:
+            raise RuntimeError(
+                "coinset scan incomplete: response.complete is not true "
+                "(fail closed — will not shrink or advance confirmed set)")
+        raw_list = doc.get("purchases")
+        if not isinstance(raw_list, list):
+            raise RuntimeError("coinset scan incomplete: purchases must be a list")
+        out: list[TierPurchase] = []
+        for i, item in enumerate(raw_list):
+            if not isinstance(item, dict):
+                raise RuntimeError(f"coinset scan incomplete: purchases[{i}] not object")
+            try:
+                out.append(TierPurchase(
+                    coin_id=normalize_coin_id(item["coin_id"]),
+                    tier_name=str(item["tier_name"]),
+                    buyer_address=str(item["buyer_address"]),
+                    block_height=int(item["block_height"]),
+                    network=str(item.get("network", self.network)),
+                ))
+            except (KeyError, TypeError, ValueError) as e:
+                raise RuntimeError(
+                    f"coinset scan incomplete: purchases[{i}]: {e}") from e
+        return out
+
+
+class StmWebhookIngest:
+    """Optional STM webhook → untrusted PENDING hints only.
+
+    Never promotes to CONFIRMED. The daemon must re-observe on-chain via
+    CoinsetPollingSource (or equivalent) before rolling a chest.
+    """
+
+    def __init__(self, network: str = "testnet11",
+                 allowed_tiers: set[str] | None = None):
+        self.network = network
+        self.allowed_tiers = allowed_tiers
+
+    def parse_hint(self, payload: dict) -> TierPurchase:
+        """Validate a webhook JSON body into a TierPurchase candidate.
+
+        Raises ValueError on malformed/untrusted shape. Caller records PENDING
+        only — never rolls from this alone.
+        """
+        if not isinstance(payload, dict):
+            raise ValueError("webhook payload must be an object")
+        # Ignore client-supplied "confirmed" claims entirely.
+        try:
+            coin = normalize_coin_id(str(payload["coin_id"]))
+            tier = str(payload["tier_name"])
+            buyer = str(payload["buyer_address"])
+            height = int(payload.get("block_height", 0))
+        except (KeyError, TypeError, ValueError) as e:
+            raise ValueError(f"invalid webhook hint: {e}") from e
+        if self.allowed_tiers is not None and tier not in self.allowed_tiers:
+            raise ValueError(f"tier not allowed in webhook hint: {tier}")
+        if not buyer.startswith("xch") and not buyer.startswith("txch"):
+            raise ValueError("buyer_address must look like a Chia bech32 address")
+        return TierPurchase(
+            coin_id=coin,
+            tier_name=tier,
+            buyer_address=buyer,
+            block_height=height,
+            network=str(payload.get("network", self.network)),
+        )

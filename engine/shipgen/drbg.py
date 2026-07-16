@@ -69,6 +69,8 @@ class Drbg:
 
         `total` may be supplied when the caller has precomputed sum(weights)
         (hot-path optimization); the draw sequence is identical either way.
+        Negative weights are always rejected, including when `total` is
+        precomputed — previously only the total-is-None path checked them.
         """
         if total is None:
             total = 0
@@ -76,6 +78,11 @@ class Drbg:
                 if w < 0:
                     raise ValueError("negative weight")
                 total += w
+        else:
+            # O(n) sign check only — do not re-sum; caller owns total accuracy.
+            for w in weights:
+                if w < 0:
+                    raise ValueError("negative weight")
         if total <= 0:
             raise ValueError("all weights are zero")
         r = self.rand_below(total)
@@ -88,8 +95,12 @@ class Drbg:
 
     def sample_distinct(self, population: int, k: int) -> list[int]:
         """k distinct integers from [0, population), in draw order."""
+        if population < 0 or k < 0:
+            raise ValueError("population and k must be non-negative")
         if k > population:
             raise ValueError("sample larger than population")
+        if k == 0:
+            return []
         seen: set[int] = set()
         out: list[int] = []
         while len(out) < k:

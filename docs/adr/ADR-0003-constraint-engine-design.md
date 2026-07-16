@@ -57,7 +57,9 @@ Option 3, with these mechanics:
   its hat overridden to The Torn. Grail seeding works the same way over
   (tier, pass_ordinal) slots. Consequence under The Scuttling: if the mint
   undersells, slots beyond the final minted count never occur, so realized
-  Torn count can be < 44 (open question OQ-3 for the project owner).
+  Torn count can be < 44 — **OQ-3 RESOLVED (2026-07-16):** this is intentional.
+  Marketing and the fairness page disclose **"up to 44 Torn"**; under-scuttle
+  means fewer Torn materialize. Do not re-roll or re-seed after close.
 - **Mythic forced aura** (spec 4.1) is a post-roll rule: if any rolled trait
   is Mythic-bucket, the aura layer re-rolls restricted to non-None auras
   (deterministic subseed), satisfying "Mythic = ≥1 Mythic trait + forced
@@ -70,14 +72,15 @@ rejection uses an explicit nonce ladder.
 
 ## Open interpretation questions
 
-- **OQ-10 — "Ghost body forces Ghost Fade aura eligibility" (spec 3).** This
-  is encoded as an 8× weight *bias* (`p_ghost_body_ghost_fade`), so Ghost Fade
-  can still appear on non-Ghost bodies at its base rate. If "eligibility" was
-  meant as *exclusivity* (Ghost Fade allowed **only** on Ghost bodies), it
-  should instead be a hard gate (exclude Ghost Fade unless body = Ghost). Both
-  readings are defensible; flagged for the owner. Changing it is a one-line
-  config edit (convert the `bias` rule to an `exclude`-family rule) plus a
-  simulation re-run — no engine change.
+- **OQ-3 — Torn under Scuttling — RESOLVED (2026-07-16).** Realized Torn
+  count may be &lt; 44 if mint undersells. Commit still places 44 indices in
+  the generated pool; unminted indices never appear. Disclose "up to 44."
+
+- **OQ-10 — "Ghost body forces Ghost Fade aura eligibility" — RESOLVED
+  (2026-07-16).** Keep **bias (8×)**, not exclusivity. Ghost Fade remains
+  possible on non-Ghost bodies at base rate so the aura layer stays a global
+  spice rack; Ghost bodies cluster toward Ghost Fade without locking the
+  trait. Exclusivity can still be flipped later via a one-line config change.
 
 ## Consequences
 

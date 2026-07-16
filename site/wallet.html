@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wallet onboarding — THE SINKING SHIP</title>
+<base href="./">
+<meta name="description" content="60-second Sage wallet + offer acceptance guide for THE SINKING SHIP mint.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="nav">
+  <a class="wordmark" href="index.html">THE&nbsp;SINKING&nbsp;SHIP</a>
+  <div class="nav-links">
+    <a href="fairness.html">Provably Fair</a>
+    <a href="reveal.html">Reveal</a>
+    <a href="wallet.html">Wallet</a>
+    <a href="dashboard.html">Dashboard</a>
+  </div>
+</nav>
+
+<header class="hero" style="min-height:auto;padding-bottom:1.5rem">
+  <p class="kicker">Risk 4 · 60-second onboarding</p>
+  <h1>Get ready to dive</h1>
+  <p class="sub">Blind mint uses Chia <strong>offer files</strong>. You pay with a Dive Pass offer;
+  you claim your chest with a 0-XCH claim offer. No custodial deposit address.</p>
+</header>
+
+<section class="section" style="max-width:40rem;margin:0 auto;padding:1rem 1.25rem 4rem">
+  <ol style="color:var(--ash);line-height:1.75;padding-left:1.2rem">
+    <li style="margin:.75rem 0"><strong style="color:var(--bone)">Install Sage</strong> —
+      desktop wallet with WalletConnect. Approve
+      <code style="color:var(--chia-bright)">chia_takeOffer</code> and
+      <code style="color:var(--chia-bright)">chia_signMessageByAddress</code> as
+      <em>required</em> namespaces (Sage ignores optionals).</li>
+    <li style="margin:.75rem 0"><strong style="color:var(--bone)">Fund testnet11 first</strong> —
+      every mint dry-run happens on testnet before mainnet. Never skip this.</li>
+    <li style="margin:.75rem 0"><strong style="color:var(--bone)">Take the Dive Pass offer</strong> —
+      pays fixed XCH for your tier. Wait for on-chain confirmation (not just the wallet toast).</li>
+    <li style="margin:.75rem 0"><strong style="color:var(--bone)">Claim the chest</strong> —
+      after fulfillment, accept a 0-XCH claim offer for the rolled NFTs. If take result is
+      “unclear,” treat as pending — never double-click panic.</li>
+    <li style="margin:.75rem 0"><strong style="color:var(--bone)">Fallback</strong> —
+      download the offer file and import into Sage if WalletConnect fails.</li>
+    <li style="margin:.75rem 0"><strong style="color:var(--bone)">Verify</strong> —
+      after salt reveal, run
+      <code style="color:var(--chia-bright)">chest_roller.py verify</code>
+      or the fairness page self-check.</li>
+  </ol>
+
+  <div style="margin-top:2rem;padding:1rem;border:1px solid var(--navy);color:var(--slate);font-size:.9rem">
+    <strong style="color:var(--bone)">Live mint not open yet.</strong>
+    This page is the onboarding contract for P8. WalletConnect pairing happens only on the
+    production reveal host with vendored bundles (no random CDN).
+  </div>
+
+  <p style="margin-top:2rem">
+    <a class="btn" href="index.html">← Home</a>
+    <a class="btn btn-primary" href="fairness.html">Provably Fair</a>
+  </p>
+</section>
+</body>
+</html>

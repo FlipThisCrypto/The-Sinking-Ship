@@ -1,0 +1,252 @@
+# SPDX-License-Identifier: MIT
+"""P7 fulfillment daemon CLI (testnet-first).
+
+STM surface (decided 2026-07-14):
+  Payment = pre-built Secure-the-Mint dive-pass offers.
+  Confirmation truth = fail-closed chain/coin-set polling (fixture for dry runs).
+  Webhook = optional hint only.
+  Delivery default = claim-style after CONFIRMED.
+
+Usage:
+    python engine/fulfillment_daemon.py tick --fixture fixtures/example_payments.json \\
+        --salt-file output/fulfillment/test.salt --db output/fulfillment/ledger.sqlite
+    python engine/fulfillment_daemon.py status --db output/fulfillment/ledger.sqlite
+    python engine/fulfillment_daemon.py export-refused --db ... --out refused.json
+    python engine/fulfillment_daemon.py ingest-hint --db ... --json-file hint.json
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import sys
+from pathlib import Path
+
+from fulfillment import (
+    CoinsetPollingSource,
+    DryRunOfferBuilder,
+    FixturePaymentSource,
+    FulfillmentDaemon,
+    SqliteLedger,
+    StmWebhookIngest,
+)
+from shipgen.config import GenConfig
+
+
+# audit-export / status share ledger helpers
+
+log = logging.getLogger("fulfillment_daemon")
+
+
+def read_salt(path: str) -> bytes:
+    data = Path(path).read_bytes().strip()
+    if len(data) < 16:
+        raise SystemExit(f"salt file {path} too short (need >= 16 bytes)")
+    return data
+
+
+def _ledger(args) -> tuple[GenConfig, SqliteLedger]:
+    cfg = GenConfig()
+    caps = {t["name"]: t["passes"] for t in cfg.tiers_doc["tiers"]}
+    return cfg, SqliteLedger(args.db, caps)
+
+
+def _source(args, cfg: GenConfig):
+    if getattr(args, "coinset_url", None):
+        return CoinsetPollingSource(args.coinset_url, network=args.network)
+    if not getattr(args, "fixture", None):
+        raise SystemExit("provide --fixture or --coinset-url")
+    return FixturePaymentSource(args.fixture)
+
+
+def cmd_tick(args) -> int:
+    cfg, ledger = _ledger(args)
+    try:
+        source = _source(args, cfg)
+        offers = DryRunOfferBuilder()
+        daemon = FulfillmentDaemon(
+            source=source,
+            ledger=ledger,
+            offers=offers,
+            salt=read_salt(args.salt_file),
+            cfg=cfg,
+            network=args.network,
+            strategy=args.strategy,
+            manifest_outdir=args.manifest_outdir,
+            metadata_outdir=args.metadata_outdir,
+        )
+        summary = daemon.tick(dry_run=args.dry_run)
+        print(json.dumps(summary, indent=2, sort_keys=True))
+        return 1 if summary.get("errors") else 0
+    finally:
+        ledger.close()
+
+
+def cmd_status(args) -> int:
+    _, ledger = _ledger(args)
+    try:
+        print(json.dumps(ledger.status_summary(), indent=2, sort_keys=True))
+        return 0
+    finally:
+        ledger.close()
+
+
+def cmd_export_refused(args) -> int:
+    _, ledger = _ledger(args)
+    try:
+        rows = ledger.list_refused()
+        text = json.dumps(rows, indent=2, sort_keys=True) + "\n"
+        if args.out:
+            Path(args.out).write_text(text, encoding="utf-8", newline="\n")
+            log.info("wrote %d refused row(s) -> %s", len(rows), args.out)
+        else:
+            print(text, end="")
+        return 0
+    finally:
+        ledger.close()
+
+
+def cmd_ingest_hint(args) -> int:
+    """Record an STM webhook / client hint as PENDING only (never rolls)."""
+    cfg, ledger = _ledger(args)
+    try:
+        payload = json.loads(Path(args.json_file).read_text(encoding="utf-8"))
+        allowed = {t["name"] for t in cfg.tiers_doc["tiers"]}
+        ingest = StmWebhookIngest(network=args.network, allowed_tiers=allowed)
+        purchase = ingest.parse_hint(payload)
+        ledger.record_pending_hint(purchase)
+        print(json.dumps({
+            "ok": True,
+            "state": "pending",
+            "coin_id": purchase.coin_id,
+            "tier_name": purchase.tier_name,
+            "note": "hint only — chain poll must confirm before roll",
+        }, indent=2))
+        return 0
+    except (OSError, ValueError, json.JSONDecodeError) as e:
+        log.error("%s", e)
+        return 1
+    finally:
+        ledger.close()
+
+
+def cmd_export_audit(args) -> int:
+    _, ledger = _ledger(args)
+    try:
+        rows = ledger.export_audit(limit=args.limit)
+        text = json.dumps(rows, indent=2, sort_keys=True) + "\n"
+        if args.out:
+            Path(args.out).write_text(text, encoding="utf-8", newline="\n")
+            log.info("wrote %d audit row(s) -> %s", len(rows), args.out)
+        else:
+            print(text, end="")
+        return 0
+    finally:
+        ledger.close()
+
+
+def cmd_reconcile(args) -> int:
+    """One reconcile cycle: poll payment source + fulfill (ops cron entrypoint).
+
+    Alias of tick with explicit naming for runbooks. Optional --loops for a
+    short local soak (default 1). Sleeps --interval seconds between loops.
+    """
+    import time
+
+    cfg, ledger = _ledger(args)
+    try:
+        source = _source(args, cfg)
+        daemon = FulfillmentDaemon(
+            source=source,
+            ledger=ledger,
+            offers=DryRunOfferBuilder(),
+            salt=read_salt(args.salt_file),
+            cfg=cfg,
+            network=args.network,
+            strategy=args.strategy,
+            manifest_outdir=args.manifest_outdir,
+            metadata_outdir=args.metadata_outdir,
+        )
+        summaries = []
+        for i in range(max(1, args.loops)):
+            s = daemon.tick(dry_run=args.dry_run)
+            s["loop"] = i + 1
+            summaries.append(s)
+            log.info("reconcile loop %d/%d fulfilled=%s errors=%s",
+                     i + 1, args.loops, s.get("fulfilled"), len(s.get("errors") or []))
+            if i + 1 < args.loops:
+                time.sleep(max(0.0, args.interval))
+        print(json.dumps({"cycles": summaries, "final_status": ledger.status_summary()},
+                         indent=2, sort_keys=True))
+        return 1 if any(s.get("errors") for s in summaries) else 0
+    finally:
+        ledger.close()
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p = sub.add_parser("tick", help="poll source and fulfill pending purchases")
+    src = p.add_mutually_exclusive_group(required=True)
+    src.add_argument("--fixture", help="JSON array of confirmed purchases")
+    src.add_argument("--coinset-url", help="base URL for CoinsetPollingSource")
+    p.add_argument("--salt-file", required=True)
+    p.add_argument("--db", default="output/fulfillment/ledger.sqlite")
+    p.add_argument("--network", default="testnet11",
+                   choices=["testnet11", "mainnet"])
+    p.add_argument("--strategy", default="claim", choices=["claim", "stm"])
+    p.add_argument("--manifest-outdir", default="output/fulfillment/chests")
+    p.add_argument("--metadata-outdir", default="output/fulfillment/metadata")
+    p.add_argument("--dry-run", action="store_true",
+                   help="roll in memory / log wallet ops without persisting fulfill")
+    p.set_defaults(fn=cmd_tick)
+
+    p = sub.add_parser("status", help="print ledger state counts and supply")
+    p.add_argument("--db", default="output/fulfillment/ledger.sqlite")
+    p.set_defaults(fn=cmd_status)
+
+    p = sub.add_parser("export-refused", help="export refused purchases (dead letter)")
+    p.add_argument("--db", default="output/fulfillment/ledger.sqlite")
+    p.add_argument("--out", default=None, help="write JSON file (default: stdout)")
+    p.set_defaults(fn=cmd_export_refused)
+
+    p = sub.add_parser("ingest-hint", help="record STM/client webhook as PENDING only")
+    p.add_argument("--db", default="output/fulfillment/ledger.sqlite")
+    p.add_argument("--json-file", required=True)
+    p.add_argument("--network", default="testnet11")
+    p.set_defaults(fn=cmd_ingest_hint)
+
+    p = sub.add_parser("export-audit", help="export append-only audit log (incident recovery)")
+    p.add_argument("--db", default="output/fulfillment/ledger.sqlite")
+    p.add_argument("--out", default=None)
+    p.add_argument("--limit", type=int, default=None)
+    p.set_defaults(fn=cmd_export_audit)
+
+    p = sub.add_parser("reconcile", help="cron entrypoint: poll source + fulfill (N loops)")
+    src = p.add_mutually_exclusive_group(required=True)
+    src.add_argument("--fixture", help="JSON array of confirmed purchases")
+    src.add_argument("--coinset-url", help="base URL for CoinsetPollingSource")
+    p.add_argument("--salt-file", required=True)
+    p.add_argument("--db", default="output/fulfillment/ledger.sqlite")
+    p.add_argument("--network", default="testnet11", choices=["testnet11", "mainnet"])
+    p.add_argument("--strategy", default="claim", choices=["claim", "stm"])
+    p.add_argument("--manifest-outdir", default="output/fulfillment/chests")
+    p.add_argument("--metadata-outdir", default="output/fulfillment/metadata")
+    p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--loops", type=int, default=1, help="reconcile cycles (default 1)")
+    p.add_argument("--interval", type=float, default=0.0, help="seconds between loops")
+    p.set_defaults(fn=cmd_reconcile)
+
+    args = ap.parse_args()
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    if getattr(args, "network", None) == "mainnet" and not getattr(args, "dry_run", True):
+        if args.cmd == "tick" and not args.dry_run:
+            log.error("refusing mainnet without an explicit future go-live flag")
+            return 2
+    return args.fn(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

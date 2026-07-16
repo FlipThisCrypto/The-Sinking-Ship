@@ -9,10 +9,12 @@ Exit codes: 0 valid, 1 invalid.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 
 from shipgen.config import GenConfig, CONFIG_DIR
+from shipgen.schema import SchemaError
 
 log = logging.getLogger("validate_configs")
 
@@ -27,7 +29,7 @@ def main() -> int:
 
     try:
         cfg = GenConfig(args.config_dir, require_weights=not args.no_weights)
-    except Exception as e:
+    except (OSError, ValueError, SchemaError, json.JSONDecodeError, TypeError, KeyError) as e:
         log.error("config validation FAILED:\n%s", e)
         return 1
 

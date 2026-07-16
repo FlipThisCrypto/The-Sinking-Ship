@@ -174,7 +174,7 @@ Themed sets of 4 across 11 concepts, e.g.: The Four Admirals, The Four Wizards o
 | # | Tier | Zone | Price (XCH) | Chest range | E[mints] | Eff. price/NFT | Passes | E[supply used] | Depth Luck | Guarantee |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 1 | Castaway | Surface | 0.10 | 1 | 1 | 0.100 | 4,444 | 4,444 | 1.0× | — |
-| 2 | Snorkeler | Sunlight | 0.25 | 2–4 | 3 | 0.083 | 3,000 | 9,000 | 1.0× | — |
+| 2 | Snorkeler | Sunlight | 0.25 | 2–4 | 3 | 0.083 | 2,920 | 8,760 | 1.0× | — |
 | 3 | Scuba Diver | Sunlight | 0.40 | 4–6 | 5 | 0.080 | 1,600 | 8,000 | 1.1× | — |
 | 4 | Deep Sea Diver | Twilight | 0.75 | 8–12 | 10 | 0.075 | 700 | 7,000 | 1.25× | ≥1 Rare |
 | 5 | Salvage Crew | Twilight | 1.10 | 13–17 | 15 | 0.073 | 300 | 4,500 | 1.4× | ≥1 Rare |
@@ -182,14 +182,15 @@ Themed sets of 4 across 11 concepts, e.g.: The Four Admirals, The Four Wizards o
 | 7 | Shipwright | Abyssal | 3.50 | 45–55 | 50 | 0.070 | 70 | 3,500 | 2.0× | ≥2 Epic |
 | 8 | Harbormaster | Abyssal | 5.50 | 90–110 | 100 | 0.055 | 25 | 2,500 | 2.5× | ≥1 Legendary |
 | 9 | Admiral | Hadal | 10.00 | 230–270 | 250 | 0.040 | 5 | 1,250 | 3.0× | ≥1 Legendary + Grail lottery ticket |
-| 10 | Wizard of the Deep | Hadal | Not for sale | 44 + 1 Grail | 45 | — | 1 | 45 | ∞ | Guaranteed named Grail |
+| 10 | Wizard of the Deep | Hadal | Not for sale | 44 + 1 Grail | 45 | — | 1 | 45 | 10.0× | Guaranteed named Grail |
 
 - **Treasury reserve:** 444 NFTs (team, collabs, contests). Symbolic number, disclose it publicly.
-- **Expected supply if fully sold:** ~44,239 + 444 reserve ≈ 44,444 with variance absorbed by The Scuttling (below).
-- **Full sellout revenue:** ~3,410 XCH. Model 25% / 50% / 75% sellout scenarios before committing to any spend.
-- **Pricing revision (2026-07-11):** deep-tier prices raised so effective cost/NFT descends in a clean monotonic regression (0.100 → 0.040 across the sold tiers): Shipwright 3.20→3.50 (0.070/NFT), Harbormaster 4.40→5.50 (0.055/NFT), Admiral 5.00→10.00 (0.040/NFT). Full-sellout revenue rises 3,336.40 → 3,409.90 XCH.
-- **Wizard of the Deep** is earned, not bought — awarded via a lore puzzle / community quest during mint. This is the marketing centerpiece.
-- **Admiral grail lottery:** 5 of the 44 grails are seeded randomly into the 5 Admiral chests. 12 are auctioned post-mint. 27 are seeded into random chests across tiers 4–8 (published odds), so even a Deep Sea Diver can strike a grail — the "anyone can find treasure" hook.
+- **Expected supply if fully sold:** ~43,999 public mint + 444 reserve ≈ 44,443 (within the 44,444 cap; public mint budget 44,000). Variance absorbed by The Scuttling (below) and a hard budget check at fulfillment.
+- **Full sellout revenue:** ~3,390 XCH. Model 25% / 50% / 75% sellout scenarios before committing to any spend.
+- **Pricing revision (2026-07-11):** deep-tier prices raised so effective cost/NFT descends in a clean monotonic regression (0.100 → 0.040 across the sold tiers): Shipwright 3.20→3.50 (0.070/NFT), Harbormaster 4.40→5.50 (0.055/NFT), Admiral 5.00→10.00 (0.040/NFT).
+- **Supply revision OQ-1 (2026-07-14, option B):** Snorkeler passes 3,000 → 2,920 (−80 × E[3] = −240 expected NFTs) so full-sellout expected consumption 43,999 ≤ public mint budget 44,000. Full-sellout revenue 3,409.90 → 3,389.90 XCH.
+- **Wizard of the Deep** is earned, not bought — awarded via a lore puzzle / community quest during mint. This is the marketing centerpiece. Depth Luck for this tier is **10.0×** (finite; OQ-2 2026-07-14) so the 44-piece chest stays mixed salvage — disclose 10× on odds pages, not "infinite."
+- **Admiral grail lottery:** 5 of the 44 grails are seeded randomly into the 5 Admiral chests. **11** are auctioned post-mint (OQ-4 2026-07-14: one auction slot funds the Wizard guaranteed grail). 27 are seeded into random chests across tiers 4–8 (published odds), so even a Deep Sea Diver can strike a grail — the "anyone can find treasure" hook.
 
 ### 5.3 The Scuttling (critical bear-market mechanism)
 

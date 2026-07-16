@@ -10,8 +10,8 @@
     "generated_pool": 44400,
     "public_mint_budget": 44000,
     "notes": [
-      "public_mint_budget = cap - treasury_reserve. OPEN QUESTION OQ-1: full-sellout expected consumption from the tier table is 44,239, which EXCEEDS this budget by 239; the spec's own '~44,239 + 444 reserve = ~44,444' arithmetic is actually 44,683. simulate.py --full-sellout quantifies this. Needs an owner ruling: shrink a tier's passes, shrink the reserve, or hard-cap late chests.",
-      "Under The Scuttling (spec 5.3), all unminted supply is destroyed at mint close; undersell is the expected base case."
+      "public_mint_budget = cap - treasury_reserve = 44,000. OQ-1 RESOLVED (owner 2026-07-14, option B trim passes): Snorkeler passes 3,000 -> 2,920, removing 80 x E[3] = 240 expected NFTs. Full-sellout expected consumption 44,239 -> 43,999 (<= budget). See ADR-0004.",
+      "Under The Scuttling (spec 5.3), all unminted supply is destroyed at mint close; undersell is the expected base case. Runtime still refuses past public_mint_budget (chest-quantity variance)."
     ]
   },
   "depth_zones": ["surface", "sunlight", "twilight", "midnight", "abyssal", "hadal"],
@@ -26,7 +26,7 @@
     {
       "id": 2, "name": "snorkeler", "display_name": "Snorkeler", "zone": "sunlight",
       "price_xch": "0.25", "chest_min": 2, "chest_max": 4, "expected_mints": 3,
-      "passes": 3000, "expected_supply": 9000,
+      "passes": 2920, "expected_supply": 8760,
       "depth_luck": "1.0", "depth_luck_permille": 1000,
       "guarantee": null
     },
@@ -83,9 +83,9 @@
       "id": 10, "name": "wizard_of_the_deep", "display_name": "Wizard of the Deep", "zone": "hadal",
       "price_xch": null, "chest_min": 44, "chest_max": 44, "expected_mints": 45,
       "passes": 1, "expected_supply": 45,
-      "depth_luck": null, "depth_luck_permille": 10000,
+      "depth_luck": "10.0", "depth_luck_permille": 10000,
       "guarantee": {"guaranteed_grail": true},
-      "notes": "Not for sale — earned via the lore puzzle / community quest. Spec shows Depth Luck as infinity; implemented as a finite 10.0x multiplier (OQ-2). chest is 44 generated mints + 1 guaranteed named grail = 45."
+      "notes": "Not for sale — earned via the lore puzzle / community quest. OQ-2 RESOLVED (2026-07-14): Depth Luck is finite 10.0x (not infinity) so the 44-piece chest stays mixed salvage. See ADR-0004."
     }
   ],
   "chest_quantity_distribution": "uniform_inclusive",
@@ -96,12 +96,12 @@
     "mid_tier_range": [4, 8],
     "auction": 11,
     "notes": [
-      "OPEN QUESTION OQ-4: spec 5.2 says 5 seeded into Admiral chests + 12 auctioned + 27 seeded across tiers 4-8 (= 44), but tier 10 separately guarantees 1 named grail. Resolved here by taking the Wizard grail from the auction pool (12 -> 11) pending owner ruling.",
+      "OQ-4 RESOLVED (2026-07-14): keep 44 grails total. Spec's 5 Admiral + 12 auction + 27 mid left no slot for the Wizard guaranteed grail; auction pool is 11 (12->11) so Wizard gets 1 named grail without expanding supply or cutting mid-tier 'anyone can strike' odds.",
       "Admiral seeding: each of the 5 grails is independently assigned to one of the 5 Admiral passes at commit time — a chest can hold 0..5 (a genuine lottery, matching 'grail lottery ticket').",
       "Mid-tier seeding: 27 distinct (tier, pass_ordinal) slots drawn without replacement across all 1,255 passes of tiers 4-8 at commit time.",
       "All placements derive from HMAC-SHA256(salt, 'grail-placement-v1') and are covered by the provenance commitment; published at reveal."
     ]
   },
-  "revenue_model_xch_full_sellout": "3409.90",
-  "pricing_note": "Deep-tier prices revised 2026-07-11 (owner) for a cleaner monotonic effective-cost regression: eff cost/NFT descends 0.100 -> 0.040 across sold tiers. Changed: Shipwright 3.20->3.50 (0.070/NFT), Harbormaster 4.40->5.50 (0.055/NFT), Admiral 5.00->10.00 (0.040/NFT). Full-sellout revenue 3336.40 -> 3409.90 XCH (+73.50). See spec Section 5.2 and ADR-0004."
+  "revenue_model_xch_full_sellout": "3389.90",
+  "pricing_note": "Deep-tier prices revised 2026-07-11 (owner) for a cleaner monotonic effective-cost regression: eff cost/NFT descends 0.100 -> 0.040 across sold tiers. Changed: Shipwright 3.20->3.50 (0.070/NFT), Harbormaster 4.40->5.50 (0.055/NFT), Admiral 5.00->10.00 (0.040/NFT). OQ-1 option B (2026-07-14): Snorkeler passes 3000->2920; full-sellout revenue 3409.90 -> 3389.90 XCH (-20.00). See spec Section 5.2 and ADR-0004."
 }

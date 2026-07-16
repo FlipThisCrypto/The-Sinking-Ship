@@ -1,0 +1,5 @@
+# THE SINKING SHIP — public site
+User-agent: *
+Allow: /
+
+Sitemap: https://flipthiscrypto.github.io/The-Sinking-Ship/sitemap.xml

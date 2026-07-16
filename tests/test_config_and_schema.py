@@ -27,10 +27,12 @@ def test_torn_quota_is_44(cfg):
 
 def test_tier_table_matches_spec_sums(cfg):
     tiers = cfg.tiers_doc["tiers"]
-    assert sum(t["passes"] for t in tiers) == 4444 + 3000 + 1600 + 700 + 300 + 160 + 70 + 25 + 5 + 1
-    assert sum(t["expected_supply"] for t in tiers) == 44239
+    # OQ-1 option B (2026-07-14): Snorkeler 3000 -> 2920
+    assert sum(t["passes"] for t in tiers) == 4444 + 2920 + 1600 + 700 + 300 + 160 + 70 + 25 + 5 + 1
+    assert sum(t["expected_supply"] for t in tiers) == 43999
+    assert sum(t["expected_supply"] for t in tiers) <= cfg.supply["public_mint_budget"]
     revenue = sum(float(t["price_xch"]) * t["passes"] for t in tiers if t["price_xch"])
-    assert round(revenue, 2) == 3409.90  # deep-tier pricing revised 2026-07-11
+    assert round(revenue, 2) == 3389.90  # OQ-1 trim: -20 XCH vs 3409.90
     # effective cost/NFT must descend monotonically across the sold tiers
     sold = [t for t in tiers if t["price_xch"]]
     eff = [float(t["price_xch"]) / t["expected_mints"] for t in sold]

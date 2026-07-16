@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bepe Love - Pixel Art Layer Creator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a1a;color:#e0e0e0;font-family:'Segoe UI',sans-serif;display:flex;height:100vh;overflow:hidden}
+/* Sidebar */
+#sidebar{width:280px;background:#12122a;border-right:1px solid #2a2a4a;display:flex;flex-direction:column;overflow-y:auto}
+#sidebar h2{padding:12px 16px 8px;font-size:14px;color:#888;text-transform:uppercase;letter-spacing:1px}
+.section{padding:8px 16px;border-bottom:1px solid #1a1a3a}
+.section-title{font-size:13px;font-weight:600;margin-bottom:8px;color:#aaa}
+/* Tools */
+.tool-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.tool-btn{width:100%;aspect-ratio:1;border:2px solid #2a2a4a;background:#1a1a3a;color:#ccc;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.tool-btn:hover{border-color:#555}
+.tool-btn.active{border-color:#ff4466;background:#2a1a2a;color:#ff4466}
+/* Colors */
+#color-display{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+#current-color{width:40px;height:40px;border:2px solid #444;border-radius:6px;cursor:pointer}
+#color-hex{background:#1a1a3a;border:1px solid #2a2a4a;color:#e0e0e0;padding:4px 8px;border-radius:4px;width:80px;font-family:monospace}
+.palette{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;margin-bottom:8px}
+.palette-color{width:100%;aspect-ratio:1;border:2px solid transparent;border-radius:4px;cursor:pointer;transition:border-color .1s}
+.palette-color:hover{border-color:#fff}
+.palette-color.active{border-color:#ff4466}
+/* Layer list */
+.layer-item{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#1a1a3a;border-radius:6px;margin-bottom:4px;cursor:pointer;border:2px solid transparent}
+.layer-item:hover{border-color:#333}
+.layer-item.active{border-color:#ff4466}
+.layer-item .vis-toggle{width:20px;height:20px;border:none;background:none;color:#888;cursor:pointer;font-size:14px}
+.layer-item .vis-toggle.visible{color:#4f4}
+.layer-item .name{flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.layer-item .remove-btn{width:20px;height:20px;border:none;background:none;color:#666;cursor:pointer;font-size:12px}
+.layer-item .remove-btn:hover{color:#f44}
+/* Buttons */
+.btn{padding:6px 12px;border:1px solid #2a2a4a;background:#1a1a3a;color:#ccc;border-radius:6px;cursor:pointer;font-size:12px;transition:all .15s;width:100%}
+.btn:hover{border-color:#555;background:#222244}
+.btn-primary{background:#441133;border-color:#ff4466;color:#ff4466}
+.btn-primary:hover{background:#551144}
+.btn-group{display:flex;gap:4px;margin-bottom:4px}
+.btn-group .btn{flex:1}
+/* Main canvas area */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#toolbar{height:40px;background:#12122a;border-bottom:1px solid #2a2a4a;display:flex;align-items:center;padding:0 12px;gap:12px;font-size:13px}
+#toolbar label{color:#888}
+#toolbar input[type=range]{width:80px}
+#toolbar input[type=checkbox]{margin-right:4px}
+#canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;background:#080818}
+#canvas-wrap canvas{image-rendering:pixelated;cursor:crosshair}
+/* Preview panel */
+#preview-panel{width:280px;background:#12122a;border-left:1px solid #2a2a4a;display:flex;flex-direction:column;overflow-y:auto}
+#preview-canvas-wrap{padding:16px;display:flex;align-items:center;justify-content:center}
+#preview-canvas{image-rendering:pixelated;border:1px solid #2a2a4a;background:repeating-conic-gradient(#222 0% 25%, #333 0% 50%) 50% / 16px 16px}
+#composite-wrap{padding:16px;display:flex;align-items:center;justify-content:center}
+#composite-canvas{image-rendering:pixelated;border:1px solid #2a2a4a}
+/* Info bar */
+#info-bar{height:24px;background:#0a0a1a;border-top:1px solid #2a2a4a;display:flex;align-items:center;padding:0 12px;font-size:11px;color:#666;gap:16px}
+/* Ref loader */
+.ref-section{padding:8px 16px}
+.ref-section select{width:100%;padding:4px;background:#1a1a3a;border:1px solid #2a2a4a;color:#ccc;border-radius:4px;font-size:12px;margin-bottom:4px}
+/* Checkerboard for transparent bg */
+.checker{background:repeating-conic-gradient(#1a1a1a 0% 25%, #2a2a2a 0% 50%) 50% / 8px 8px}
+/* Brush size */
+.brush-sizes{display:flex;gap:4px;margin-top:4px}
+.brush-size-btn{width:28px;height:28px;border:2px solid #2a2a4a;background:#1a1a3a;color:#ccc;border-radius:6px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
+.brush-size-btn.active{border-color:#ff4466;color:#ff4466}
+/* Mirror toggle */
+.toggle-row{display:flex;align-items:center;gap:8px;margin:4px 0}
+.toggle-row label{font-size:12px;color:#aaa;flex:1}
+.toggle-row input[type=checkbox]{accent-color:#ff4466}
+</style>
+</head>
+<body>
+
+<!-- LEFT SIDEBAR: Tools & Layers -->
+<div id="sidebar">
+  <h2>Drawing Tools</h2>
+  <div class="section">
+    <div class="tool-grid">
+      <button class="tool-btn active" data-tool="pencil" title="Pencil (B)">&#9998;</button>
+      <button class="tool-btn" data-tool="eraser" title="Eraser (E)">&#9003;</button>
+      <button class="tool-btn" data-tool="fill" title="Fill Bucket (G)">&#9681;</button>
+      <button class="tool-btn" data-tool="line" title="Line (L)">&#9585;</button>
+      <button class="tool-btn" data-tool="rect" title="Rectangle (R)">&#9633;</button>
+      <button class="tool-btn" data-tool="circle" title="Circle (C)">&#9675;</button>
+      <button class="tool-btn" data-tool="eyedropper" title="Eyedropper (I)">&#128065;</button>
+      <button class="tool-btn" data-tool="move" title="Move Layer (V)">&#10021;</button>
+      <button class="tool-btn" data-tool="select" title="Select (S)">&#11036;</button>
+      <button class="tool-btn" data-tool="dither" title="Dither Pattern (D)">&#9618;</button>
+    </div>
+    <div class="section-title" style="margin-top:8px">Brush Size</div>
+    <div class="brush-sizes">
+      <button class="brush-size-btn active" data-size="1">1</button>
+      <button class="brush-size-btn" data-size="2">2</button>
+      <button class="brush-size-btn" data-size="3">3</button>
+      <button class="brush-size-btn" data-size="4">4</button>
+      <button class="brush-size-btn" data-size="5">5</button>
+    </div>
+    <div class="toggle-row">
+      <label>Mirror X</label><input type="checkbox" id="mirror-x">
+    </div>
+    <div class="toggle-row">
+      <label>Mirror Y</label><input type="checkbox" id="mirror-y">
+    </div>
+    <div class="toggle-row">
+      <label>Pixel Grid</label><input type="checkbox" id="show-grid" checked>
+    </div>
+  </div>
+
+  <h2>Color</h2>
+  <div class="section">
+    <div id="color-display">
+      <div id="current-color" style="background:#000"></div>
+      <input type="text" id="color-hex" value="#000000">
+      <input type="color" id="color-picker" value="#000000" style="width:0;height:0;opacity:0;position:absolute">
+    </div>
+    <div class="palette" id="palette"></div>
+    <div class="section-title">Bepe Colors</div>
+    <div class="palette" id="bepe-palette"></div>
+  </div>
+
+  <h2>Reference Layers</h2>
+  <div class="section">
+    <div class="section-title">Underlay (visible behind drawing)</div>
+    <div class="btn-group">
+      <button class="btn" onclick="loadRefImage()">Load Reference</button>
+      <button class="btn" onclick="clearRef()">Clear</button>
+    </div>
+    <div class="toggle-row">
+      <label>Show Reference</label><input type="checkbox" id="show-ref" checked>
+    </div>
+    <div class="toggle-row">
+      <label>Ref Opacity</label><input type="range" id="ref-opacity" min="10" max="100" value="40" style="width:80px">
+    </div>
+  </div>
+
+  <h2>Canvas</h2>
+  <div class="section">
+    <div class="btn-group">
+      <button class="btn" onclick="undo()">Undo (Z)</button>
+      <button class="btn" onclick="redo()">Redo (Y)</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn" onclick="clearCanvas()">Clear All</button>
+      <button class="btn" onclick="flipH()">Flip H</button>
+      <button class="btn" onclick="flipV()">Flip V</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn" onclick="shiftCanvas(-1,0)">&#8592;</button>
+      <button class="btn" onclick="shiftCanvas(0,-1)">&#8593;</button>
+      <button class="btn" onclick="shiftCanvas(0,1)">&#8595;</button>
+      <button class="btn" onclick="shiftCanvas(1,0)">&#8594;</button>
+    </div>
+    <div class="section-title" style="margin-top:6px">Shift moves all pixels by 1px</div>
+  </div>
+
+  <h2>File</h2>
+  <div class="section">
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="exportPNG()">Export PNG</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn" onclick="exportUpscaled()">Export 1024px</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn" onclick="loadImage()">Load Image</button>
+    </div>
+    <input type="file" id="file-input" accept="image/png" style="display:none">
+    <input type="file" id="ref-input" accept="image/png" style="display:none">
+  </div>
+</div>
+
+<!-- MAIN CANVAS -->
+<div id="main">
+  <div id="toolbar">
+    <label>Zoom:</label>
+    <input type="range" id="zoom-slider" min="2" max="12" value="6" step="1">
+    <span id="zoom-label">6x</span>
+    <span style="color:#444">|</span>
+    <label>Layer:</label>
+    <span id="layer-name-display" style="color:#ff4466">Drawing</span>
+  </div>
+  <div id="canvas-wrap">
+    <canvas id="draw-canvas"></canvas>
+  </div>
+  <div id="info-bar">
+    <span id="pos-info">X: 0, Y: 0</span>
+    <span id="pixel-info">RGBA: 0,0,0,0</span>
+    <span id="canvas-size">128 x 128</span>
+  </div>
+</div>
+
+<!-- RIGHT: Preview & Composite -->
+<div id="preview-panel">
+  <h2 style="padding:12px 16px 8px;font-size:14px;color:#888;text-transform:uppercase;letter-spacing:1px">Current Layer</h2>
+  <div id="preview-canvas-wrap">
+    <canvas id="preview-canvas" width="128" height="128"></canvas>
+  </div>
+
+  <h2 style="padding:12px 16px 8px;font-size:14px;color:#888;text-transform:uppercase;letter-spacing:1px">Composite Preview</h2>
+  <div id="composite-wrap" class="checker" style="border-radius:8px;margin:0 16px">
+    <canvas id="composite-canvas" width="128" height="128" style="width:200px;height:200px"></canvas>
+  </div>
+
+  <h2 style="padding:12px 16px 8px;font-size:14px;color:#888;text-transform:uppercase;letter-spacing:1px">Composite Layers</h2>
+  <div class="section" id="composite-layers">
+    <div class="section-title">Load layers to preview compositing</div>
+    <div id="comp-layer-list"></div>
+    <div class="btn-group" style="margin-top:8px">
+      <button class="btn" onclick="addCompLayer()">+ Add Layer</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="renderComposite()">Refresh Preview</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn" onclick="exportComposite()">Export Composite</button>
+    </div>
+    <input type="file" id="comp-layer-input" accept="image/png" style="display:none" multiple>
+  </div>
+
+  <h2 style="padding:12px 16px 8px;font-size:14px;color:#888;text-transform:uppercase;letter-spacing:1px">Quick Composite</h2>
+  <div class="section">
+    <div class="section-title">Load a full layer stack</div>
+    <div class="btn-group">
+      <button class="btn" onclick="loadLayerStack()">Load Layer Stack</button>
+    </div>
+    <input type="file" id="stack-input" accept="image/png" style="display:none" multiple>
+  </div>
+</div>
+
+<script>
+// === CONSTANTS ===
+const W = 128, H = 128;
+let zoom = 6;
+let currentTool = 'pencil';
+let currentColor = {r:0,g:0,b:0,a:255};
+let brushSize = 1;
+let mirrorX = false, mirrorY = false;
+let showGrid = true;
+let showRef = true;
+let refOpacity = 0.4;
+
+// === CANVAS SETUP ===
+const drawCanvas = document.getElementById('draw-canvas');
+const drawCtx = drawCanvas.getContext('2d');
+const previewCanvas = document.getElementById('preview-canvas');
+const previewCtx = previewCanvas.getContext('2d');
+const compositeCanvas = document.getElementById('composite-canvas');
+const compCtx = compositeCanvas.getContext('2d');
+
+// Pixel data - the actual 128x128 image
+let pixelData = new ImageData(W, H);
+let refImageData = null; // reference underlay
+
+// Undo/redo
+let undoStack = [];
+let redoStack = [];
+const MAX_UNDO = 50;
+
+// Drawing state
+let isDrawing = false;
+let lastX = -1, lastY = -1;
+let lineStart = null;
+let selectStart = null;
+let selectRect = null;
+let moveOffset = null;
+
+// Composite layers
+let compLayers = [];
+
+// === PALETTES ===
+const defaultPalette = [
+  '#000000','#1a1a2e','#2d2d44','#444466','#666688','#8888aa','#aaaacc','#ffffff',
+  '#ff0000','#ff4444','#ff8866','#ffaa00','#ffcc00','#ffff00','#ccff00','#88ff00',
+  '#00ff00','#00ff88','#00ffcc','#00ffff','#00ccff','#0088ff','#0044ff','#0000ff',
+  '#4400ff','#8800ff','#cc00ff','#ff00ff','#ff00aa','#ff0066','#ff4466','#884444'
+];
+const bepePalette = [
+  '#00c853','#4caf50','#1b5e20','#64dd17', // greens (bepe)
+  '#2196f3','#1565c0',                      // blues
+  '#ff5722','#e65100',                      // oranges
+  '#e91e63','#f06292',                      // pinks
+  '#9c27b0','#6a1b9a',                      // purples
+  '#f44336','#c62828',                      // reds
+  '#ffeb3b','#fdd835',                      // yellows
+  '#795548','#3e2723','#212121','#424242',  // browns/darks
+  '#ff4466','#ff2244',                      // accent reds (bepe love)
+  '#ffc107','#ff9800'                       // golds
+];
+
+function initPalette(containerId, colors) {
+  const el = document.getElementById(containerId);
+  colors.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'palette-color';
+    div.style.background = c;
+    div.onclick = () => setColor(c);
+    el.appendChild(div);
+  });
+}
+initPalette('palette', defaultPalette);
+initPalette('bepe-palette', bepePalette);
+
+function hexToRgba(hex) {
+  hex = hex.replace('#','');
+  if(hex.length===3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  return {
+    r: parseInt(hex.substr(0,2),16),
+    g: parseInt(hex.substr(2,2),16),
+    b: parseInt(hex.substr(4,2),16),
+    a: 255
+  };
+}
+function rgbaToHex(r,g,b) {
+  return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+}
+
+function setColor(hex) {
+  currentColor = hexToRgba(hex);
+  document.getElementById('current-color').style.background = hex;
+  document.getElementById('color-hex').value = hex;
+  document.getElementById('color-picker').value = hex;
+}
+
+document.getElementById('current-color').onclick = () => document.getElementById('color-picker').click();
+document.getElementById('color-picker').oninput = e => setColor(e.target.value);
+document.getElementById('color-hex').onchange = e => setColor(e.target.value);
+
+// === TOOL BUTTONS ===
+document.querySelectorAll('.tool-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTool = btn.dataset.tool;
+  };
+});
+document.querySelectorAll('.brush-size-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.brush-size-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    brushSize = parseInt(btn.dataset.size);
+  };
+});
+
+// === TOGGLES ===
+document.getElementById('mirror-x').onchange = e => mirrorX = e.target.checked;
+document.getElementById('mirror-y').onchange = e => mirrorY = e.target.checked;
+document.getElementById('show-grid').onchange = e => { showGrid = e.target.checked; render(); };
+document.getElementById('show-ref').onchange = e => { showRef = e.target.checked; render(); };
+document.getElementById('ref-opacity').oninput = e => { refOpacity = e.target.value / 100; render(); };
+
+// === ZOOM ===
+const zoomSlider = document.getElementById('zoom-slider');
+zoomSlider.oninput = () => {
+  zoom = parseInt(zoomSlider.value);
+  document.getElementById('zoom-label').textContent = zoom + 'x';
+  resizeDrawCanvas();
+  render();
+};
+
+function resizeDrawCanvas() {
+  drawCanvas.width = W * zoom;
+  drawCanvas.height = H * zoom;
+  drawCanvas.style.width = (W * zoom) + 'px';
+  drawCanvas.style.height = (H * zoom) + 'px';
+}
+resizeDrawCanvas();
+
+// === PIXEL OPERATIONS ===
+function getPixel(x, y) {
+  if(x<0||x>=W||y<0||y>=H) return {r:0,g:0,b:0,a:0};
+  const i = (y * W + x) * 4;
+  return {r:pixelData.data[i], g:pixelData.data[i+1], b:pixelData.data[i+2], a:pixelData.data[i+3]};
+}
+
+function setPixel(x, y, color) {
+  if(x<0||x>=W||y<0||y>=H) return;
+  const i = (y * W + x) * 4;
+  pixelData.data[i] = color.r;
+  pixelData.data[i+1] = color.g;
+  pixelData.data[i+2] = color.b;
+  pixelData.data[i+3] = color.a;
+}
+
+function colorMatch(a, b) {
+  return a.r===b.r && a.g===b.g && a.b===b.b && a.a===b.a;
+}
+
+// Brush stroke (supports size)
+function drawBrush(cx, cy, color) {
+  const half = Math.floor(brushSize / 2);
+  for(let dy = -half; dy < brushSize - half; dy++) {
+    for(let dx = -half; dx < brushSize - half; dx++) {
+      setPixel(cx+dx, cy+dy, color);
+      if(mirrorX) setPixel(W-1-(cx+dx), cy+dy, color);
+      if(mirrorY) setPixel(cx+dx, H-1-(cy+dy), color);
+      if(mirrorX && mirrorY) setPixel(W-1-(cx+dx), H-1-(cy+dy), color);
+    }
+  }
+}
+
+// Bresenham line
+function drawLine(x0,y0,x1,y1,color) {
+  const dx = Math.abs(x1-x0), dy = Math.abs(y1-y0);
+  const sx = x0<x1?1:-1, sy = y0<y1?1:-1;
+  let err = dx-dy;
+  while(true) {
+    drawBrush(x0,y0,color);
+    if(x0===x1 && y0===y1) break;
+    const e2 = 2*err;
+    if(e2 > -dy) { err -= dy; x0 += sx; }
+    if(e2 < dx) { err += dx; y0 += sy; }
+  }
+}
+
+// Flood fill
+function floodFill(sx, sy, fillColor) {
+  const target = getPixel(sx, sy);
+  if(colorMatch(target, fillColor)) return;
+  const stack = [[sx, sy]];
+  const visited = new Set();
+  while(stack.length > 0) {
+    const [x,y] = stack.pop();
+    const key = y*W+x;
+    if(visited.has(key)) continue;
+    if(x<0||x>=W||y<0||y>=H) continue;
+    const p = getPixel(x,y);
+    if(!colorMatch(p, target)) continue;
+    visited.add(key);
+    setPixel(x,y,fillColor);
+    stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+  }
+}
+
+// Midpoint circle
+function drawCircle(cx,cy,rx,ry,color,filled) {
+  if(filled) {
+    for(let y=-ry;y<=ry;y++) {
+      for(let x=-rx;x<=rx;x++) {
+        if((x*x)/(rx*rx)+(y*y)/(ry*ry) <= 1) {
+          drawBrush(cx+x,cy+y,color);
+        }
+      }
+    }
+  } else {
+    // Outline only
+    const steps = Math.max(rx,ry) * 8;
+    for(let i=0;i<steps;i++) {
+      const a = (i/steps)*Math.PI*2;
+      const x = Math.round(cx + rx*Math.cos(a));
+      const y = Math.round(cy + ry*Math.sin(a));
+      drawBrush(x,y,color);
+    }
+  }
+}
+
+// Rectangle
+function drawRect(x0,y0,x1,y1,color,filled) {
+  const minX=Math.min(x0,x1),maxX=Math.max(x0,x1);
+  const minY=Math.min(y0,y1),maxY=Math.max(y0,y1);
+  if(filled) {
+    for(let y=minY;y<=maxY;y++)
+      for(let x=minX;x<=maxX;x++)
+        drawBrush(x,y,color);
+  } else {
+    for(let x=minX;x<=maxX;x++) { drawBrush(x,minY,color); drawBrush(x,maxY,color); }
+    for(let y=minY;y<=maxY;y++) { drawBrush(minX,y,color); drawBrush(maxX,y,color); }
+  }
+}
+
+// === UNDO/REDO ===
+function saveUndo() {
+  undoStack.push(new Uint8ClampedArray(pixelData.data));
+  if(undoStack.length > MAX_UNDO) undoStack.shift();
+  redoStack = [];
+}
+
+function undo() {
+  if(undoStack.length === 0) return;
+  redoStack.push(new Uint8ClampedArray(pixelData.data));
+  pixelData.data.set(undoStack.pop());
+  render();
+  updatePreview();
+}
+
+function redo() {
+  if(redoStack.length === 0) return;
+  undoStack.push(new Uint8ClampedArray(pixelData.data));
+  pixelData.data.set(redoStack.pop());
+  render();
+  updatePreview();
+}
+
+// === CANVAS OPERATIONS ===
+function clearCanvas() {
+  saveUndo();
+  pixelData = new ImageData(W, H);
+  render();
+  updatePreview();
+}
+
+function flipH() {
+  saveUndo();
+  const newData = new ImageData(W, H);
+  for(let y=0;y<H;y++)
+    for(let x=0;x<W;x++) {
+      const si = (y*W+x)*4;
+      const di = (y*W+(W-1-x))*4;
+      for(let c=0;c<4;c++) newData.data[di+c] = pixelData.data[si+c];
+    }
+  pixelData = newData;
+  render();
+  updatePreview();
+}
+
+function flipV() {
+  saveUndo();
+  const newData = new ImageData(W, H);
+  for(let y=0;y<H;y++)
+    for(let x=0;x<W;x++) {
+      const si = (y*W+x)*4;
+      const di = ((H-1-y)*W+x)*4;
+      for(let c=0;c<4;c++) newData.data[di+c] = pixelData.data[si+c];
+    }
+  pixelData = newData;
+  render();
+  updatePreview();
+}
+
+function shiftCanvas(dx, dy) {
+  saveUndo();
+  const newData = new ImageData(W, H);
+  for(let y=0;y<H;y++)
+    for(let x=0;x<W;x++) {
+      const sx = ((x - dx) % W + W) % W;
+      const sy = ((y - dy) % H + H) % H;
+      const si = (sy*W+sx)*4;
+      const di = (y*W+x)*4;
+      for(let c=0;c<4;c++) newData.data[di+c] = pixelData.data[si+c];
+    }
+  pixelData = newData;
+  render();
+  updatePreview();
+}
+
+// === RENDERING ===
+function render() {
+  const cw = W * zoom, ch = H * zoom;
+  drawCtx.clearRect(0, 0, cw, ch);
+
+  // Checkerboard background
+  drawCtx.fillStyle = '#1a1a1a';
+  drawCtx.fillRect(0, 0, cw, ch);
+  drawCtx.fillStyle = '#2a2a2a';
+  for(let y=0;y<H;y++)
+    for(let x=0;x<W;x++)
+      if((x+y)%2===0) drawCtx.fillRect(x*zoom, y*zoom, zoom, zoom);
+
+  // Reference underlay
+  if(showRef && refImageData) {
+    const tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = W; tmpCanvas.height = H;
+    tmpCanvas.getContext('2d').putImageData(refImageData, 0, 0);
+    drawCtx.globalAlpha = refOpacity;
+    drawCtx.drawImage(tmpCanvas, 0, 0, cw, ch);
+    drawCtx.globalAlpha = 1;
+  }
+
+  // Draw pixels
+  for(let y=0;y<H;y++) {
+    for(let x=0;x<W;x++) {
+      const i = (y*W+x)*4;
+      const a = pixelData.data[i+3];
+      if(a > 0) {
+        const r = pixelData.data[i], g = pixelData.data[i+1], b = pixelData.data[i+2];
+        drawCtx.fillStyle = `rgba(${r},${g},${b},${a/255})`;
+        drawCtx.fillRect(x*zoom, y*zoom, zoom, zoom);
+      }
+    }
+  }
+
+  // Grid
+  if(showGrid && zoom >= 4) {
+    drawCtx.strokeStyle = 'rgba(255,255,255,0.08)';
+    drawCtx.lineWidth = 1;
+    for(let x=0;x<=W;x++) {
+      drawCtx.beginPath();
+      drawCtx.moveTo(x*zoom+0.5, 0);
+      drawCtx.lineTo(x*zoom+0.5, ch);
+      drawCtx.stroke();
+    }
+    for(let y=0;y<=H;y++) {
+      drawCtx.beginPath();
+      drawCtx.moveTo(0, y*zoom+0.5);
+      drawCtx.lineTo(cw, y*zoom+0.5);
+      drawCtx.stroke();
+    }
+  }
+
+  // Selection rect
+  if(selectRect) {
+    const {x,y,w,h} = selectRect;
+    drawCtx.strokeStyle = '#ff4466';
+    drawCtx.lineWidth = 2;
+    drawCtx.setLineDash([4,4]);
+    drawCtx.strokeRect(x*zoom, y*zoom, w*zoom, h*zoom);
+    drawCtx.setLineDash([]);
+  }
+}
+
+function updatePreview() {
+  previewCtx.clearRect(0,0,128,128);
+  // Checkerboard
+  previewCtx.fillStyle = '#222';
+  previewCtx.fillRect(0,0,128,128);
+  for(let y=0;y<128;y+=8)
+    for(let x=0;x<128;x+=8)
+      if(((x/8)+(y/8))%2===0) {
+        previewCtx.fillStyle = '#333';
+        previewCtx.fillRect(x,y,8,8);
+      }
+  const tmp = document.createElement('canvas');
+  tmp.width = W; tmp.height = H;
+  tmp.getContext('2d').putImageData(pixelData, 0, 0);
+  previewCtx.drawImage(tmp, 0, 0);
+  renderComposite();
+}
+
+// === COMPOSITE ===
+function renderComposite() {
+  compCtx.clearRect(0,0,128,128);
+  // Draw composite layers in order
+  compLayers.forEach(layer => {
+    if(layer.visible && layer.image) {
+      compCtx.drawImage(layer.image, 0, 0, 128, 128);
+    }
+  });
+  // Draw current drawing on top (or at its position)
+  const tmp = document.createElement('canvas');
+  tmp.width = W; tmp.height = H;
+  tmp.getContext('2d').putImageData(pixelData, 0, 0);
+  compCtx.drawImage(tmp, 0, 0);
+}
+
+function addCompLayer() {
+  document.getElementById('comp-layer-input').click();
+}
+
+document.getElementById('comp-layer-input').onchange = function(e) {
+  Array.from(e.target.files).forEach(file => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = ev => {
+      img.onload = () => {
+        const name = file.name.replace('.png','');
+        compLayers.push({name, image: img, visible: true});
+        updateCompLayerList();
+        renderComposite();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+};
+
+function loadLayerStack() {
+  document.getElementById('stack-input').click();
+}
+
+document.getElementById('stack-input').onchange = function(e) {
+  compLayers = [];
+  const files = Array.from(e.target.files).sort((a,b) => a.name.localeCompare(b.name));
+  let loaded = 0;
+  files.forEach(file => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = ev => {
+      img.onload = () => {
+        const name = file.name.replace('.png','');
+        compLayers.push({name, image: img, visible: true});
+        loaded++;
+        if(loaded === files.length) {
+          updateCompLayerList();
+          renderComposite();
+        }
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+};
+
+function updateCompLayerList() {
+  const list = document.getElementById('comp-layer-list');
+  list.innerHTML = '';
+  compLayers.forEach((layer, i) => {
+    const div = document.createElement('div');
+    div.className = 'layer-item';
+    div.innerHTML = `
+      <button class="vis-toggle ${layer.visible?'visible':''}" onclick="toggleCompLayer(${i})">${layer.visible?'&#128065;':'&#128064;'}</button>
+      <span class="name">${layer.name}</span>
+      <button class="remove-btn" onclick="removeCompLayer(${i})">&#10005;</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function toggleCompLayer(i) {
+  compLayers[i].visible = !compLayers[i].visible;
+  updateCompLayerList();
+  renderComposite();
+}
+
+function removeCompLayer(i) {
+  compLayers.splice(i, 1);
+  updateCompLayerList();
+  renderComposite();
+}
+
+// === MOUSE HANDLERS ===
+function getCanvasPos(e) {
+  const rect = drawCanvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - rect.left) / zoom);
+  const y = Math.floor((e.clientY - rect.top) / zoom);
+  return {x: Math.max(0, Math.min(W-1, x)), y: Math.max(0, Math.min(H-1, y))};
+}
+
+drawCanvas.onmousedown = function(e) {
+  e.preventDefault();
+  const {x, y} = getCanvasPos(e);
+  isDrawing = true;
+
+  if(currentTool === 'pencil') {
+    saveUndo();
+    drawBrush(x, y, currentColor);
+    lastX = x; lastY = y;
+  } else if(currentTool === 'eraser') {
+    saveUndo();
+    drawBrush(x, y, {r:0,g:0,b:0,a:0});
+    lastX = x; lastY = y;
+  } else if(currentTool === 'dither') {
+    saveUndo();
+    if((x+y)%2===0) drawBrush(x, y, currentColor);
+    lastX = x; lastY = y;
+  } else if(currentTool === 'fill') {
+    saveUndo();
+    floodFill(x, y, currentColor);
+  } else if(currentTool === 'eyedropper') {
+    const p = getPixel(x, y);
+    if(p.a > 0) setColor(rgbaToHex(p.r, p.g, p.b));
+  } else if(currentTool === 'line' || currentTool === 'rect' || currentTool === 'circle') {
+    saveUndo();
+    lineStart = {x, y};
+  } else if(currentTool === 'move') {
+    moveOffset = {x, y};
+    saveUndo();
+  }
+
+  render();
+  updatePreview();
+};
+
+drawCanvas.onmousemove = function(e) {
+  const {x, y} = getCanvasPos(e);
+  document.getElementById('pos-info').textContent = `X: ${x}, Y: ${y}`;
+  const p = getPixel(x, y);
+  document.getElementById('pixel-info').textContent = `RGBA: ${p.r},${p.g},${p.b},${p.a}`;
+
+  if(!isDrawing) return;
+
+  if(currentTool === 'pencil') {
+    if(lastX >= 0) drawLine(lastX, lastY, x, y, currentColor);
+    else drawBrush(x, y, currentColor);
+    lastX = x; lastY = y;
+  } else if(currentTool === 'eraser') {
+    const eraseColor = {r:0,g:0,b:0,a:0};
+    if(lastX >= 0) drawLine(lastX, lastY, x, y, eraseColor);
+    else drawBrush(x, y, eraseColor);
+    lastX = x; lastY = y;
+  } else if(currentTool === 'dither') {
+    if((x+y)%2===0) drawBrush(x, y, currentColor);
+    lastX = x; lastY = y;
+  } else if(currentTool === 'move') {
+    const dx = x - moveOffset.x;
+    const dy = y - moveOffset.y;
+    if(dx !== 0 || dy !== 0) {
+      // Restore from undo, then shift
+      pixelData.data.set(undoStack[undoStack.length-1]);
+      shiftPixels(dx, dy);
+      moveOffset = {x, y};
+    }
+  }
+
+  render();
+  updatePreview();
+};
+
+drawCanvas.onmouseup = function(e) {
+  if(!isDrawing) return;
+  const {x, y} = getCanvasPos(e);
+
+  if(currentTool === 'line' && lineStart) {
+    drawLine(lineStart.x, lineStart.y, x, y, currentColor);
+  } else if(currentTool === 'rect' && lineStart) {
+    drawRect(lineStart.x, lineStart.y, x, y, currentColor, e.shiftKey);
+  } else if(currentTool === 'circle' && lineStart) {
+    const rx = Math.abs(x - lineStart.x);
+    const ry = Math.abs(y - lineStart.y);
+    drawCircle(lineStart.x, lineStart.y, rx, ry, currentColor, e.shiftKey);
+  }
+
+  isDrawing = false;
+  lastX = -1; lastY = -1;
+  lineStart = null;
+  moveOffset = null;
+  render();
+  updatePreview();
+};
+
+drawCanvas.onmouseleave = function() {
+  if(isDrawing && (currentTool === 'pencil' || currentTool === 'eraser')) {
+    isDrawing = false;
+    lastX = -1; lastY = -1;
+  }
+};
+
+// Scroll to zoom
+drawCanvas.parentElement.onwheel = function(e) {
+  e.preventDefault();
+  const newZoom = Math.max(2, Math.min(12, zoom + (e.deltaY > 0 ? -1 : 1)));
+  if(newZoom !== zoom) {
+    zoom = newZoom;
+    zoomSlider.value = zoom;
+    document.getElementById('zoom-label').textContent = zoom + 'x';
+    resizeDrawCanvas();
+    render();
+  }
+};
+
+function shiftPixels(dx, dy) {
+  const newData = new ImageData(W, H);
+  for(let y=0;y<H;y++)
+    for(let x=0;x<W;x++) {
+      const sx = x - dx, sy = y - dy;
+      if(sx>=0&&sx<W&&sy>=0&&sy<H) {
+        const si = (sy*W+sx)*4, di = (y*W+x)*4;
+        for(let c=0;c<4;c++) newData.data[di+c] = pixelData.data[si+c];
+      }
+    }
+  pixelData = newData;
+}
+
+// === KEYBOARD SHORTCUTS ===
+document.onkeydown = function(e) {
+  if(e.target.tagName === 'INPUT') return;
+  const key = e.key.toLowerCase();
+  if(key === 'b') selectTool('pencil');
+  else if(key === 'e') selectTool('eraser');
+  else if(key === 'g') selectTool('fill');
+  else if(key === 'l') selectTool('line');
+  else if(key === 'r') selectTool('rect');
+  else if(key === 'c') selectTool('circle');
+  else if(key === 'i') selectTool('eyedropper');
+  else if(key === 'v') selectTool('move');
+  else if(key === 's' && !e.ctrlKey) selectTool('select');
+  else if(key === 'd') selectTool('dither');
+  else if(key === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); }
+  else if(key === 'y' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); redo(); }
+  else if(key === '[') { brushSize = Math.max(1, brushSize-1); updateBrushUI(); }
+  else if(key === ']') { brushSize = Math.min(5, brushSize+1); updateBrushUI(); }
+};
+
+function selectTool(tool) {
+  currentTool = tool;
+  document.querySelectorAll('.tool-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tool === tool);
+  });
+}
+
+function updateBrushUI() {
+  document.querySelectorAll('.brush-size-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.size) === brushSize);
+  });
+}
+
+// === FILE I/O ===
+function exportPNG() {
+  const tmp = document.createElement('canvas');
+  tmp.width = W; tmp.height = H;
+  tmp.getContext('2d').putImageData(pixelData, 0, 0);
+  const link = document.createElement('a');
+  link.download = 'trait_128x128.png';
+  link.href = tmp.toDataURL('image/png');
+  link.click();
+}
+
+function exportUpscaled() {
+  const tmp = document.createElement('canvas');
+  tmp.width = W; tmp.height = H;
+  tmp.getContext('2d').putImageData(pixelData, 0, 0);
+  const out = document.createElement('canvas');
+  out.width = 1024; out.height = 1024;
+  const outCtx = out.getContext('2d');
+  outCtx.imageSmoothingEnabled = false;
+  outCtx.drawImage(tmp, 0, 0, 1024, 1024);
+  const link = document.createElement('a');
+  link.download = 'trait_1024x1024.png';
+  link.href = out.toDataURL('image/png');
+  link.click();
+}
+
+function exportComposite() {
+  const tmp = document.createElement('canvas');
+  tmp.width = 128; tmp.height = 128;
+  const ctx = tmp.getContext('2d');
+  compLayers.forEach(layer => {
+    if(layer.visible && layer.image) ctx.drawImage(layer.image, 0, 0, 128, 128);
+  });
+  // Add current drawing
+  const drawTmp = document.createElement('canvas');
+  drawTmp.width = W; drawTmp.height = H;
+  drawTmp.getContext('2d').putImageData(pixelData, 0, 0);
+  ctx.drawImage(drawTmp, 0, 0);
+  const link = document.createElement('a');
+  link.download = 'composite_128x128.png';
+  link.href = tmp.toDataURL('image/png');
+  link.click();
+}
+
+function loadImage() {
+  document.getElementById('file-input').click();
+}
+
+document.getElementById('file-input').onchange = function(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const img = new Image();
+  const reader = new FileReader();
+  reader.onload = ev => {
+    img.onload = () => {
+      saveUndo();
+      const tmp = document.createElement('canvas');
+      tmp.width = W; tmp.height = H;
+      const ctx = tmp.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, 0, 0, W, H);
+      pixelData = ctx.getImageData(0, 0, W, H);
+      render();
+      updatePreview();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+};
+
+function loadRefImage() {
+  document.getElementById('ref-input').click();
+}
+
+document.getElementById('ref-input').onchange = function(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const img = new Image();
+  const reader = new FileReader();
+  reader.onload = ev => {
+    img.onload = () => {
+      const tmp = document.createElement('canvas');
+      tmp.width = W; tmp.height = H;
+      const ctx = tmp.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, 0, 0, W, H);
+      refImageData = ctx.getImageData(0, 0, W, H);
+      render();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+};
+
+function clearRef() {
+  refImageData = null;
+  render();
+}
+
+// === RIGHT CLICK FOR EYEDROPPER ===
+drawCanvas.oncontextmenu = function(e) {
+  e.preventDefault();
+  const {x, y} = getCanvasPos(e);
+  const p = getPixel(x, y);
+  if(p.a > 0) setColor(rgbaToHex(p.r, p.g, p.b));
+};
+
+// === INIT ===
+render();
+updatePreview();
+</script>
+</body>
+</html>

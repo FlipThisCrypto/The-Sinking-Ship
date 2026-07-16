@@ -57,10 +57,21 @@ def main() -> int:
             "guarantee": guarantee,
         })
 
+    gs = tiers["grail_seeding"]
     data = {
         "supply": tiers["supply"]["cap"],
         "reserve": tiers["supply"]["treasury_reserve"],
         "grails": tiers["supply"]["grail_count"],
+        "publicMintBudget": tiers["supply"]["public_mint_budget"],
+        "generatedPool": tiers["supply"]["generated_pool"],
+        "revenueFullSelloutXch": tiers.get("revenue_model_xch_full_sellout"),
+        "grailSeeding": {
+            "admiral": gs["admiral_chests"],
+            "mid": gs["mid_tier_chests"],
+            "auction": gs["auction"],
+            "wizard": gs["wizard_of_the_deep"],
+        },
+        "rngAlgorithm": "HMAC-SHA256-DRBG-v1",
         "tiers": rows,
         "zoneColors": zone_hex,
     }

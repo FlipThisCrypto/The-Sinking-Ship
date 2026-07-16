@@ -1,13 +1,13 @@
 # ADR-0004 — Tier math and the supply model (and the spec's own overflow)
 
-**Status:** Accepted (with open questions OQ-1/OQ-2/OQ-4 for the owner)
-**Date:** 2026-07-09
+**Status:** Accepted (OQ-1, OQ-2, OQ-4 resolved 2026-07-14)
+**Date:** 2026-07-09 (updates 2026-07-14)
 
 ## Context
 
-Spec 5.2's tier table is extracted verbatim into `config/tiers.json`. Three
-modeling decisions were not fully specified, and one arithmetic conflict
-exists in the spec itself.
+Spec 5.2's tier table is extracted into `config/tiers.json`. Three modeling
+decisions were not fully specified, and one arithmetic conflict existed in
+the spec itself.
 
 ## Decision
 
@@ -17,55 +17,69 @@ exists in the spec itself.
    distribution the spec's own arithmetic implies. Recorded as
    `chest_quantity_distribution: "uniform_inclusive"`.
 2. **Depth Luck multiplies Epic+ bucket weights** (epic, legendary, mythic)
-   as integer permille, per "multiplied odds on Epic+ rolls". Tier 10's
-   "∞" luck is implemented as a finite 10.0× (OQ-2): infinity would make
-   every trait roll Epic+, which contradicts the tier still producing a
-   full 44-piece chest of mixed salvage; 10× is the strongest finite step
-   above Admiral's 3×. Owner may override in tiers.json.
+   as integer permille, per "multiplied odds on Epic+ rolls".
 3. **Pity guarantees are chest-level floors** enforced deterministically:
    count qualifying NFTs (grails always qualify); for each missing
    qualifier, a DRBG-chosen non-qualifying NFT re-rolls with one
    DRBG-chosen carrier layer restricted to traits at/above the floor
    bucket. Explainable in one sentence on the fairness page, and exact.
 4. **Grail seeding** (5 Admiral / 27 mid-tier / auction / Wizard) is fixed
-   at commit time over `(tier, pass_ordinal)` slots — see ADR-0003. Spec
-   conflict **OQ-4**: 5 + 12 + 27 = 44 leaves zero grails for tier 10's
-   "guaranteed named Grail"; resolved as auction 12 → 11 pending ruling.
+   at commit time over `(tier, pass_ordinal)` slots — see ADR-0003.
 5. **Supply accounting**: grails seeded into Admiral chests replace rolled
    slots (E[supply] 1,250 = 5 × 250 counts them); the Wizard chest is
    44 rolled + 1 grail = 45, matching the spec row exactly.
 
-## The overflow (OQ-1) — measured, not hidden
+## OQ-2 — Wizard Depth Luck — RESOLVED (2026-07-14)
 
-Full sellout expected consumption sums to **44,239** (the spec's own row
-sums), but the hard budget is `44,444 − 444 reserve = 44,000`. The spec's
-"~44,239 + 444 ≈ 44,444" is arithmetically 44,683. Measured by
-`simulate.py --profile sellout` across seeds: consumption ≈ 44,200–44,400,
-i.e. **~200–400 NFTs over budget at full sellout**.
+**Ruling: finite 10.0×** (`depth_luck_permille: 10000`).
 
-The Scuttling (5.3) makes undersell the expected case, so this only bites
-at ≥ ~99.5% sellout — but mint-day code must not have an undefined edge.
-Options for the owner:
+True ∞ would force every trait roll into Epic+ and erase mixed salvage in
+the 44-piece Wizard chest. 10× is the strongest finite step above Admiral's
+3× and is what marketing/odds pages must disclose (not "infinite rarity").
 
-- **(a) shrink the reserve** to ≤ 200 at full sellout (cheapest, symbolic
-  444 lost);
-- **(b) trim passes** (e.g. Snorkeler 3,000 → 2,920 removes ~240 expected);
-- **(c) hard-cap late chests** (last chests clamp to remaining budget —
-  ugly for buyers, needs disclosure on the odds page).
+## OQ-4 — Auction grails 11 vs 12 — RESOLVED (2026-07-14)
 
-Until ruled, the engine keeps rolling per spec and `simulate.py` prints the
-overflow loudly on every run; the fulfillment daemon design (P7 stub)
-reserves a `supply_budget` check hook.
+**Ruling: auction = 11** (Wizard takes one from the auction pool).
+
+Spec arithmetic `5 + 12 + 27 = 44` left zero room for tier 10's guaranteed
+named grail while keeping the symbolic **44 grails**. Alternatives rejected:
+
+- expand to 45 grails — breaks 44 symbolism;
+- cut mid-tier (27) — hurts the "anyone can strike" hook;
+- cut Admiral lottery (5) — worse for deep-tier buyers.
+
+Placement: `5 Admiral + 11 auction + 27 mid + 1 Wizard = 44`.
+
+## The overflow (OQ-1) — RESOLVED (owner 2026-07-14, option B)
+
+**Problem (pre-ruling):** full sellout expected consumption summed to
+**44,239**, but the hard budget is `44,444 − 444 reserve = 44,000`
+(overflow **239**). The spec's "~44,239 + 444 ≈ 44,444" was arithmetically
+44,683.
+
+**Ruling:** **(b) trim passes** — Snorkeler `passes` **3,000 → 2,920**
+(−80 passes × E[3] mints = **−240** expected NFTs). Expected full-sellout
+consumption **44,239 → 43,999** (≤ 44,000 public mint budget). Full-sellout
+revenue **3,409.90 → 3,389.90 XCH** (−20 XCH at 0.25 XCH/pass).
+
+Alternatives not chosen:
+
+- **(a) shrink the reserve** — would break the symbolic 444 treasury figure;
+- **(c) hard-cap late chests** — buyer-hostile, needs odds-page disclosure.
+
+**Residual:** chest-quantity variance can still push a *realized* full
+sellout a few dozen NFTs around the mean. P7 fulfillment must continue to
+refuse past `public_mint_budget` (fail closed). `simulate.py` only prints
+OVERFLOW when measured consumption exceeds budget.
 
 ## Consequences
 
 - tiers.json is the single source of truth; weights.json carries copies of
   depth_luck/guarantees for P3-prompt compatibility, and the config loader
   fails hard on any divergence between the two.
-- Revenue at full sellout computes to 3,409.90 XCH from config (deep-tier
-  prices revised by the owner 2026-07-11: Shipwright 3.50, Harbormaster 5.50,
-  Admiral 10.00, for a monotonic 0.100→0.040 effective-cost regression) —
-  matching the spec's "~3,410" — so the 25/50/75% sellout scenario modeling
-  asked for in spec 5.2 can run off tiers.json without new code.
-- Every open question is a config edit away from resolution; no code
-  changes needed for (a) or (b), one guarded branch for (c).
+- Revenue at full sellout computes to **3,389.90 XCH** from config after the
+  OQ-1 trim (deep-tier prices from 2026-07-11 unchanged: Shipwright 3.50,
+  Harbormaster 5.50, Admiral 10.00 — monotonic 0.100→0.040 effective-cost
+  regression). 25/50/75% sellout scenarios still run off tiers.json.
+- OQ-1 / OQ-2 / OQ-4 closed by config + documentation; fulfillment budget
+  gate remains mandatory for variance.

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Provably Fair — THE SINKING SHIP</title>
+<base href="./">
+<meta name="description" content="Commit–reveal fairness scheme, Depth Luck odds, grail seeding, and how to verify any chest with chest_roller.py.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="nav">
+  <a class="wordmark" href="index.html">THE&nbsp;SINKING&nbsp;SHIP</a>
+  <div class="nav-links">
+    <a href="index.html#descent">The Depths</a>
+    <a href="index.html#tiers">Dive Passes</a>
+    <a href="fairness.html">Provably Fair</a>
+    <a href="reveal.html">Reveal (demo)</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="https://github.com/FlipThisCrypto/The-Sinking-Ship" rel="noopener">GitHub</a>
+  </div>
+</nav>
+
+<header class="hero" id="top" style="min-height:auto;padding-bottom:2rem">
+  <p class="kicker">Trust document · zero hype</p>
+  <h1>Provably Fair,<br>not “trust us.”</h1>
+  <p class="sub">Before mint we publish a commitment hash. After mint we reveal the salt.
+  Anyone can recompute every chest. If the hashes match, the roll was fair.</p>
+</header>
+
+<section class="section" style="padding:2rem 1.25rem 4rem;max-width:52rem;margin:0 auto">
+  <h2 class="section-title">Plain language</h2>
+  <ol style="line-height:1.7;color:var(--ash);padding-left:1.25rem">
+    <li style="margin:.6rem 0"><strong style="color:var(--bone)">Lock the rules.</strong>
+      Traits, weights, tiers, and the RNG algorithm are hashed into one commitment before anyone pays.</li>
+    <li style="margin:.6rem 0"><strong style="color:var(--bone)">Pay with a coin.</strong>
+      Your payment coin id becomes the seed for your chest — not a server roll you can’t check.</li>
+    <li style="margin:.6rem 0"><strong style="color:var(--bone)">Reveal the salt.</strong>
+      After mint closes, the secret salt is published. Re-run the same math at home.</li>
+    <li style="margin:.6rem 0"><strong style="color:var(--bone)">Verify.</strong>
+      <code style="color:var(--chia-bright)">chest_roller.py verify</code> must reproduce the published manifest bit-for-bit.</li>
+  </ol>
+
+  <h2 class="section-title" style="margin-top:2.5rem">Technical construction</h2>
+  <pre id="tech-block" style="background:var(--ink);border:1px solid var(--navy);padding:1rem;overflow:auto;font-size:.85rem;color:var(--pale);line-height:1.5"></pre>
+
+  <h2 class="section-title" style="margin-top:2.5rem">Dive tier table</h2>
+  <p style="color:var(--slate);margin-bottom:1rem;font-size:.95rem">
+    Numbers from <code>config/tiers.json</code> via <code>scripts/build_site_data.py</code> — not hand-copied.</p>
+  <div style="overflow-x:auto">
+    <table class="tier-table" id="fair-table">
+      <thead>
+        <tr>
+          <th>Tier</th><th>Zone</th><th>Price</th><th>Chest</th>
+          <th>Passes</th><th>Luck</th><th>Guarantee</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <h2 class="section-title" style="margin-top:2.5rem">Grail seeding (44 total)</h2>
+  <ul id="grail-list" style="color:var(--ash);line-height:1.8;padding-left:1.25rem"></ul>
+  <p style="color:var(--slate);margin-top:1rem;font-size:.9rem">
+    <strong style="color:var(--bone)">The Torn:</strong> up to 44 committed global indices receive Halo+Horns.
+    Under The Scuttling, unminted indices never appear — realized Torn may be fewer than 44 (OQ-3).</p>
+
+  <h2 class="section-title" style="margin-top:2.5rem">Browser self-check</h2>
+  <p style="color:var(--ash);margin-bottom:.75rem;font-size:.95rem">
+    Runs the JS DRBG against published golden vectors (no wallet, no network beyond this site).
+  </p>
+  <button class="btn btn-primary" type="button" id="selfcheck-btn">Run fairness self-check</button>
+  <pre id="selfcheck-out" style="margin-top:1rem;background:var(--ink);border:1px solid var(--navy);padding:1rem;overflow:auto;font-size:.85rem;color:var(--pale);min-height:3rem">Ready.</pre>
+
+  <h2 class="section-title" style="margin-top:2.5rem">Verify a chest</h2>
+  <pre style="background:var(--ink);border:1px solid var(--navy);padding:1rem;overflow:auto;font-size:.85rem;color:var(--pale)">python engine/chest_roller.py verify \
+  --manifest path/to/chest_….json \
+  --salt-file path/to/revealed.salt</pre>
+  <p style="color:var(--slate);margin-top:.75rem;font-size:.9rem">
+    Golden vectors:
+    <a href="fairness_vectors.json" style="color:var(--chia-bright)">fairness_vectors.json</a>
+    · JS module:
+    <a href="js/shipgen_drbg.js" style="color:var(--chia-bright)">js/shipgen_drbg.js</a>
+  </p>
+
+  <h2 class="section-title" style="margin-top:2.5rem">The Scuttling</h2>
+  <p style="color:var(--ash);line-height:1.7">
+    When the mint window closes, unminted supply is permanently destroyed — publicly, on-chain,
+    with ceremony. <em style="color:var(--bone)">Ships that never sailed are scuttled.</em>
+    Final supply equals what divers salvaged. Public mint budget:
+    <strong id="budget" style="color:var(--chia-bright)"></strong>.
+  </p>
+
+  <p style="margin-top:2.5rem">
+    <a class="btn" href="index.html">← Back to the wreck</a>
+    <a class="btn btn-primary" href="reveal.html">Try reveal demo</a>
+  </p>
+</section>
+
+<script src="tiers.js"></script>
+<script type="module">
+import { verifyFairnessVectors } from "./js/shipgen_drbg.js";
+
+const tbody = document.querySelector("#fair-table tbody");
+for (const t of SHIP_DATA.tiers) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `<td>${t.name}</td><td>${t.zone}</td><td>${t.price == null ? "—" : t.price + " XCH"}</td>`
+    + `<td>${t.chest}</td><td>${Number(t.passes).toLocaleString("en-US")}</td>`
+    + `<td>${t.luck == null ? "10.0×" : t.luck + "×"}</td><td>${t.guarantee}</td>`;
+  tbody.appendChild(tr);
+}
+const g = SHIP_DATA.grailSeeding || {};
+document.getElementById("grail-list").innerHTML = [
+  `${g.admiral ?? 5} seeded into Admiral chests (lottery)`,
+  `${g.mid ?? 27} seeded across mid tiers (Deep Sea → Harbormaster)`,
+  `${g.auction ?? 11} reserved for post-mint auction`,
+  `${g.wizard ?? 1} named grail for Wizard of the Deep`,
+].map(s => `<li>${s}</li>`).join("");
+document.getElementById("budget").textContent =
+  (SHIP_DATA.publicMintBudget || 44000).toLocaleString("en-US") + " NFTs";
+document.getElementById("tech-block").textContent =
+`algorithm: ${SHIP_DATA.rngAlgorithm || "HMAC-SHA256-DRBG-v1"}
+seed_key  = HMAC-SHA256(secret_salt, payment_coin_id_bytes)
+draws     = named HMAC-DRBG substreams (quantity, traits, pity, grails)
+commit    = SHA-256(canonical JSON of configs + placements + salt + algorithm)
+verify    = re-roll chest from (salt, coin_id, tier, pass_ordinal, start_index)
+            must match published manifest_hash bit-for-bit
+
+supply cap: ${SHIP_DATA.supply}
+treasury reserve (disclosed): ${SHIP_DATA.reserve}
+public mint budget: ${SHIP_DATA.publicMintBudget}
+full-sellout revenue model: ${SHIP_DATA.revenueFullSelloutXch} XCH`;
+
+document.getElementById("selfcheck-btn").addEventListener("click", async () => {
+  const out = document.getElementById("selfcheck-out");
+  out.textContent = "Running…";
+  try {
+    const doc = await (await fetch("fairness_vectors.json")).json();
+    const r = await verifyFairnessVectors(doc);
+    out.textContent = (r.ok ? "PASS\n" : "FAIL\n") + JSON.stringify(r, null, 2);
+    out.style.color = r.ok ? "var(--chia-bright)" : "var(--coral)";
+  } catch (e) {
+    out.textContent = "ERROR: " + e;
+    out.style.color = "var(--coral)";
+  }
+});
+</script>
+</body>
+</html>

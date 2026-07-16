@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chest Reveal (demo) — THE SINKING SHIP</title>
+<base href="./">
+<meta name="description" content="Demo chest-opening experience using a real rolled chest-manifest-v1 shape.">
+<link rel="stylesheet" href="style.css">
+<style>
+  .reveal-stage {
+    max-width: 40rem; margin: 0 auto; text-align: center; padding: 2rem 1rem 4rem;
+  }
+  .chest-wrap {
+    position: relative; width: min(320px, 80vw); margin: 1.5rem auto;
+    transition: transform .4s ease;
+  }
+  .chest-wrap.open { transform: scale(1.04); }
+  .chest-wrap img { width: 100%; height: auto; display: block; }
+  .nft-stream {
+    display: flex; flex-direction: column; gap: .65rem; margin-top: 1.5rem;
+    max-height: 28rem; overflow-y: auto; text-align: left;
+  }
+  .nft-card {
+    border: 1px solid var(--navy); background: rgba(10,14,28,.85);
+    padding: .75rem 1rem; opacity: 0; transform: translateY(12px);
+    animation: surface .5s ease forwards;
+  }
+  .nft-card .r {
+    font-family: var(--mono); font-size: .72rem; letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .nft-card.common .r { color: var(--slate); }
+  .nft-card.uncommon .r { color: var(--steel); }
+  .nft-card.rare .r { color: var(--chia-bright); }
+  .nft-card.epic .r { color: var(--amethyst); }
+  .nft-card.legendary .r { color: var(--gold); }
+  .nft-card.mythic .r { color: var(--coral); }
+  .nft-card.grail .r { color: var(--pale-gold); }
+  @keyframes surface { to { opacity: 1; transform: translateY(0); } }
+  .glow-ring {
+    pointer-events: none; position: absolute; inset: -8%; border-radius: 50%;
+    border: 2px solid transparent; opacity: 0;
+  }
+  .chest-wrap.open .glow-ring {
+    opacity: .7; border-color: var(--chia); animation: pulse 1.2s ease infinite;
+  }
+  @keyframes pulse { 50% { opacity: .25; transform: scale(1.05); } }
+  .zone-label { color: var(--slate); font-size: .9rem; margin-bottom: .5rem; }
+  .share-line {
+    margin-top: 1.5rem; padding: 1rem; border: 1px dashed var(--navy);
+    color: var(--pale); font-size: .95rem; display: none;
+  }
+  .share-line.show { display: block; }
+  .meta { color: var(--slate); font-size: .8rem; margin-top: .5rem; word-break: break-all; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="wordmark" href="index.html">THE&nbsp;SINKING&nbsp;SHIP</a>
+  <div class="nav-links">
+    <a href="index.html#tiers">Dive Passes</a>
+    <a href="fairness.html">Provably Fair</a>
+    <a href="reveal.html">Reveal (demo)</a>
+    <a href="dashboard.html">Dashboard</a>
+  </div>
+</nav>
+
+<div class="reveal-stage">
+  <p class="kicker">P8 prototype · real manifest shape · not live mint</p>
+  <h1 style="font-size:clamp(1.6rem,4vw,2.2rem);margin:.5rem 0 1rem">Open the chest</h1>
+  <p class="zone-label" id="zone-line">Loading demo chest…</p>
+  <p class="meta" id="hash-line"></p>
+
+  <div class="chest-wrap" id="chest">
+    <div class="glow-ring"></div>
+    <picture>
+      <img id="chest-img" src="assets/chest/treasure_chest.webp" alt="Closed treasure chest"
+           onerror="this.src='assets/chest/treasure_chest.jpg'">
+    </picture>
+  </div>
+
+  <button class="btn btn-primary" type="button" id="open-btn" disabled>Loading…</button>
+  <div class="nft-stream" id="stream" aria-live="polite"></div>
+  <div class="share-line" id="share"></div>
+
+  <p style="margin-top:2rem;color:var(--slate);font-size:.85rem">
+    Loads <code>demo_chest.json</code> (rolled by shipgen). Live mint will fetch
+    by opaque offer id after take. Odds:
+    <a href="fairness.html" style="color:var(--chia-bright)">Provably Fair</a>.
+  </p>
+</div>
+
+<script>
+(function () {
+  const effects = {
+    common: "bubbles", uncommon: "bubble burst + glint", rare: "light shaft",
+    epic: "zone glow ring", legendary: "full-screen shimmer",
+    mythic: "aura + palette flash", grail: "bespoke sequence",
+  };
+  const rank = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, mythic: 5, grail: 6 };
+
+  function traitLine(traits) {
+    if (!traits) return "Named grail (hand-authored)";
+    const keys = ["ship_class", "body", "ship_condition", "sky"];
+    return keys.map(k => traits[k]).filter(Boolean).join(" · ");
+  }
+
+  function entries(manifest) {
+    return (manifest.nfts || []).map(e => {
+      if (e.type === "grail") {
+        return { rarity_tier: "grail", label: `Grail #${e.grail_number}` };
+      }
+      return {
+        rarity_tier: e.rarity_tier || "common",
+        label: traitLine(e.traits) + (e.the_torn ? " · The Torn" : ""),
+      };
+    });
+  }
+
+  let manifest = null;
+  const btn = document.getElementById("open-btn");
+  const stream = document.getElementById("stream");
+  const chest = document.getElementById("chest");
+  const chestImg = document.getElementById("chest-img");
+  const share = document.getElementById("share");
+
+  fetch("demo_chest.json")
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(m => {
+      manifest = m;
+      document.getElementById("zone-line").textContent =
+        `Depth: ${m.zone} · ${m.tier} · qty ${m.quantity}`;
+      document.getElementById("hash-line").textContent =
+        `manifest_hash ${m.manifest_hash}`;
+      btn.disabled = false;
+      btn.textContent = "Dive — open chest";
+    })
+    .catch(err => {
+      document.getElementById("zone-line").textContent = "Failed to load demo_chest.json";
+      btn.textContent = "Unavailable";
+      console.error(err);
+    });
+
+  btn.addEventListener("click", async () => {
+    if (!manifest || btn.dataset.done) return;
+    btn.dataset.done = "1";
+    btn.disabled = true;
+    btn.textContent = "Surfacing…";
+    chest.classList.add("open");
+    chestImg.src = "assets/chest/open_chest.webp";
+    chestImg.onerror = () => { chestImg.src = "assets/chest/open_chest.jpg"; };
+    chestImg.alt = "Open treasure chest";
+
+    const nfts = entries(manifest);
+    let best = "common";
+    for (let i = 0; i < nfts.length; i++) {
+      await new Promise(r => setTimeout(r, Math.min(90, 400 / Math.max(1, nfts.length / 5))));
+      const n = nfts[i];
+      if ((rank[n.rarity_tier] || 0) > (rank[best] || 0)) best = n.rarity_tier;
+      const card = document.createElement("div");
+      card.className = "nft-card " + n.rarity_tier;
+      card.innerHTML = `<div class="r">${n.rarity_tier} · ${effects[n.rarity_tier] || ""}</div>`
+        + `<div style="color:var(--bone);margin-top:.25rem">${n.label}</div>`;
+      stream.appendChild(card);
+    }
+    btn.textContent = "Chest open";
+    share.textContent =
+      `I struck ${best} at ${manifest.zone} depth (${manifest.quantity} salvage). Hope never sinks. #TheSinkingShip`;
+    share.classList.add("show");
+  });
+})();
+</script>
+</body>
+</html>

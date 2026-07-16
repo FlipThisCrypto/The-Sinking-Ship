@@ -160,7 +160,9 @@ def main() -> int:
         overflow = consumed - budget
         if overflow > 0:
             print(f"OVERFLOW: {overflow} NFTs beyond budget "
-                  f"(spec conflict OQ-1 — see tiers.json supply notes)")
+                  f"(chest-quantity variance around E[supply]; "
+                  f"P7 must refuse past public_mint_budget — OQ-1 expected "
+                  f"overflow was closed by trimming Snorkeler passes)")
         else:
             print(f"headroom: {-overflow}")
         print(f"grails seeded into chests: {stats['grails']}")
