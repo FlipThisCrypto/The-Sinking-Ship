@@ -29,6 +29,7 @@ from fulfillment import (
     FulfillmentDaemon,
     SqliteLedger,
     StmWebhookIngest,
+    configure_logging,
 )
 from shipgen.config import GenConfig
 
@@ -190,6 +191,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--version", action="version", version=f"fulfillment_daemon {VERSION}")
+    ap.add_argument(
+        "--log-json",
+        action="store_true",
+        help="emit JSON log lines on stderr (alert / aggregator friendly)",
+    )
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     p = sub.add_parser("tick", help="poll source and fulfill pending purchases")
@@ -254,7 +260,7 @@ def main() -> int:
     p.set_defaults(fn=cmd_reconcile)
 
     args = ap.parse_args()
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    configure_logging(json_logs=bool(getattr(args, "log_json", False)))
     # Refuse live mainnet fulfillment until go-live is an explicit opt-in.
     # Covers tick + reconcile (cron); dry-run still allowed for dress rehearsals.
     write_cmds = {"tick", "reconcile"}

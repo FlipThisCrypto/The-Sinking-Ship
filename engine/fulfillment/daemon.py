@@ -10,6 +10,7 @@ from shipgen.config import GenConfig, load_json
 from shipgen.roll import RollEngine, build_commitment
 from shipgen.schema import validate
 
+from .logging_util import event
 from .types import (
     FulfillmentLedger,
     OfferBuilder,
@@ -93,6 +94,10 @@ class FulfillmentDaemon:
             "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
         since = self.ledger.last_polled_height()
+        event(
+            log, "tick_start",
+            network=self.network, dry_run=bool(dry_run), since_height=since,
+        )
         try:
             purchases = self.source.poll_confirmed(since)
             tip = self.source.current_height()
@@ -100,6 +105,7 @@ class FulfillmentDaemon:
             # fail closed: do not advance height, do not shrink confirmed set
             log.error("payment scan incomplete — fail closed: %s", e)
             summary["errors"].append(f"poll: {e}")
+            event(log, "tick_fail_closed", error=str(e), since_height=since)
             return summary
 
         for p in purchases:
@@ -125,6 +131,17 @@ class FulfillmentDaemon:
             "tick done recorded=%d rolled=%d fulfilled=%d refused=%d errors=%d",
             summary["recorded"], summary.get("rolled", 0),
             summary["fulfilled"], summary["refused"], len(summary["errors"]),
+        )
+        event(
+            log, "tick_complete",
+            recorded=summary["recorded"],
+            rolled=summary.get("rolled", 0),
+            fulfilled=summary["fulfilled"],
+            refused=summary["refused"],
+            skipped=summary.get("skipped", 0),
+            error_count=len(summary["errors"]),
+            network=self.network,
+            dry_run=bool(dry_run),
         )
         return summary
 

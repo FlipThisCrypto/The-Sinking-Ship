@@ -22,6 +22,7 @@ from .offers import DryRunOfferBuilder
 from .sage_rpc import SageOfferBuilder, SageRpcClient, SageRpcError
 from .daemon import FulfillmentDaemon, load_minting_defaults
 from .mock_coinset import MockCoinsetServer
+from .logging_util import configure_logging, event
 
 __all__ = [
     "PaymentState",
@@ -40,4 +41,6 @@ __all__ = [
     "FulfillmentDaemon",
     "load_minting_defaults",
     "MockCoinsetServer",
+    "configure_logging",
+    "event",
 ]
