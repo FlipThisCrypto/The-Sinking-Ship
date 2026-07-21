@@ -27,6 +27,15 @@ def gen_entry(manifest):
     return next(e for e in manifest["nfts"] if e["type"] == "generated")
 
 
+def test_process_manifest_rejects_quantity_mismatch(gen, manifest, tmp_path):
+    bad = dict(manifest)
+    bad["quantity"] = int(manifest["quantity"]) + 5
+    path = tmp_path / "bad.json"
+    path.write_text(json.dumps(bad), encoding="utf-8")
+    with pytest.raises(ValueError, match="quantity"):
+        gen.process_manifest(path, tmp_path / "out")
+
+
 def test_metadata_is_valid_chip0007(gen, manifest):
     doc = gen.nft_metadata(manifest, gen_entry(manifest))
     validate(doc, gen.chip_schema)  # explicit double-check

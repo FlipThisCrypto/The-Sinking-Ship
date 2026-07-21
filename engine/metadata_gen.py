@@ -32,6 +32,8 @@ from shipgen.schema import validate, SchemaError
 log = logging.getLogger("metadata_gen")
 
 NAME_FMT = "Sinking Ship #{:05d}"
+# Reject manifests whose quantity exceeds any plausible chest (ops footgun).
+MAX_CHEST_QUANTITY = 64
 
 
 class MetadataGenerator:
@@ -113,6 +115,17 @@ class MetadataGenerator:
         manifest = load_json(manifest_path)
         if manifest.get("schema") != "chest-manifest-v1":
             raise ValueError(f"{manifest_path} is not a chest-manifest-v1 file")
+        nfts = manifest.get("nfts")
+        if not isinstance(nfts, list) or not nfts:
+            raise ValueError(f"{manifest_path} has empty or missing nfts[]")
+        qty = manifest.get("quantity")
+        if qty is not None and int(qty) != len(nfts):
+            raise ValueError(
+                f"{manifest_path}: quantity {qty} != len(nfts) {len(nfts)}")
+        if len(nfts) > MAX_CHEST_QUANTITY:
+            raise ValueError(
+                f"{manifest_path}: chest quantity {len(nfts)} exceeds "
+                f"MAX_CHEST_QUANTITY={MAX_CHEST_QUANTITY}")
         if manifest.get("config_version_hash") != self.cfg.config_hash:
             log.warning("%s was rolled with config hash %.12s… but local configs "
                         "give %.12s… — metadata reflects LOCAL display names",
@@ -120,7 +133,7 @@ class MetadataGenerator:
                         self.cfg.config_hash)
         written = grails = 0
         outdir.mkdir(parents=True, exist_ok=True)
-        for entry in manifest["nfts"]:
+        for entry in nfts:
             if entry["type"] == "grail":
                 grails += 1
                 log.info("  slot %d: GRAIL #%d — hand-authored metadata required",
