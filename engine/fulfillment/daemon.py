@@ -6,8 +6,9 @@ import json
 import logging
 from pathlib import Path
 
-from shipgen.config import GenConfig
+from shipgen.config import GenConfig, load_json
 from shipgen.roll import RollEngine, build_commitment
+from shipgen.schema import validate
 
 from .types import (
     FulfillmentLedger,
@@ -17,6 +18,16 @@ from .types import (
 )
 
 log = logging.getLogger("fulfillment.daemon")
+
+
+def load_minting_defaults(config_dir: Path | None = None) -> dict:
+    """Read minting.did and royalty from collection.json (single source of truth)."""
+    root = Path(config_dir) if config_dir else (
+        Path(__file__).resolve().parent.parent.parent / "config"
+    )
+    doc = load_json(root / "collection.json")
+    validate(doc, load_json(root / "schemas" / "collection.schema.json"))
+    return doc["minting"]
 
 
 class FulfillmentDaemon:
@@ -31,8 +42,8 @@ class FulfillmentDaemon:
         cfg: GenConfig | None = None,
         network: str = "testnet11",
         strategy: str = "claim",
-        did: str = "did:chia:testnet-placeholder",
-        royalty_basis_points: int = 300,
+        did: str | None = None,
+        royalty_basis_points: int | None = None,
         manifest_outdir: str | Path = "output/fulfillment/chests",
         metadata_outdir: str | Path = "output/fulfillment/metadata",
     ):
@@ -50,8 +61,15 @@ class FulfillmentDaemon:
         self.engine = RollEngine(self.cfg)
         self.network = network
         self.strategy = strategy
-        self.did = did
-        self.royalty_basis_points = royalty_basis_points
+        minting = load_minting_defaults()
+        # collection.json is the marketplace royalty/DID source (metadata_gen too).
+        # Callers may still override for test doubles or one-off dry runs.
+        self.did = minting["did"] if did is None else did
+        self.royalty_basis_points = (
+            int(minting["royalty_percentage_basis_points"])
+            if royalty_basis_points is None
+            else int(royalty_basis_points)
+        )
         self.manifest_outdir = Path(manifest_outdir)
         self.metadata_outdir = Path(metadata_outdir)
         commitment = build_commitment(salt, self.cfg)

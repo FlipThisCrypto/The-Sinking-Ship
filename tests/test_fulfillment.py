@@ -15,6 +15,7 @@ from fulfillment import (
     PaymentState,
     SqliteLedger,
     TierPurchase,
+    load_minting_defaults,
 )
 from shipgen.config import GenConfig
 from shipgen.drbg import normalize_coin_id
@@ -169,3 +170,39 @@ def _empty_fixture(tmp_path: Path) -> Path:
     p = tmp_path / "empty.json"
     p.write_text("[]", encoding="utf-8")
     return p
+
+
+def test_daemon_minting_defaults_match_collection_json(tmp_path, ledger, cfg):
+    """Royalty/DID for mint must match metadata_gen's collection.json source."""
+    minting = load_minting_defaults()
+    daemon = FulfillmentDaemon(
+        source=FixturePaymentSource(_empty_fixture(tmp_path)),
+        ledger=ledger,
+        offers=DryRunOfferBuilder(),
+        salt=TEST_SALT,
+        cfg=cfg,
+        manifest_outdir=tmp_path / "chests",
+        metadata_outdir=tmp_path / "meta",
+    )
+    assert daemon.royalty_basis_points == int(
+        minting["royalty_percentage_basis_points"]
+    )
+    assert daemon.did == minting["did"]
+    # Guard against the old hardcoded 300 bp default drifting from config.
+    assert daemon.royalty_basis_points == 500
+
+
+def test_daemon_minting_overrides_respected(tmp_path, ledger, cfg):
+    daemon = FulfillmentDaemon(
+        source=FixturePaymentSource(_empty_fixture(tmp_path)),
+        ledger=ledger,
+        offers=DryRunOfferBuilder(),
+        salt=TEST_SALT,
+        cfg=cfg,
+        did="did:chia:override-test",
+        royalty_basis_points=100,
+        manifest_outdir=tmp_path / "chests",
+        metadata_outdir=tmp_path / "meta",
+    )
+    assert daemon.did == "did:chia:override-test"
+    assert daemon.royalty_basis_points == 100

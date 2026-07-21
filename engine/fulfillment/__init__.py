@@ -20,7 +20,7 @@ from .ledger import SqliteLedger
 from .sources import CoinsetPollingSource, FixturePaymentSource, StmWebhookIngest
 from .offers import DryRunOfferBuilder
 from .sage_rpc import SageOfferBuilder, SageRpcClient, SageRpcError
-from .daemon import FulfillmentDaemon
+from .daemon import FulfillmentDaemon, load_minting_defaults
 from .mock_coinset import MockCoinsetServer
 
 __all__ = [
@@ -38,5 +38,6 @@ __all__ = [
     "SageOfferBuilder",
     "SageRpcError",
     "FulfillmentDaemon",
+    "load_minting_defaults",
     "MockCoinsetServer",
 ]
