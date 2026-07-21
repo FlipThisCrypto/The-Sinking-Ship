@@ -1,9 +1,14 @@
 # SPDX-License-Identifier: MIT
 """Config integrity + the minimal schema validator's own behavior."""
+from pathlib import Path
+
 import pytest
 
+from shipgen.config import load_json
 from shipgen.schema import validate, SchemaError
 from shipgen.canon import canon_json, hash_obj
+
+CONFIG = Path(__file__).resolve().parent.parent / "config"
 
 
 def test_all_configs_load_and_cross_validate(cfg):
@@ -67,3 +72,17 @@ def test_schema_validator_negatives():
 def test_canonical_json_is_order_insensitive():
     assert canon_json({"b": 1, "a": [1, 2]}) == canon_json({"a": [1, 2], "b": 1})
     assert hash_obj({"x": {"n": 1, "m": 2}}) == hash_obj({"x": {"m": 2, "n": 1}})
+
+
+def test_collection_json_public_urls_are_live_pages():
+    """Marketplace collection block must not ship example.com placeholders."""
+    doc = load_json(CONFIG / "collection.json")
+    validate(doc, load_json(CONFIG / "schemas" / "collection.schema.json"))
+    c = doc["collection"]
+    for key in ("website", "icon", "banner", "license_url"):
+        url = c[key]
+        assert url.startswith("https://"), key
+        assert "example" not in url.lower(), f"{key} still placeholder: {url}"
+    assert "flipthiscrypto.github.io" in c["website"]
+    assert doc["minting"]["royalty_percentage_basis_points"] == 500
+    assert doc["minting"]["series_total"] == 44444
