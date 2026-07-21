@@ -13,7 +13,7 @@ Work this list top-to-bottom before any mainnet salt commitment.
 
 ## B. Art & metadata
 
-- [ ] `python engine/render_engine.py --validate-sprites` 0 errors
+- [x] `python engine/render_engine.py --validate-sprites` 0 errors (also gated in CI + tests/test_render.py)
 - [ ] `python scripts/style_score.py --samples <batch> --threshold 92` PASS
 - [ ] Cohesion contact sheet reviewed by owner
 - [ ] Grail 1/1 art + final lore (not stubs) ready for 44

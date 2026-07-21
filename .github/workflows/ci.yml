@@ -62,6 +62,9 @@ jobs:
       - name: Validate configs against schemas
         run: python engine/validate_configs.py
 
+      - name: Validate sprite inventory for active render profile
+        run: python engine/render_engine.py --validate-sprites
+
       - name: Run test suite
         run: python -m pytest tests/ -q
 

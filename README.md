@@ -109,10 +109,11 @@ and anyone can recompute every chest with `chest_roller.py verify`. See
 - Testnet-first: anything that will touch the chain is designed for testnet11
   dry runs.
 - CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs config
-  validation, the full test suite, the fulfillment smoke, a full-sellout Monte
+  validation, active-profile sprite inventory checks, the full test suite
+  (including render compose smoke), the fulfillment smoke, a full-sellout Monte
   Carlo rarity gate (`simulate.py --check`, ±5% of spec 4.1), and the
   Python↔JS fairness-vector parity check on every push and PR — a determinism,
-  distribution, or parity regression cannot reach `main` silently.
+  art-pipeline, distribution, or parity regression cannot reach `main` silently.
 
 ## Status
 
