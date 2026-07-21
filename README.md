@@ -128,6 +128,11 @@ sprite validation, fairness parity, stale `tiers.js` detection), fulfillment
 safety (mainnet allow-flag, collection-sourced royalty/DID), and public site
 a11y/security surfaces.
 
+**Round 2 ops maturity:** structured JSON logging, Prometheus metrics and
+composite health, crash-consistent ledger backup, soak harness, operator
+preflight, reveal `?offer=` publish path, webhook rate limits, retention
+archive, and buyer receipt export.
+
 **P7 fulfillment** (`engine/fulfillment/`): SQLite ledger, fixture + fail-closed
 coinset poll client, STM webhook PENDING hints, CLI (`tick` / `status` /
 `export-refused` / `ingest-hint` / `reconcile` / `export-audit`), offline smoke
