@@ -87,6 +87,9 @@ jobs:
       - name: Fulfillment offline smoke
         run: python scripts/smoke_fulfillment.py
 
+      - name: Fulfillment burst soak (40 purchases)
+        run: python scripts/soak_fulfillment.py --purchases 40
+
       # Spec 4.1 rarity targets (±5% relative). Mythic is sparse, so use
       # multiple replicates to damp Poisson noise — same gate as launch
       # checklist section A. Failures exit 2 from simulate.py --check.
