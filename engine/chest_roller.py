@@ -41,8 +41,10 @@ def read_salt(path: str) -> bytes:
     if not data:
         raise SystemExit(f"salt file {path} is empty")
     if len(data) < MIN_SALT_BYTES:
-        log.warning("salt is only %d bytes — use >= %d bytes of high entropy "
-                    "for the real mint", len(data), MIN_SALT_BYTES)
+        raise SystemExit(
+            f"salt file {path} is only {len(data)} bytes "
+            f"(need >= {MIN_SALT_BYTES} bytes of high entropy)"
+        )
     return data
 
 
