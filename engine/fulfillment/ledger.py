@@ -77,6 +77,11 @@ class SqliteLedger(FulfillmentLedger):
             self._conn.execute(
                 "INSERT INTO meta(key, value) VALUES ('next_start_index', '1')")
         cur = self._conn.execute(
+            "SELECT value FROM meta WHERE key = 'schema_version'")
+        if cur.fetchone() is None:
+            self._conn.execute(
+                "INSERT INTO meta(key, value) VALUES ('schema_version', '1')")
+        cur = self._conn.execute(
             "SELECT value FROM meta WHERE key = 'last_polled_height'")
         if cur.fetchone() is None:
             self._conn.execute(
@@ -349,6 +354,7 @@ class SqliteLedger(FulfillmentLedger):
             "total_purchases": sum(by_state.values()),
             "db_path": str(self.path),
             "integrity_ok": self.integrity_ok(),
+            "schema_version": int(self._meta_get("schema_version") or "1"),
         }
 
     def list_refused(self) -> list[dict]:
