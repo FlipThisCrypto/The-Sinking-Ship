@@ -32,22 +32,29 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      # GitHub Pages serves style.css / main.js / tiers.js with a 10-min
-      # browser cache and no content-hashed filenames, so edits can appear
-      # "stuck" behind a stale cache. Stamp the commit SHA onto those asset
-      # links at deploy time so every release has unique URLs and browsers
-      # always fetch the new code. Only the deployed artifact is rewritten;
-      # the committed site/index.html stays clean for local development.
+      # GitHub Pages serves style.css / main.js / tiers.js / the DRBG module
+      # with a 10-min browser cache and no content-hashed filenames, so edits
+      # can appear "stuck" behind a stale cache. Stamp the commit SHA onto those
+      # asset references at deploy time so every release has unique URLs and
+      # browsers always fetch the new code. Every page that loads these assets
+      # is rewritten (not just index.html) — otherwise fairness.html / reveal /
+      # wallet would keep serving stale CSS/JS after a deploy. Both attribute
+      # forms (href="…"/src="…") and the ES-module `from "./…"` specifier are
+      # covered. Only the deployed artifact is rewritten; the committed HTML
+      # stays clean for local development.
       - name: Cache-bust versioned asset links
         run: |
           V="${GITHUB_SHA}"
-          sed -i \
-            -e "s|href=\"style.css\"|href=\"style.css?v=${V}\"|g" \
-            -e "s|src=\"tiers.js\"|src=\"tiers.js?v=${V}\"|g" \
-            -e "s|src=\"main.js\"|src=\"main.js?v=${V}\"|g" \
-            site/index.html
+          for f in site/*.html; do
+            sed -i \
+              -e "s|style\.css\"|style.css?v=${V}\"|g" \
+              -e "s|main\.js\"|main.js?v=${V}\"|g" \
+              -e "s|tiers\.js\"|tiers.js?v=${V}\"|g" \
+              -e "s|shipgen_drbg\.js\"|shipgen_drbg.js?v=${V}\"|g" \
+              "$f"
+          done
           echo "Stamped asset version ${V}:"
-          grep -nE 'style.css|main.js|tiers.js' site/index.html
+          grep -rnE '\?v=' site/*.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
