@@ -46,6 +46,20 @@ Significant behavior changes need an ADR under `docs/adr/`. Spec disputes:
 | Site | `site/`, `scripts/build_site_data.py` |
 | Art / render | `engine/render_engine.py`, `sprites/`, ADR-0008 |
 
+## Operator tooling (mint window)
+
+```bash
+python scripts/generate_salt.py --out secrets/mint.salt
+python scripts/ops_preflight.py --salt-file secrets/mint.salt --db path/to/ledger.sqlite
+python engine/fulfillment_daemon.py status --db path --health
+python engine/fulfillment_daemon.py status --db path --metrics --out metrics.prom
+python engine/fulfillment_daemon.py backup --db path --out backups/ledger.sqlite
+python scripts/soak_fulfillment.py --purchases 40
+python scripts/export_buyer_receipt.py --db path --coin-id <hex> --out receipt.json
+```
+
+Prefer `--log-json` on daemon commands when shipping logs to an aggregator.
+
 ## Security
 
 See [SECURITY.md](SECURITY.md). Do not file public issues with salts or keys.
