@@ -35,6 +35,11 @@ def build_health(
     elif pending_work > 50:
         level = "degraded"
         reasons.append("fulfillment_backlog")
+    # Optional circuit breaker snapshot from status enrichment
+    br = status.get("circuit_breaker") or {}
+    if br.get("state") == "open":
+        level = "degraded" if level == "ok" else level
+        reasons.append("coinset_circuit_open")
     return {
         "schema": "sinking-ship-health-v1",
         "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
