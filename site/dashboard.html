@@ -254,6 +254,33 @@ section { margin: 2.25rem 0; }
 }
 .actions button:hover { border-color: var(--gold); color: var(--pale-gold); }
 
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--chia-bright);
+  outline-offset: 3px;
+}
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 100;
+  padding: 0.55rem 0.9rem;
+  background: var(--ink);
+  color: var(--pale-gold);
+  border: 1px solid var(--gold);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  transform: translateY(-150%);
+  transition: transform 0.15s ease;
+  text-decoration: none;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline-offset: 2px;
+}
+
 @media (max-width: 700px) {
   .task { grid-template-columns: auto 1fr; }
   .task-status-col { grid-column: 2; text-align: left; }
@@ -263,10 +290,10 @@ section { margin: 2.25rem 0; }
 </style>
 </head>
 <body>
-
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="top">
   <div class="brand">THE&nbsp;SINKING&nbsp;SHIP <span>· Dashboard</span></div>
-  <nav class="top-nav">
+  <nav class="top-nav" aria-label="Primary">
     <a href="index.html">← Landing</a>
     <a href="#direction">Direction</a>
     <a href="#tracks">Tracks</a>
@@ -278,7 +305,7 @@ section { margin: 2.25rem 0; }
   <span class="badge" id="sync-badge">local checkboxes</span>
 </header>
 
-<main class="wrap">
+<main id="main" class="wrap">
 
   <div class="hero" id="direction">
     <h1>Project direction — one place</h1>
