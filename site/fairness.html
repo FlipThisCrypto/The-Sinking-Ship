@@ -120,24 +120,50 @@
 <script type="module">
 import { verifyFairnessVectors } from "./js/shipgen_drbg.js";
 
-const tbody = document.querySelector("#fair-table tbody");
-for (const t of SHIP_DATA.tiers) {
-  const tr = document.createElement("tr");
-  tr.innerHTML = `<td>${t.name}</td><td>${t.zone}</td><td>${t.price == null ? "—" : t.price + " XCH"}</td>`
-    + `<td>${t.chest}</td><td>${Number(t.passes).toLocaleString("en-US")}</td>`
-    + `<td>${t.luck == null ? "10.0×" : t.luck + "×"}</td><td>${t.guarantee}</td>`;
-  tbody.appendChild(tr);
+function td(text) {
+  const c = document.createElement("td");
+  c.textContent = text;
+  return c;
 }
-const g = SHIP_DATA.grailSeeding || {};
-document.getElementById("grail-list").innerHTML = [
-  `${g.admiral ?? 5} seeded into Admiral chests (lottery)`,
-  `${g.mid ?? 27} seeded across mid tiers (Deep Sea → Harbormaster)`,
-  `${g.auction ?? 11} reserved for post-mint auction`,
-  `${g.wizard ?? 1} named grail for Wizard of the Deep`,
-].map(s => `<li>${s}</li>`).join("");
-document.getElementById("budget").textContent =
-  (SHIP_DATA.publicMintBudget || 44000).toLocaleString("en-US") + " NFTs";
-document.getElementById("tech-block").textContent =
+
+const tbody = document.querySelector("#fair-table tbody");
+if (tbody && typeof SHIP_DATA !== "undefined") {
+  for (const t of SHIP_DATA.tiers) {
+    const tr = document.createElement("tr");
+    tr.append(
+      td(t.name),
+      td(t.zone),
+      td(t.price == null ? "—" : t.price + " XCH"),
+      td(String(t.chest)),
+      td(Number(t.passes).toLocaleString("en-US")),
+      td(t.luck == null ? "10.0×" : t.luck + "×"),
+      td(t.guarantee),
+    );
+    tbody.appendChild(tr);
+  }
+}
+const g = (typeof SHIP_DATA !== "undefined" && SHIP_DATA.grailSeeding) || {};
+const grailList = document.getElementById("grail-list");
+if (grailList) {
+  for (const s of [
+    `${g.admiral ?? 5} seeded into Admiral chests (lottery)`,
+    `${g.mid ?? 27} seeded across mid tiers (Deep Sea → Harbormaster)`,
+    `${g.auction ?? 11} reserved for post-mint auction`,
+    `${g.wizard ?? 1} named grail for Wizard of the Deep`,
+  ]) {
+    const li = document.createElement("li");
+    li.textContent = s;
+    grailList.appendChild(li);
+  }
+}
+const budgetEl = document.getElementById("budget");
+if (budgetEl && typeof SHIP_DATA !== "undefined") {
+  budgetEl.textContent =
+    (SHIP_DATA.publicMintBudget || 44000).toLocaleString("en-US") + " NFTs";
+}
+const tech = document.getElementById("tech-block");
+if (tech && typeof SHIP_DATA !== "undefined") {
+  tech.textContent =
 `algorithm: ${SHIP_DATA.rngAlgorithm || "HMAC-SHA256-DRBG-v1"}
 seed_key  = HMAC-SHA256(secret_salt, payment_coin_id_bytes)
 draws     = named HMAC-DRBG substreams (quantity, traits, pity, grails)
@@ -149,20 +175,32 @@ supply cap: ${SHIP_DATA.supply}
 treasury reserve (disclosed): ${SHIP_DATA.reserve}
 public mint budget: ${SHIP_DATA.publicMintBudget}
 full-sellout revenue model: ${SHIP_DATA.revenueFullSelloutXch} XCH`;
+}
 
-document.getElementById("selfcheck-btn").addEventListener("click", async () => {
-  const out = document.getElementById("selfcheck-out");
-  out.textContent = "Running…";
-  try {
-    const doc = await (await fetch("fairness_vectors.json")).json();
-    const r = await verifyFairnessVectors(doc);
-    out.textContent = (r.ok ? "PASS\n" : "FAIL\n") + JSON.stringify(r, null, 2);
-    out.style.color = r.ok ? "var(--chia-bright)" : "var(--coral)";
-  } catch (e) {
-    out.textContent = "ERROR: " + e;
-    out.style.color = "var(--coral)";
-  }
-});
+const selfBtn = document.getElementById("selfcheck-btn");
+if (selfBtn) {
+  selfBtn.addEventListener("click", async () => {
+    const out = document.getElementById("selfcheck-out");
+    if (!out) return;
+    out.textContent = "Running…";
+    selfBtn.disabled = true;
+    selfBtn.setAttribute("aria-busy", "true");
+    try {
+      const resp = await fetch("fairness_vectors.json");
+      if (!resp.ok) throw new Error("HTTP " + resp.status + " loading fairness_vectors.json");
+      const doc = await resp.json();
+      const r = await verifyFairnessVectors(doc);
+      out.textContent = (r.ok ? "PASS\n" : "FAIL\n") + JSON.stringify(r, null, 2);
+      out.style.color = r.ok ? "var(--chia-bright)" : "var(--coral)";
+    } catch (e) {
+      out.textContent = "ERROR: " + e;
+      out.style.color = "var(--coral)";
+    } finally {
+      selfBtn.disabled = false;
+      selfBtn.setAttribute("aria-busy", "false");
+    }
+  });
+}
 </script>
 </body>
 </html>
