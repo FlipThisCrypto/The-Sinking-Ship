@@ -1,11 +1,13 @@
 ﻿# SPDX-License-Identifier: MIT
 """Fail if live configs no longer match a stamped mint-open hash."""
 from __future__ import annotations
-import argparse, json, sys
+import argparse
+import json
+import sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "engine"))
-from shipgen.config import GenConfig
+from shipgen.config import GenConfig  # noqa: E402
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--stamp", required=True)

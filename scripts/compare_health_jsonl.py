@@ -1,7 +1,8 @@
 ﻿# SPDX-License-Identifier: MIT
 """Compare two metrics JSONL files for health level regressions (CI-friendly)."""
 from __future__ import annotations
-import argparse, json, sys
+import argparse
+import json
 from pathlib import Path
 def last_level(path):
     lines = Path(path).read_text(encoding="utf-8").strip().splitlines()

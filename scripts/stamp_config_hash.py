@@ -5,11 +5,13 @@ Usage:
     python scripts/stamp_config_hash.py --out secrets/mint_config_hash.txt
 """
 from __future__ import annotations
-import argparse, json, sys
+import argparse
+import json
+import sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "engine"))
-from shipgen.config import GenConfig
+from shipgen.config import GenConfig  # noqa: E402
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)

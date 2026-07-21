@@ -1,7 +1,8 @@
 ﻿# SPDX-License-Identifier: MIT
 """Redact buyer addresses from ledger JSON dumps for public post-mortems."""
 from __future__ import annotations
-import argparse, json, re, sys
+import argparse
+import json
 from pathlib import Path
 def redact(obj):
     if isinstance(obj, dict):

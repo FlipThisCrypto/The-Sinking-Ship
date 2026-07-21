@@ -1,12 +1,14 @@
 ﻿# SPDX-License-Identifier: MIT
 """Detect orphan rolled-but-not-fulfilled purchases for resume ops."""
 from __future__ import annotations
-import argparse, json, sys
+import argparse
+import json
+import sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT/"engine"))
-from fulfillment import SqliteLedger, PaymentState
-from shipgen.config import GenConfig
+from fulfillment import SqliteLedger, PaymentState  # noqa: E402
+from shipgen.config import GenConfig  # noqa: E402
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", required=True)

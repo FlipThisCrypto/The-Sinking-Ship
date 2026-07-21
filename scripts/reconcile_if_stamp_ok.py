@@ -1,7 +1,10 @@
 ﻿# SPDX-License-Identifier: MIT
 """Abort reconcile if config stamp mismatches (post-mint-open safety)."""
 from __future__ import annotations
-import argparse, json, subprocess, sys
+import argparse
+import json
+import subprocess
+import sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 def main():
@@ -17,8 +20,10 @@ def main():
         print(json.dumps({"aborted": True, "reason": "config_stamp_mismatch"}))
         return 2
     cmd = [sys.executable, str(ROOT/"engine"/"fulfillment_daemon.py"), "reconcile", "--db", args.db, "--salt-file", args.salt_file, "--loops", "1"]
-    if args.fixture: cmd += ["--fixture", args.fixture]
-    if args.coinset_url: cmd += ["--coinset-url", args.coinset_url]
+    if args.fixture:
+        cmd += ["--fixture", args.fixture]
+    if args.coinset_url:
+        cmd += ["--coinset-url", args.coinset_url]
     return subprocess.call(cmd, cwd=str(ROOT))
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,7 +1,9 @@
 ﻿# SPDX-License-Identifier: MIT
 """Hash-chain manifests in a directory for bulk integrity (sha256 of sorted files)."""
 from __future__ import annotations
-import argparse, hashlib, json, sys
+import argparse
+import hashlib
+import json
 from pathlib import Path
 def main():
     ap = argparse.ArgumentParser()

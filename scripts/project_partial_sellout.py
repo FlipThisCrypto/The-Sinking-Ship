@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import sys
 from pathlib import Path
 
@@ -32,8 +31,6 @@ def project(fraction: float) -> dict:
     expected_supply = 0.0
     for t in cfg.tiers_doc["tiers"]:
         passes = int(t["passes"] * fraction)
-        # floor at least 0; keep full fraction math for expected_mints scale
-        exp_mints = float(t["expected_mints"]) * fraction
         exp_supply = float(t["expected_supply"]) * fraction
         price = t.get("price_xch")
         rev = float(price) * passes if price is not None else 0.0

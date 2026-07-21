@@ -1,7 +1,9 @@
 ﻿# SPDX-License-Identifier: MIT
 """VACUUM and WAL checkpoint for long-running mint ledgers."""
 from __future__ import annotations
-import argparse, json, sqlite3, sys
+import argparse
+import json
+import sqlite3
 from pathlib import Path
 def main():
     ap = argparse.ArgumentParser()

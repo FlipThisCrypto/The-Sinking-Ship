@@ -1,12 +1,14 @@
 ﻿# SPDX-License-Identifier: MIT
 """Simulate scuttling remaining budget (numbers only; no chain)."""
 from __future__ import annotations
-import argparse, json, sys
+import argparse
+import json
+import sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT/"engine"))
-from fulfillment import SqliteLedger
-from shipgen.config import GenConfig
+from fulfillment import SqliteLedger  # noqa: E402
+from shipgen.config import GenConfig  # noqa: E402
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", required=True)

@@ -1,12 +1,15 @@
 ﻿# SPDX-License-Identifier: MIT
 """List refused purchases as CSV for support ticket import."""
 from __future__ import annotations
-import argparse, csv, json, sys
+import argparse
+import csv
+import json
+import sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT/"engine"))
-from fulfillment import SqliteLedger
-from shipgen.config import GenConfig
+from fulfillment import SqliteLedger  # noqa: E402
+from shipgen.config import GenConfig  # noqa: E402
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", required=True)

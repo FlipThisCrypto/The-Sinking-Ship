@@ -1,6 +1,8 @@
 ﻿# SPDX-License-Identifier: MIT
 from pathlib import Path
-import json, subprocess, sys
+import json
+import subprocess
+import sys
 def test_round3_surface_flags():
     root = Path(__file__).resolve().parent.parent
     r = subprocess.run([sys.executable, str(root/"scripts"/"round3_surface.py")], capture_output=True, text=True, check=True)

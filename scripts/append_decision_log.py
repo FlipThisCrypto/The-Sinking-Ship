@@ -1,7 +1,8 @@
 ﻿# SPDX-License-Identifier: MIT
 """Append-only decision log for mint window governance (local file)."""
 from __future__ import annotations
-import argparse, json
+import argparse
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 def main():

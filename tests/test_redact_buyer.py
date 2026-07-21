@@ -1,5 +1,4 @@
 ﻿# SPDX-License-Identifier: MIT
-from scripts import redact_buyer_fields as r
 # load via importlib
 import importlib.util
 from pathlib import Path
