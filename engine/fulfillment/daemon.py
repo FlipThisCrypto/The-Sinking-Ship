@@ -10,6 +10,7 @@ from shipgen.config import GenConfig, load_json
 from shipgen.roll import RollEngine, build_commitment
 from shipgen.schema import validate
 
+from .budget_guard import can_accept_chest
 from .logging_util import event
 from .types import (
     FulfillmentLedger,
@@ -170,9 +171,9 @@ class FulfillmentDaemon:
             # Budget gate before committing the roll: refuse if even a 1-NFT
             # chest would exceed remaining budget; after roll, re-check qty.
             remaining = self.budget - self.ledger.supply_consumed()
-            if remaining <= 0:
-                reason = f"public mint budget exhausted ({self.budget})"
-                self.ledger.mark_refused(coin_id, reason, dry_run=dry_run)
+            ok, reason = can_accept_chest(remaining, 1)
+            if not ok:
+                self.ledger.mark_refused(coin_id, reason or "budget", dry_run=dry_run)
                 log.warning("REFUSED %s: %s", coin_id[:12], reason)
                 return "refused"
 
@@ -180,12 +181,10 @@ class FulfillmentDaemon:
                 self.salt, coin_id, row["tier_name"], ordinal, start,
                 self.placements, self.provenance_hash,
             )
-            if self.ledger.supply_consumed() + manifest["quantity"] > self.budget:
-                reason = (
-                    f"chest qty {manifest['quantity']} would exceed budget "
-                    f"(consumed={self.ledger.supply_consumed()}, budget={self.budget})"
-                )
-                self.ledger.mark_refused(coin_id, reason, dry_run=dry_run)
+            remaining_after = self.budget - self.ledger.supply_consumed()
+            ok, reason = can_accept_chest(remaining_after, int(manifest["quantity"]))
+            if not ok:
+                self.ledger.mark_refused(coin_id, reason or "budget", dry_run=dry_run)
                 log.warning("REFUSED %s: %s", coin_id[:12], reason)
                 return "refused"
 
