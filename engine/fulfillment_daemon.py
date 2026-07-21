@@ -273,6 +273,16 @@ def cmd_reconcile(args) -> int:
     """
     import time
 
+    from fulfillment.reconcile_lock import LedgerFileLock, LedgerLockError
+
+    lock_path = getattr(args, "lock_file", None) or (str(Path(args.db)) + ".lock")
+    try:
+        lock = LedgerFileLock(lock_path, stale_seconds=float(getattr(args, "lock_stale_s", 3600)))
+        lock.acquire()
+    except LedgerLockError as e:
+        log.error("%s", e)
+        return 3
+
     cfg, ledger = _ledger(args)
     try:
         source = _source(args, cfg)
@@ -302,6 +312,7 @@ def cmd_reconcile(args) -> int:
         return 1 if any(s.get("errors") for s in summaries) else 0
     finally:
         ledger.close()
+        lock.release()
 
 
 VERSION = "1.0.0"
@@ -434,6 +445,17 @@ def main() -> int:
     )
     p.add_argument("--loops", type=int, default=1, help="reconcile cycles (default 1)")
     p.add_argument("--interval", type=float, default=0.0, help="seconds between loops")
+    p.add_argument(
+        "--lock-file",
+        default=None,
+        help="exclusive reconcile lock path (default: <db>.lock)",
+    )
+    p.add_argument(
+        "--lock-stale-s",
+        type=float,
+        default=3600.0,
+        help="break lock if older than this many seconds",
+    )
     p.set_defaults(fn=cmd_reconcile)
 
     args = ap.parse_args()
