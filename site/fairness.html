@@ -116,6 +116,18 @@
     <strong id="budget" style="color:var(--chia-bright)"></strong>.
   </p>
 
+  <h2 class="section-title" style="margin-top:2.5rem">How to verify offline</h2>
+  <ol style="line-height:1.7;color:var(--ash);padding-left:1.25rem">
+    <li style="margin:.5rem 0">After salt reveal, obtain any published chest manifest JSON.</li>
+    <li style="margin:.5rem 0">Run
+      <code style="color:var(--chia-bright)">python engine/chest_roller.py verify --manifest &lt;chest.json&gt; --salt-file &lt;revealed.salt&gt;</code>
+    </li>
+    <li style="margin:.5rem 0">Confirm exit code 0 and that the recomputed manifest matches bit-for-bit.</li>
+    <li style="margin:.5rem 0">Optionally re-check browser vectors:
+      <code style="color:var(--chia-bright)">node site/js/verify_vectors.mjs</code>
+    </li>
+  </ol>
+
   <p style="margin-top:2.5rem">
     <a class="btn" href="index.html">← Back to the wreck</a>
     <a class="btn btn-primary" href="reveal.html">Try reveal demo</a>
