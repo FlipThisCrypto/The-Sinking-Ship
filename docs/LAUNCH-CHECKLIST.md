@@ -39,8 +39,11 @@ Work this list top-to-bottom before any mainnet salt commitment.
 
 - [ ] testnet11 end-to-end: pay → detect → roll → mint → offer → accept → verify
 - [ ] Owner sign-off on pricing + supply table
-- [ ] Salt generated offline (≥16 bytes CSPRNG); never committed
+- [ ] Salt generated offline (≥16 bytes CSPRNG); never committed (`python scripts/generate_salt.py --out secrets/mint.salt`)
 - [ ] Commitment hash published; mint window announced
+- [ ] Ops preflight green: `python scripts/ops_preflight.py --salt-file secrets/mint.salt`
+- [ ] Metrics scrape path ready: `fulfillment_daemon.py status --metrics`
+- [ ] Ledger backup cron rehearsed: `fulfillment_daemon.py backup`
 
 ## Commands quick ref
 
