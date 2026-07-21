@@ -117,11 +117,15 @@ and anyone can recompute every chest with `chest_roller.py verify`. See
 
 ## Status
 
-Technical core (P2–P6) built and tested.
+Technical core (P2–P6) built and tested. Continuous improvement iterations
+harden CI (ruff, secret scan, site links, sellout Monte Carlo, load test,
+sprite validation, fairness parity, stale `tiers.js` detection), fulfillment
+safety (mainnet allow-flag, collection-sourced royalty/DID), and public site
+a11y/security surfaces.
 
 **P7 fulfillment** (`engine/fulfillment/`): SQLite ledger, fixture + fail-closed
 coinset poll client, STM webhook PENDING hints, CLI (`tick` / `status` /
-`export-refused` / `ingest-hint`), offline smoke
+`export-refused` / `ingest-hint` / `reconcile` / `export-audit`), offline smoke
 `scripts/smoke_fulfillment.py`. Sage mTLS mint + live testnet e2e still open —
 [docs/TODO-P7-fulfillment.md](docs/TODO-P7-fulfillment.md).
 
@@ -129,10 +133,12 @@ coinset poll client, STM webhook PENDING hints, CLI (`tick` / `status` /
 [site/fairness.html](site/fairness.html), [site/wallet.html](site/wallet.html),
 [site/fairness_vectors.json](site/fairness_vectors.json). Launch checklist:
 [docs/LAUNCH-CHECKLIST.md](docs/LAUNCH-CHECKLIST.md). Incident runbook:
-[docs/INCIDENT-RUNBOOK.md](docs/INCIDENT-RUNBOOK.md).
+[docs/INCIDENT-RUNBOOK.md](docs/INCIDENT-RUNBOOK.md). Contributing:
+[CONTRIBUTING.md](CONTRIBUTING.md). Security: [SECURITY.md](SECURITY.md).
 
 Art direction locked (Amano illustration); layered production still in progress.
-Landing page live on GitHub Pages.
+Landing page live on GitHub Pages
+(https://flipthiscrypto.github.io/The-Sinking-Ship/).
 
 **Single-pane project view:**
 [site/dashboard.html](site/dashboard.html) — also
