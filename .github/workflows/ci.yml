@@ -75,6 +75,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Assert supported Python version
+        run: python scripts/check_python_version.py
+
       - name: Validate configs against schemas
         run: python engine/validate_configs.py
 

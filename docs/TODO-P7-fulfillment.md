@@ -31,12 +31,21 @@ Sage mTLS mint and live testnet e2e still open. No mainnet.
 - [x] 20-chest fixture stress tick test
 - [x] `export-audit`
 
+## Ops surface added (Round 2)
+
+- [x] `--log-json` structured events (`tick_start` / `tick_complete` / `fulfill_one`)
+- [x] `status --metrics` Prometheus text + `status --health` composite
+- [x] `backup` crash-consistent SQLite snapshot
+- [x] `lookup` / `archive-fulfilled` / `--reveal-outdir`
+- [x] Webhook shared secret + rate limit (auth before rate accounting)
+- [x] `scripts/ops_preflight.py`, `soak_fulfillment.py`, buyer receipt export
+
 ## Remaining
 
-1. Point `--coinset-url` at live testnet11 API (client already fail-closed).
+1. Point `--coinset-url` at live testnet11 API (client already fail-closed; HTTP retries added).
 2. Wire `SageOfferBuilder` to real Sage mTLS certs.
-3. Host cron calling `reconcile` on a schedule.
-4. Full concurrent *purchase* soak under production-like I/O.
+3. Host cron calling `reconcile` on a schedule (+ metrics scrape / backup).
+4. ~~Full concurrent *purchase* soak under production-like I/O.~~ offline soak shipped; live I/O soak still open.
 5. testnet11 go/no-go: pay → detect → roll → mint → offer → accept → verify.
 
 ## CLI
