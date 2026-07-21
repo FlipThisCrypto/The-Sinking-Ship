@@ -6,10 +6,10 @@
     "id": "col-the-sinking-ship-v1",
     "name": "The Sinking Ship",
     "description": "44,444 pixel-art salvage records from the wreck everyone abandoned. The world sees a sinking ship. You see a salvage operation. Hope never sinks.",
-    "icon": "https://thesinkingship.example/assets/icon.png",
-    "banner": "https://thesinkingship.example/assets/banner.png",
+    "icon": "https://flipthiscrypto.github.io/The-Sinking-Ship/assets/og-image.png",
+    "banner": "https://flipthiscrypto.github.io/The-Sinking-Ship/assets/og-image.png",
     "twitter": "@FlipThisCrypto",
-    "website": "https://thesinkingship.example",
+    "website": "https://flipthiscrypto.github.io/The-Sinking-Ship/",
     "license_url": "https://raw.githubusercontent.com/FlipThisCrypto/The-Sinking-Ship/main/LICENSE"
   },
   "minting": {
@@ -22,6 +22,6 @@
   "notes": [
     "OQ-8: collection.id is a placeholder slug; CHIP-0007 examples use a UUID and marketplaces treat it as an opaque unique string. Owner to confirm final id format before mint.",
     "OQ-9: series_total is the 44,444 cap; under The Scuttling the realized supply will be lower. CHIP-0007 has no post-hoc mutation story — series_total is committed pre-mint at the cap. Flagged for the fairness docs.",
-    "icon/banner/website URLs are placeholders until the domain is live."
+    "icon/banner/website point at the live GitHub Pages site until a custom domain is cut over; DID and royalty XCH address remain owner-supplied before testnet11."
   ]
 }
