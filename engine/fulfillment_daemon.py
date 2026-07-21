@@ -75,6 +75,7 @@ def cmd_tick(args) -> int:
             strategy=args.strategy,
             manifest_outdir=args.manifest_outdir,
             metadata_outdir=args.metadata_outdir,
+            reveal_outdir=getattr(args, "reveal_outdir", None),
         )
         summary = daemon.tick(dry_run=args.dry_run)
         print(json.dumps(summary, indent=2, sort_keys=True))
@@ -219,6 +220,7 @@ def cmd_reconcile(args) -> int:
             strategy=args.strategy,
             manifest_outdir=args.manifest_outdir,
             metadata_outdir=args.metadata_outdir,
+            reveal_outdir=getattr(args, "reveal_outdir", None),
         )
         summaries = []
         for i in range(max(1, args.loops)):
@@ -261,6 +263,11 @@ def main() -> int:
     p.add_argument("--strategy", default="claim", choices=["claim", "stm"])
     p.add_argument("--manifest-outdir", default="output/fulfillment/chests")
     p.add_argument("--metadata-outdir", default="output/fulfillment/metadata")
+    p.add_argument(
+        "--reveal-outdir",
+        default=None,
+        help="publish fulfilled chest JSON for reveal.html ?offer= (e.g. site/chests)",
+    )
     p.add_argument("--dry-run", action="store_true",
                    help="roll in memory / log wallet ops without persisting fulfill")
     p.add_argument(
@@ -312,6 +319,11 @@ def main() -> int:
     p.add_argument("--strategy", default="claim", choices=["claim", "stm"])
     p.add_argument("--manifest-outdir", default="output/fulfillment/chests")
     p.add_argument("--metadata-outdir", default="output/fulfillment/metadata")
+    p.add_argument(
+        "--reveal-outdir",
+        default=None,
+        help="publish fulfilled chest JSON for reveal.html ?offer=",
+    )
     p.add_argument("--dry-run", action="store_true")
     p.add_argument(
         "--allow-mainnet",

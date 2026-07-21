@@ -47,6 +47,7 @@ class FulfillmentDaemon:
         royalty_basis_points: int | None = None,
         manifest_outdir: str | Path = "output/fulfillment/chests",
         metadata_outdir: str | Path = "output/fulfillment/metadata",
+        reveal_outdir: str | Path | None = None,
     ):
         if strategy not in ("claim", "stm"):
             raise ValueError("strategy must be 'claim' (default) or 'stm'")
@@ -73,6 +74,8 @@ class FulfillmentDaemon:
         )
         self.manifest_outdir = Path(manifest_outdir)
         self.metadata_outdir = Path(metadata_outdir)
+        # Optional public reveal tree: site/chests/<offer-id>.json for ?offer=
+        self.reveal_outdir = Path(reveal_outdir) if reveal_outdir else None
         commitment = build_commitment(salt, self.cfg)
         self.placements = commitment["commitment"]["placements"]
         self.provenance_hash = commitment["commitment_hash"]
@@ -211,9 +214,28 @@ class FulfillmentDaemon:
         self.ledger.mark_fulfilled(
             coin_id, manifest["manifest_hash"], offer_id, dry_run=dry_run,
         )
+        if not dry_run:
+            self._publish_reveal_manifest(offer_id, coin_id, manifest)
         log.info("fulfilled %s offer=%s…", coin_id[:12], offer_id[:24])
         # Count "rolled" only when this tick performed the roll (ops visibility).
         return "rolled" if just_rolled and dry_run else "fulfilled"
+
+    def _publish_reveal_manifest(
+        self, offer_id: str, coin_id: str, manifest: dict,
+    ) -> None:
+        """Write chest-manifest-v1 for the reveal app (?offer= id lookup)."""
+        if self.reveal_outdir is None:
+            return
+        safe = "".join(c if c.isalnum() or c in "._-" else "_" for c in offer_id)[:128]
+        if not safe:
+            safe = coin_id[:16]
+        self.reveal_outdir.mkdir(parents=True, exist_ok=True)
+        path = self.reveal_outdir / f"{safe}.json"
+        path.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8", newline="\n",
+        )
+        log.info("reveal manifest published %s", path.name)
 
     def _write_metadata_paths(self, manifest: dict, dry_run: bool) -> list[str]:
         """Write CHIP-0007 stubs or real metadata; return paths for mint step."""

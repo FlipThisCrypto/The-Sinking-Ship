@@ -122,6 +122,35 @@ def test_double_fulfill_same_manifest(tmp_path, ledger, cfg):
     assert ledger.state_of(c) == PaymentState.FULFILLED
 
 
+def test_reveal_outdir_publishes_offer_json(tmp_path, ledger, cfg):
+    c = coin(88)
+    fixture = tmp_path / "pay.json"
+    fixture.write_text(json.dumps([{
+        "coin_id": c,
+        "tier_name": "castaway",
+        "buyer_address": "xch1buyer",
+        "block_height": 5,
+        "network": "testnet11",
+    }]), encoding="utf-8")
+    reveal = tmp_path / "site_chests"
+    daemon = FulfillmentDaemon(
+        source=FixturePaymentSource(fixture),
+        ledger=ledger,
+        offers=DryRunOfferBuilder(),
+        salt=TEST_SALT,
+        cfg=cfg,
+        manifest_outdir=tmp_path / "chests",
+        metadata_outdir=tmp_path / "meta",
+        reveal_outdir=reveal,
+    )
+    assert daemon.tick(dry_run=False)["fulfilled"] == 1
+    published = list(reveal.glob("*.json"))
+    assert len(published) == 1
+    doc = json.loads(published[0].read_text(encoding="utf-8"))
+    assert doc["schema"] == "chest-manifest-v1"
+    assert doc["manifest_hash"] == ledger.get_manifest(c)["manifest_hash"]
+
+
 def test_budget_refusal(tmp_path, cfg, caps):
     """When budget is already exhausted, confirmed purchase is refused."""
     ledger = SqliteLedger(tmp_path / "budget.sqlite", caps)
