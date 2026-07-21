@@ -99,7 +99,7 @@
 </nav>
 
 <main id="main" class="reveal-stage">
-  <p class="kicker">P8 prototype · real manifest shape · not live mint</p>
+  <p class="kicker">P8 reveal · chest-manifest-v1 · <code>?manifest=</code> / <code>?offer=</code></p>
   <h1 style="font-size:clamp(1.6rem,4vw,2.2rem);margin:.5rem 0 1rem">Open the chest</h1>
   <p class="zone-label" id="zone-line">Loading demo chest…</p>
   <p class="meta" id="hash-line"></p>
@@ -155,8 +155,42 @@
     });
   }
 
+  /**
+   * Resolve which chest-manifest-v1 JSON to load.
+   * Query params (same-origin only; path traversal blocked):
+   *   ?manifest=demo_chest.json          — relative path under site/
+   *   ?offer=<opaque-id>                 — maps to chests/<id>.json when hosted
+   * Default: demo_chest.json
+   */
+  function resolveManifestUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const offer = (params.get("offer") || "").trim();
+    const manifest = (params.get("manifest") || "").trim();
+    let rel = "demo_chest.json";
+    if (offer) {
+      // Opaque offer ids become static filenames when fulfillment publishes them.
+      if (!/^[A-Za-z0-9._-]{1,128}$/.test(offer)) {
+        throw new Error("invalid offer id (use 1–128 safe characters)");
+      }
+      rel = "chests/" + offer + ".json";
+    } else if (manifest) {
+      if (manifest.includes("://") || manifest.startsWith("//") || manifest.includes("\\")) {
+        throw new Error("manifest URL must be a same-origin relative path");
+      }
+      if (manifest.split("/").some(p => p === ".." || p === "")) {
+        throw new Error("manifest path must not contain '..' or empty segments");
+      }
+      if (!/^[A-Za-z0-9._/-]+\.json$/.test(manifest)) {
+        throw new Error("manifest path must be a .json relative path");
+      }
+      rel = manifest;
+    }
+    return rel;
+  }
+
   let manifest = null;
   let shareText = "";
+  let sourceLabel = "demo_chest.json";
   const btn = document.getElementById("open-btn");
   const stream = document.getElementById("stream");
   const chest = document.getElementById("chest");
@@ -167,28 +201,36 @@
   const copyBtn = document.getElementById("copy-share");
   const copyStatus = document.getElementById("copy-status");
 
-  fetch("demo_chest.json")
-    .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  Promise.resolve()
+    .then(() => {
+      sourceLabel = resolveManifestUrl();
+      return fetch(sourceLabel);
+    })
+    .then(r => { if (!r.ok) throw new Error("HTTP " + r.status + " for " + sourceLabel); return r.json(); })
     .then(m => {
       if (!m || !Array.isArray(m.nfts) || !m.manifest_hash) {
         throw new Error("manifest missing nfts or manifest_hash");
+      }
+      if (m.schema && m.schema !== "chest-manifest-v1") {
+        throw new Error("unsupported schema " + m.schema);
       }
       manifest = m;
       document.getElementById("zone-line").textContent =
         `Depth: ${m.zone} · ${m.tier} · qty ${m.quantity}`;
       document.getElementById("hash-line").textContent =
-        `manifest_hash ${m.manifest_hash}`;
+        `manifest_hash ${m.manifest_hash} · source ${sourceLabel}`;
       btn.disabled = false;
       btn.setAttribute("aria-busy", "false");
       btn.textContent = "Dive — open chest";
     })
     .catch(err => {
-      document.getElementById("zone-line").textContent = "Demo chest unavailable";
+      document.getElementById("zone-line").textContent = "Chest unavailable";
       btn.disabled = true;
       btn.setAttribute("aria-busy", "false");
       btn.textContent = "Unavailable";
       loadError.textContent =
-        "Could not load demo_chest.json (" + err.message + "). Try a hard refresh or open from the deployed site.";
+        "Could not load " + sourceLabel + " (" + err.message + "). " +
+        "Use ?manifest=demo_chest.json or ?offer=<id> for published chests.";
       loadError.classList.add("show");
       console.error(err);
     });

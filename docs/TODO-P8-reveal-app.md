@@ -27,7 +27,7 @@ Not wired to live manifests or wallet yet.
 
 ## Remaining work
 
-1. Load real manifest by opaque offer id from fulfillment service.
+1. ~~Load real manifest by opaque offer id~~ — client supports `?offer=<id>` → `chests/<id>.json` and `?manifest=<rel.json>` (same-origin, path-safe). Host still must publish chest JSON next to the site.
 2. Full JS roll-engine port (DRBG KAT already green).
 3. Live WalletConnect pairing (page is guide-only).
 4. Production CDN cache tiers + reveal-day cache flip.
