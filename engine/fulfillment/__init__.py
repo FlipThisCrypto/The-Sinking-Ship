@@ -23,6 +23,7 @@ from .sage_rpc import SageOfferBuilder, SageRpcClient, SageRpcError
 from .daemon import FulfillmentDaemon, load_minting_defaults
 from .mock_coinset import MockCoinsetServer
 from .logging_util import configure_logging, event
+from .metrics import status_to_prometheus
 
 __all__ = [
     "PaymentState",
@@ -43,4 +44,5 @@ __all__ = [
     "MockCoinsetServer",
     "configure_logging",
     "event",
+    "status_to_prometheus",
 ]

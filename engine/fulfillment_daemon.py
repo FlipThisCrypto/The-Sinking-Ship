@@ -84,10 +84,21 @@ def cmd_tick(args) -> int:
 
 
 def cmd_status(args) -> int:
+    from fulfillment.metrics import status_to_prometheus
+
     _, ledger = _ledger(args)
     try:
-        print(json.dumps(ledger.status_summary(), indent=2, sort_keys=True))
-        return 0
+        summary = ledger.status_summary()
+        if getattr(args, "metrics", False):
+            text = status_to_prometheus(summary)
+            if args.out:
+                Path(args.out).write_text(text, encoding="utf-8", newline="\n")
+                log.info("wrote metrics -> %s", args.out)
+            else:
+                print(text, end="")
+            return 0 if summary.get("integrity_ok", True) else 1
+        print(json.dumps(summary, indent=2, sort_keys=True))
+        return 0 if summary.get("integrity_ok", True) else 1
     finally:
         ledger.close()
 
@@ -220,6 +231,12 @@ def main() -> int:
 
     p = sub.add_parser("status", help="print ledger state counts and supply")
     p.add_argument("--db", default="output/fulfillment/ledger.sqlite")
+    p.add_argument(
+        "--metrics",
+        action="store_true",
+        help="emit Prometheus text exposition instead of JSON",
+    )
+    p.add_argument("--out", default=None, help="with --metrics: write to file")
     p.set_defaults(fn=cmd_status)
 
     p = sub.add_parser("export-refused", help="export refused purchases (dead letter)")
