@@ -1,0 +1,9 @@
+# Default review routing for THE SINKING SHIP.
+# GitHub uses this when CODEOWNERS is enabled on the repo.
+
+*       @FlipThisCrypto
+
+/engine/                @FlipThisCrypto
+/config/                @FlipThisCrypto
+/site/                  @FlipThisCrypto
+/.github/               @FlipThisCrypto
