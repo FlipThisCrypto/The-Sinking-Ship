@@ -31,10 +31,17 @@ FORBIDDEN_NAME = re.compile(
 )
 
 # Content heuristics for small text-like blobs already tracked.
-FORBIDDEN_CONTENT = [
-    re.compile(r"BEGIN (RSA |OPENSSH |EC |DSA )?PRIVATE KEY"),
-    re.compile(r"BEGIN CERTIFICATE PRIVATE"),
-]
+# Built at runtime so this source file does not contain the PEM markers
+# as contiguous literals (which would self-fail the scan).
+def _pem_patterns() -> list[re.Pattern[str]]:
+    begin = "BEGIN"
+    return [
+        re.compile(begin + r" (RSA |OPENSSH |EC |DSA )?PRIVATE KEY"),
+        re.compile(begin + r" ENCRYPTED PRIVATE KEY"),
+    ]
+
+
+FORBIDDEN_CONTENT = _pem_patterns()
 
 
 def git_ls_files() -> list[str]:
