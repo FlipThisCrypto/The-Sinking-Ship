@@ -13,10 +13,24 @@ import json
 import logging
 import sys
 
-from shipgen.config import GenConfig, CONFIG_DIR
-from shipgen.schema import SchemaError
+from pathlib import Path
+
+from shipgen.config import GenConfig, CONFIG_DIR, load_json
+from shipgen.schema import SchemaError, validate
 
 log = logging.getLogger("validate_configs")
+
+# Marketplace + render configs are not part of the fairness hash bundle but
+# must still validate or CHIP-0007 / the compositor will fail at mint time.
+EXTRA_CONFIGS = ("collection", "palette", "render")
+
+
+def _validate_extra(config_dir: Path) -> None:
+    for name in EXTRA_CONFIGS:
+        doc = load_json(config_dir / f"{name}.json")
+        schema = load_json(config_dir / "schemas" / f"{name}.schema.json")
+        validate(doc, schema)
+        log.info("%s.json: schema ok", name)
 
 
 def main() -> int:
@@ -26,9 +40,11 @@ def main() -> int:
                     help="skip weights.json (used before the tuner has produced it)")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    config_dir = Path(args.config_dir)
 
     try:
-        cfg = GenConfig(args.config_dir, require_weights=not args.no_weights)
+        cfg = GenConfig(config_dir, require_weights=not args.no_weights)
+        _validate_extra(config_dir)
     except (OSError, ValueError, SchemaError, json.JSONDecodeError, TypeError, KeyError) as e:
         log.error("config validation FAILED:\n%s", e)
         return 1
@@ -40,7 +56,7 @@ def main() -> int:
     if cfg.weights is not None:
         log.info("weights.json: consistent with traits + tiers")
         log.info("config bundle hash: %s", cfg.config_hash)
-    log.info("all configs valid")
+    log.info("all configs valid (traits/tiers/weights + collection/palette/render)")
     return 0
 
 
