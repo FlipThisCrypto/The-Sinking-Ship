@@ -1,0 +1,11 @@
+# Keep GitHub Actions on supported majors so CI/deploy cannot silently rot.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
