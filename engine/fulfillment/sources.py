@@ -17,9 +17,20 @@ from .types import PaymentSource, TierPurchase
 HttpGet = Callable[[str], bytes]
 
 
-def _default_http_get(url: str) -> bytes:
-    req = urllib.request.Request(url, headers={"Accept": "application/json"}, method="GET")
-    with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 — operator-supplied base URL
+DEFAULT_HTTP_TIMEOUT_S = 30.0
+DEFAULT_USER_AGENT = "TheSinkingShip-fulfillment/1.0 (+https://github.com/FlipThisCrypto/The-Sinking-Ship)"
+
+
+def _default_http_get(url: str, timeout: float = DEFAULT_HTTP_TIMEOUT_S) -> bytes:
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Accept": "application/json",
+            "User-Agent": DEFAULT_USER_AGENT,
+        },
+        method="GET",
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 — operator-supplied base URL
         if getattr(resp, "status", 200) != 200:
             raise RuntimeError(f"HTTP {resp.status} for {url}")
         return resp.read()
@@ -81,10 +92,18 @@ class CoinsetPollingSource(PaymentSource):
         base_url: str,
         network: str = "testnet11",
         http_get: HttpGet | None = None,
+        timeout_s: float = DEFAULT_HTTP_TIMEOUT_S,
     ):
         self.base_url = base_url.rstrip("/")
         self.network = network
-        self._http_get = http_get or _default_http_get
+        self.timeout_s = float(timeout_s)
+        if http_get is not None:
+            self._http_get = http_get
+        else:
+            def self_http_get(url: str) -> bytes:
+                return _default_http_get(url, timeout=self.timeout_s)
+
+            self._http_get = self_http_get
 
     def _get_json(self, path: str, query: dict | None = None) -> dict:
         url = f"{self.base_url}{path}"

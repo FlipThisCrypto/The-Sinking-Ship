@@ -54,6 +54,17 @@ def test_coinset_fail_closed_on_transport_error():
         src.current_height()
 
 
+def test_coinset_timeout_and_user_agent_defaults():
+    """Operators can tune timeout; default client identifies this project."""
+    from fulfillment.sources import DEFAULT_HTTP_TIMEOUT_S, DEFAULT_USER_AGENT
+
+    src = CoinsetPollingSource("http://coinset.test", timeout_s=12.5)
+    assert src.timeout_s == 12.5
+    assert DEFAULT_HTTP_TIMEOUT_S == 30.0
+    assert "TheSinkingShip-fulfillment" in DEFAULT_USER_AGENT
+    assert "github.com/FlipThisCrypto/The-Sinking-Ship" in DEFAULT_USER_AGENT
+
+
 def test_webhook_hint_never_implies_confirmed(tmp_path):
     cfg = GenConfig()
     caps = {t["name"]: t["passes"] for t in cfg.tiers_doc["tiers"]}
