@@ -25,6 +25,8 @@ class SqliteLedger(FulfillmentLedger):
         self._conn.row_factory = sqlite3.Row
         self._conn.execute("PRAGMA foreign_keys = ON")
         self._conn.execute("PRAGMA journal_mode = WAL")
+        # Wait up to 5s on lock contention (concurrent tick / status / export).
+        self._conn.execute("PRAGMA busy_timeout = 5000")
         self._migrate()
 
     def close(self) -> None:
@@ -329,6 +331,11 @@ class SqliteLedger(FulfillmentLedger):
     def set_last_polled_height(self, height: int) -> None:
         self._meta_set("last_polled_height", str(height))
 
+    def integrity_ok(self) -> bool:
+        """SQLite quick integrity check (ops / crash recovery)."""
+        row = self._conn.execute("PRAGMA quick_check").fetchone()
+        return bool(row) and str(row[0]).lower() == "ok"
+
     def status_summary(self) -> dict:
         rows = self._conn.execute(
             "SELECT state, COUNT(*) AS n FROM purchases GROUP BY state"
@@ -340,6 +347,8 @@ class SqliteLedger(FulfillmentLedger):
             "next_start_index": self.peek_next_start_index(),
             "last_polled_height": self.last_polled_height(),
             "total_purchases": sum(by_state.values()),
+            "db_path": str(self.path),
+            "integrity_ok": self.integrity_ok(),
         }
 
     def list_refused(self) -> list[dict]:

@@ -49,6 +49,13 @@ def test_record_purchase_idempotent(ledger):
     a = ledger.record_purchase(p)
     b = ledger.record_purchase(p)
     assert a == b == 1
+
+
+def test_status_summary_reports_integrity_and_path(ledger, tmp_path):
+    s = ledger.status_summary()
+    assert s["integrity_ok"] is True
+    assert s["total_purchases"] == 0
+    assert "ledger.sqlite" in s["db_path"].replace("\\", "/")
     assert ledger.state_of(coin(1)) == PaymentState.CONFIRMED
 
 
