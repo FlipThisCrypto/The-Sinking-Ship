@@ -29,6 +29,8 @@ from .daemon import FulfillmentDaemon, load_minting_defaults
 from .mock_coinset import MockCoinsetServer
 from .logging_util import configure_logging, event
 from .metrics import status_to_prometheus
+from .health import build_health
+from .budget_guard import can_accept_chest
 
 __all__ = [
     "PaymentState",
@@ -51,4 +53,6 @@ __all__ = [
     "configure_logging",
     "event",
     "status_to_prometheus",
+    "build_health",
+    "can_accept_chest",
 ]
