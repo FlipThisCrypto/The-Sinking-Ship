@@ -58,6 +58,31 @@ def test_status_summary_reports_integrity_and_path(ledger):
     assert "ledger.sqlite" in s["db_path"].replace("\\", "/")
 
 
+def test_cli_backup_creates_integrity_ok_copy(tmp_path, ledger, monkeypatch):
+    import fulfillment_daemon as fd
+
+    ledger.record_purchase(
+        TierPurchase(coin(77), "castaway", "xch1buyer", 1, "testnet11"))
+    src = Path(ledger.path)
+    ledger.close()
+    dest = tmp_path / "backup" / "ledger.sqlite"
+    monkeypatch.setattr(
+        "sys.argv",
+        ["fulfillment_daemon.py", "backup", "--db", str(src), "--out", str(dest)],
+    )
+    assert fd.main() == 0
+    assert dest.is_file()
+    from fulfillment import SqliteLedger
+    from shipgen.config import GenConfig
+    caps = {t["name"]: t["passes"] for t in GenConfig().tiers_doc["tiers"]}
+    b = SqliteLedger(dest, caps)
+    try:
+        assert b.integrity_ok()
+        assert b.status_summary()["total_purchases"] == 1
+    finally:
+        b.close()
+
+
 def test_ordinals_increment_per_tier(ledger):
     for i in range(3):
         o = ledger.record_purchase(

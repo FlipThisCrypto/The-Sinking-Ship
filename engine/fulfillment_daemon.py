@@ -142,6 +142,47 @@ def cmd_ingest_hint(args) -> int:
         ledger.close()
 
 
+def cmd_backup(args) -> int:
+    """Online-safe SQLite backup via the backup API (crash-consistent copy)."""
+    import shutil
+    import sqlite3
+
+    src = Path(args.db)
+    dest = Path(args.out)
+    if not src.is_file():
+        log.error("ledger not found: %s", src)
+        return 1
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    # Prefer SQLite backup API when possible for a consistent snapshot.
+    try:
+        src_conn = sqlite3.connect(f"file:{src.as_posix()}?mode=ro", uri=True)
+        dest_conn = sqlite3.connect(str(dest))
+        try:
+            src_conn.backup(dest_conn)
+        finally:
+            dest_conn.close()
+            src_conn.close()
+    except sqlite3.Error as e:
+        log.warning("sqlite backup API failed (%s); falling back to file copy", e)
+        shutil.copy2(src, dest)
+    # Verify destination integrity
+    cfg, ledger = _ledger(argparse.Namespace(db=str(dest)))
+    try:
+        ok = ledger.integrity_ok()
+        summary = ledger.status_summary()
+    finally:
+        ledger.close()
+    report = {
+        "source": str(src),
+        "dest": str(dest),
+        "integrity_ok": ok,
+        "total_purchases": summary.get("total_purchases"),
+        "supply_consumed": summary.get("supply_consumed"),
+    }
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0 if ok else 1
+
+
 def cmd_export_audit(args) -> int:
     _, ledger = _ledger(args)
     try:
@@ -255,6 +296,11 @@ def main() -> int:
     p.add_argument("--out", default=None)
     p.add_argument("--limit", type=int, default=None)
     p.set_defaults(fn=cmd_export_audit)
+
+    p = sub.add_parser("backup", help="crash-consistent ledger snapshot + integrity check")
+    p.add_argument("--db", default="output/fulfillment/ledger.sqlite")
+    p.add_argument("--out", required=True, help="destination .sqlite path")
+    p.set_defaults(fn=cmd_backup)
 
     p = sub.add_parser("reconcile", help="cron entrypoint: poll source + fulfill (N loops)")
     src = p.add_mutually_exclusive_group(required=True)
