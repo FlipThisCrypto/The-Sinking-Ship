@@ -16,9 +16,14 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "engine"))
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "engine"))
 
 from shipgen.config import GenConfig, load_json, CONFIG_DIR  # noqa: E402
+
+# Canonical grail bios (P1 Lore Bible). Source of truth for the description
+# field below; tests/test_grail_bios.py enforces one bio per GRAIL_SETS member.
+GRAIL_BIOS: dict[str, str] = load_json(ROOT / "docs" / "lore" / "grail-bios.json")["bios"]
 
 # 11 themed sets × 4 (spec 4.3) — display names are placeholders until P1 fills bios.
 GRAIL_SETS = [
@@ -71,7 +76,7 @@ def main() -> int:
                 "name": f"Sinking Ship Grail #{n:02d} — {member}",
                 "description": (
                     f"Hand-crafted 1/1. Set: {set_name}. "
-                    f"Placeholder bio — replace from Lore Bible (P1). "
+                    f"{GRAIL_BIOS[member]} "
                     f"Hope never sinks."
                 ),
                 "minting_tool": m["minting_tool"],

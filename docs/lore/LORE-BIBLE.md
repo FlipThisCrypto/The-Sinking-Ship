@@ -1,6 +1,6 @@
 # THE SINKING SHIP — Lore Bible (core)
 
-**Status:** core spine finished (P1 foundation). Expand bios/grail prose as art lands.  
+**Status:** P1 complete — core spine + all 44 grail bios (see [`grail-bios.json`](grail-bios.json)). Per-grail visual prose can still deepen as final art lands.  
 **Tagline:** *Hope never sinks.*  
 **Thesis:** The world sees a sinking ship. You see a salvage operation.
 
@@ -61,20 +61,22 @@ light, and it is not the sun.
 
 ## Grail sets (11 × 4 = 44)
 
-Placeholder names; final 2–3 sentence bios replace stubs in
-`scripts/gen_grail_stubs.py` output.
+All 44 grails are named and have canonical 2–3 sentence bios. The bios are the
+single source of truth in [`grail-bios.json`](grail-bios.json); they flow
+directly into grail metadata via `scripts/gen_grail_stubs.py`, and
+`tests/test_grail_bios.py` enforces one bio per named grail.
 
-1. The Four Admirals  
-2. The Four Wizards of the Deep  
-3. The Four Horsemen of the Bear  
-4. The Lighthouse Keepers  
-5. The First Divers  
-6. The Last Men Aboard  
-7. The Shipwrights  
-8. The Ghost Captains  
-9. The Torn  
-10. The Salvage Kings  
-11. The Ark Builders  
+1. **The Four Admirals** — rank as conviction that refused the lifeboat, across the depths.
+2. **The Four Wizards of the Deep** — chain-magic: the offer, the void, the tide, the crystal moon.
+3. **The Four Horsemen of the Bear** — Despair, Doubt, Silence, Exit Liquidity; drawn so you remember what you swam *past* (cautionary, never celebrated).
+4. **The Lighthouse Keepers** — light kept over broken piers, storms, graveyards, and dry dock.
+5. **The First Divers** — the first foolish, foundational descents (snorkel → salvage).
+6. **The Last Men Aboard** — loyalty as being last: helm, hold, mast, and the one who turned the boat around.
+7. **The Shipwrights** — keel, plank, spar, and the Spellwright who builds in code.
+8. **The Ghost Captains** — fog, bones, silence, and the black flag of refusal.
+9. **The Torn** — halo + horns; committed indices, part warning and part crown.
+10. **The Salvage Kings** — crowned by the haul at each depth, surface to hadal.
+11. **The Ark Builders** — frame, hull, mast, and the light the whole ark carries back up.
 
 ---
 

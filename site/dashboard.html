@@ -604,11 +604,11 @@ section { margin: 2.25rem 0; }
 // track: engine | chain | art | content | launch | site
 const TASKS = [
   {
-    id: "P1", track: "content", status: "todo",
+    id: "P1", track: "content", status: "done",
     title: "Lore Bible",
-    body: `<p>Origin myth, six depth-zone lore drops, 44 grail bios (11×4), Tom Bepe character sheet, 20-term glossary.</p>
-      <ul><li>Tone: FF7 melancholy + naval myth + crypto meme, never celebrating failure</li>
-      <li>Output: single markdown lore bible (not in repo yet)</li></ul>`
+    body: `<p>Origin myth, six depth-zone drops, Tom Bepe, glossary, and all 44 grail bios (11×4) — the bios are the single source of truth in <code>docs/lore/grail-bios.json</code>, flow into grail metadata via <code>gen_grail_stubs.py</code>, and are coverage-tested.</p>
+      <ul><li><code>docs/lore/LORE-BIBLE.md</code></li>
+      <li><code>docs/lore/grail-bios.json</code> + <code>tests/test_grail_bios.py</code></li></ul>`
   },
   {
     id: "P2", track: "engine", status: "done",
