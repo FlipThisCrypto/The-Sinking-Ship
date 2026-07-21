@@ -46,5 +46,11 @@ See [docs/INCIDENT-RUNBOOK.md](docs/INCIDENT-RUNBOOK.md) §5.
 ## Operator secrets
 
 - Mint salt: offline CSPRNG, never committed (`*.salt` gitignored).
+  Generate with `python scripts/generate_salt.py --out secrets/mint.salt`.
 - Sage mTLS materials: local secrets only.
-- Ledger DB backups: treat as sensitive during the mint window.
+- Ledger DB backups: treat as sensitive during the mint window
+  (`fulfillment_daemon.py backup`).
+- Webhook shared secrets for `ingest-hint --webhook-secret` must not be
+  committed; rotate if leaked.
+- Buyer `site/chests/*.json` may link payments to manifests — host carefully;
+  `robots.txt` disallows `/chests/` indexing.
