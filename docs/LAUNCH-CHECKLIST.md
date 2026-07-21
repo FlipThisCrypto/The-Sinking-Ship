@@ -26,7 +26,7 @@ Work this list top-to-bottom before any mainnet salt commitment.
 - [ ] Sage mTLS certs bootstrapped; `SageRpcClient.health` green on testnet
 - [ ] Double-pay / crash-resume / budget edge tests green
 - [ ] `reconcile` cron dry-run for ≥1 hour without errors
-- [ ] Load: `python scripts/load_test_rolls.py --chests 200` p95 &lt; 100ms
+- [x] Load: `python scripts/load_test_rolls.py --chests 200` p95 &lt; 100ms (also gated in CI)
 
 ## D. Site & ops
 

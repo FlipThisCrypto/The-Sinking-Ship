@@ -77,6 +77,11 @@ jobs:
       - name: Full-sellout rarity distribution check
         run: python engine/simulate.py --profile sellout --seed ci --replicates 5 --check
 
+      # Launch checklist C: roll-core p95 must stay under 100ms so fulfillment
+      # ticks cannot stall under burst demand. Script exits non-zero on fail.
+      - name: Roll-core load test (p95 under 100ms)
+        run: python scripts/load_test_rolls.py --chests 200
+
   fairness-parity:
     name: Python↔JS fairness vector parity
     runs-on: ubuntu-latest
