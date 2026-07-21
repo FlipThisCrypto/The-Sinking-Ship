@@ -153,6 +153,37 @@ def cmd_ingest_hint(args) -> int:
         ledger.close()
 
 
+def cmd_lookup(args) -> int:
+    """Support lookup: full purchase + optional manifest hash by coin_id."""
+    from shipgen.drbg import normalize_coin_id
+
+    _, ledger = _ledger(args)
+    try:
+        coin = normalize_coin_id(args.coin_id)
+        row = ledger.get_row(coin)
+        if row is None:
+            print(json.dumps({"found": False, "coin_id": coin}, indent=2))
+            return 1
+        out = {
+            "found": True,
+            "coin_id": coin,
+            "state": row.get("state"),
+            "tier_name": row.get("tier_name"),
+            "pass_ordinal": row.get("pass_ordinal"),
+            "buyer_address": row.get("buyer_address"),
+            "block_height": row.get("block_height"),
+            "manifest_hash": row.get("manifest_hash"),
+            "offer_id": row.get("offer_id"),
+            "quantity": row.get("quantity"),
+            "refuse_reason": row.get("refuse_reason"),
+            "updated_at": row.get("updated_at"),
+        }
+        print(json.dumps(out, indent=2, sort_keys=True))
+        return 0
+    finally:
+        ledger.close()
+
+
 def cmd_backup(args) -> int:
     """Online-safe SQLite backup via the backup API (crash-consistent copy)."""
     import shutil
@@ -329,6 +360,11 @@ def main() -> int:
     p.add_argument("--db", default="output/fulfillment/ledger.sqlite")
     p.add_argument("--out", required=True, help="destination .sqlite path")
     p.set_defaults(fn=cmd_backup)
+
+    p = sub.add_parser("lookup", help="support: lookup purchase by payment coin_id")
+    p.add_argument("--db", default="output/fulfillment/ledger.sqlite")
+    p.add_argument("--coin-id", required=True)
+    p.set_defaults(fn=cmd_lookup)
 
     p = sub.add_parser("reconcile", help="cron entrypoint: poll source + fulfill (N loops)")
     src = p.add_mutually_exclusive_group(required=True)
