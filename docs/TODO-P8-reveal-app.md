@@ -24,6 +24,9 @@ Not wired to live manifests or wallet yet.
 
 - [x] Share-card generator: `scripts/gen_share_card.py`
 - [x] Wallet onboarding page: `site/wallet.html` (static 60s guide)
+- [x] `?manifest=` / `?offer=` loaders + `site/js/manifest_verify.js` shape checks
+- [x] Fulfillment `--reveal-outdir` publishes `chests/<offer-id>.json`
+- [x] Wallet recovery paths + offline verify playbook on fairness page
 
 ## Remaining work
 
