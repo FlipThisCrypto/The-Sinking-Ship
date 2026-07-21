@@ -1,7 +1,10 @@
 ﻿# SPDX-License-Identifier: MIT
 """Generate a one-page mint go/no-go markdown from preflight + health."""
 from __future__ import annotations
-import argparse, json, subprocess, sys
+import argparse
+import json
+import subprocess
+import sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 def main():
@@ -11,7 +14,8 @@ def main():
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     cmd = [sys.executable, str(ROOT/"scripts"/"ops_preflight.py"), "--salt-file", args.salt_file, "--skip-sprites"]
-    if args.db: cmd += ["--db", args.db]
+    if args.db:
+        cmd += ["--db", args.db]
     r = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
     try:
         pre = json.loads(r.stdout)
