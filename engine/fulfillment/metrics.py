@@ -28,9 +28,18 @@ def status_to_prometheus(status: dict[str, Any], *, job: str = "sinking_ship_ful
         if state not in by_state:
             lines.append(f'sinking_ship_purchases_by_state{{state="{state}"}} 0')
 
+    budget = status.get("public_mint_budget")
+    consumed = int(status.get("supply_consumed", 0))
+    remaining = status.get("budget_remaining")
+    if remaining is None and budget is not None:
+        remaining = max(0, int(budget) - consumed)
     gauges = [
         ("sinking_ship_supply_consumed", "NFTs counted against public mint budget",
-         status.get("supply_consumed", 0)),
+         consumed),
+        ("sinking_ship_public_mint_budget", "Configured public mint budget",
+         int(budget) if budget is not None else 0),
+        ("sinking_ship_budget_remaining", "Budget headroom (NFTs)",
+         int(remaining) if remaining is not None else 0),
         ("sinking_ship_next_start_index", "Next global index for generated NFTs",
          status.get("next_start_index", 0)),
         ("sinking_ship_last_polled_height", "Last successfully polled chain height",

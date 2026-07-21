@@ -87,9 +87,12 @@ def cmd_tick(args) -> int:
 def cmd_status(args) -> int:
     from fulfillment.metrics import status_to_prometheus
 
-    _, ledger = _ledger(args)
+    cfg, ledger = _ledger(args)
     try:
         summary = ledger.status_summary()
+        budget = int(cfg.supply["public_mint_budget"])
+        summary["public_mint_budget"] = budget
+        summary["budget_remaining"] = max(0, budget - int(summary["supply_consumed"]))
         if getattr(args, "metrics", False):
             text = status_to_prometheus(summary)
             if args.out:

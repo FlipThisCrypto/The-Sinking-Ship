@@ -95,6 +95,8 @@ class FulfillmentDaemon:
             "network": self.network,
             "dry_run": bool(dry_run),
             "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "public_mint_budget": self.budget,
+            "supply_consumed_before": self.ledger.supply_consumed(),
         }
         since = self.ledger.last_polled_height()
         event(
@@ -135,6 +137,10 @@ class FulfillmentDaemon:
             summary["recorded"], summary.get("rolled", 0),
             summary["fulfilled"], summary["refused"], len(summary["errors"]),
         )
+        summary["supply_consumed_after"] = self.ledger.supply_consumed()
+        summary["budget_remaining"] = max(
+            0, self.budget - summary["supply_consumed_after"],
+        )
         event(
             log, "tick_complete",
             recorded=summary["recorded"],
@@ -145,6 +151,7 @@ class FulfillmentDaemon:
             error_count=len(summary["errors"]),
             network=self.network,
             dry_run=bool(dry_run),
+            budget_remaining=summary["budget_remaining"],
         )
         return summary
 

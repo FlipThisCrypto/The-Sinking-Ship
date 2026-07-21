@@ -346,9 +346,12 @@ class SqliteLedger(FulfillmentLedger):
             "SELECT state, COUNT(*) AS n FROM purchases GROUP BY state"
         ).fetchall()
         by_state = {r["state"]: int(r["n"]) for r in rows}
+        consumed = self.supply_consumed()
+        # public_mint_budget is not stored in the ledger; callers that know
+        # GenConfig may enrich. Keep headroom null here for pure ledger view.
         return {
             "by_state": by_state,
-            "supply_consumed": self.supply_consumed(),
+            "supply_consumed": consumed,
             "next_start_index": self.peek_next_start_index(),
             "last_polled_height": self.last_polled_height(),
             "total_purchases": sum(by_state.values()),
