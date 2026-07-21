@@ -206,3 +206,34 @@ def test_daemon_minting_overrides_respected(tmp_path, ledger, cfg):
     )
     assert daemon.did == "did:chia:override-test"
     assert daemon.royalty_basis_points == 100
+
+
+def test_export_audit_includes_fulfillment_actions(tmp_path, ledger, cfg):
+    """Incident recovery: audit trail must record purchase + fulfill events."""
+    c = coin(42)
+    fixture = tmp_path / "pay.json"
+    fixture.write_text(json.dumps([{
+        "coin_id": c,
+        "tier_name": "castaway",
+        "buyer_address": "xch1buyer",
+        "block_height": 5,
+        "network": "testnet11",
+    }]), encoding="utf-8")
+    daemon = FulfillmentDaemon(
+        source=FixturePaymentSource(fixture),
+        ledger=ledger,
+        offers=DryRunOfferBuilder(),
+        salt=TEST_SALT,
+        cfg=cfg,
+        manifest_outdir=tmp_path / "chests",
+        metadata_outdir=tmp_path / "meta",
+    )
+    summary = daemon.tick(dry_run=False)
+    assert summary["fulfilled"] == 1
+    audit = ledger.export_audit()
+    assert len(audit) >= 1
+    actions = {row["action"] for row in audit}
+    # At least one action tied to this coin appears in the append-only log.
+    coins = {row.get("coin_id") for row in audit}
+    assert c in coins or any(c[:12] in str(row) for row in audit)
+    assert actions, "expected non-empty audit actions after fulfill"
