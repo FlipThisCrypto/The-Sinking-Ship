@@ -1,6 +1,7 @@
 # THE SINKING SHIP — Launch checklist (P12 core)
 
-Work this list top-to-bottom before any mainnet salt commitment.
+Work this list top-to-bottom before any mainnet salt commitment. The risk→test
+rationale behind these gates is in [`MASTER-TEST-PLAN.md`](MASTER-TEST-PLAN.md).
 
 ## A. Config & fairness
 
@@ -30,8 +31,8 @@ Work this list top-to-bottom before any mainnet salt commitment.
 
 ## D. Site & ops
 
-- [ ] Landing + fairness + reveal + wallet pages reviewed
-- [ ] GitHub Pages deploy green
+- [ ] Landing + fairness + reveal + wallet pages reviewed (owner)
+- [x] GitHub Pages deploy green (Actions `Deploy site to GitHub Pages`)
 - [x] Incident runbook: RPC down, double-fulfill attempt, reveal site down (`docs/INCIDENT-RUNBOOK.md`)
 - [ ] Scuttling ceremony steps rehearsed (`docs/SCUTTLING-PROCEDURE.md`)
 
