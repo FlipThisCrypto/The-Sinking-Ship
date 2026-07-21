@@ -21,19 +21,44 @@ DEFAULT_HTTP_TIMEOUT_S = 30.0
 DEFAULT_USER_AGENT = "TheSinkingShip-fulfillment/1.0 (+https://github.com/FlipThisCrypto/The-Sinking-Ship)"
 
 
-def _default_http_get(url: str, timeout: float = DEFAULT_HTTP_TIMEOUT_S) -> bytes:
-    req = urllib.request.Request(
-        url,
-        headers={
-            "Accept": "application/json",
-            "User-Agent": DEFAULT_USER_AGENT,
-        },
-        method="GET",
-    )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 — operator-supplied base URL
-        if getattr(resp, "status", 200) != 200:
-            raise RuntimeError(f"HTTP {resp.status} for {url}")
-        return resp.read()
+def _default_http_get(
+    url: str,
+    timeout: float = DEFAULT_HTTP_TIMEOUT_S,
+    *,
+    retries: int = 2,
+    backoff_s: float = 0.25,
+) -> bytes:
+    """GET with short retries for transport blips; still fail-closed overall.
+
+    Retries only transient transport failures. HTTP non-200 and JSON issues
+    surface immediately. Callers must not advance ledger height on any raise.
+    """
+    import time
+
+    last_err: Exception | None = None
+    attempts = max(1, int(retries) + 1)
+    for attempt in range(attempts):
+        try:
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "Accept": "application/json",
+                    "User-Agent": DEFAULT_USER_AGENT,
+                },
+                method="GET",
+            )
+            with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+                if getattr(resp, "status", 200) != 200:
+                    raise RuntimeError(f"HTTP {resp.status} for {url}")
+                return resp.read()
+        except (urllib.error.URLError, TimeoutError, OSError) as e:
+            last_err = e
+            if attempt + 1 < attempts:
+                time.sleep(backoff_s * (2 ** attempt))
+                continue
+            raise
+    assert last_err is not None
+    raise last_err
 
 
 class FixturePaymentSource(PaymentSource):
