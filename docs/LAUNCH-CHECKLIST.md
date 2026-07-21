@@ -5,7 +5,7 @@ Work this list top-to-bottom before any mainnet salt commitment.
 ## A. Config & fairness
 
 - [ ] `python engine/validate_configs.py` green
-- [ ] `python engine/simulate.py --profile sellout --seed launch --replicates 5 --check` green
+- [x] `python engine/simulate.py --profile sellout --seed launch --replicates 5 --check` green (also gated in CI with `--seed ci`)
 - [ ] OQ-1/2/3/4/10/11 decisions frozen in `config/` + ADRs
 - [ ] Provenance commitment plan: who holds salt, where hash is published
 - [ ] `python scripts/export_fairness_vectors.py` committed to `site/`
