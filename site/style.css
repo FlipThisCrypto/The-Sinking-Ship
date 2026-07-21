@@ -179,6 +179,17 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 500; color: var(--bone);
   cursor: not-allowed;
   pointer-events: none;
 }
+/* Touch-friendly minimum target on coarse pointers (mobile) */
+@media (pointer: coarse) {
+  .btn, .nav-links a, .skip-link {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-links a { padding: 0.35rem 0.45rem; }
+}
 .btn {
   font-family: var(--mono); display: inline-block; padding: 0.8rem 1.6rem;
   border: 1px solid var(--gold); color: var(--pale-gold); font-size: 0.82rem;
