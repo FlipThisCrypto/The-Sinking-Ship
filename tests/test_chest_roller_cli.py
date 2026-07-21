@@ -25,6 +25,13 @@ def run_cli(argv) -> int:
         sys.argv = old
 
 
+def test_read_salt_rejects_short_file(tmp_path):
+    p = tmp_path / "tiny.salt"
+    p.write_bytes(b"tooshort")
+    with pytest.raises(SystemExit):
+        chest_roller.read_salt(str(p))
+
+
 def test_commit_roll_verify_roundtrip(tmp_path, salt_file):
     outdir = tmp_path / "out"
     assert run_cli(["commit", "--salt-file", salt_file,
