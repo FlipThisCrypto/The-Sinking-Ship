@@ -79,6 +79,8 @@ class FulfillmentDaemon:
 
     def tick(self, dry_run: bool = False) -> dict:
         """One poll+fulfill cycle. Returns a summary dict for ops/logging."""
+        from datetime import datetime, timezone
+
         summary = {
             "recorded": 0,
             "rolled": 0,
@@ -86,6 +88,9 @@ class FulfillmentDaemon:
             "refused": 0,
             "skipped": 0,
             "errors": [],
+            "network": self.network,
+            "dry_run": bool(dry_run),
+            "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
         since = self.ledger.last_polled_height()
         try:
