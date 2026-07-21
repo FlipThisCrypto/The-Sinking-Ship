@@ -153,6 +153,19 @@ def cmd_ingest_hint(args) -> int:
         ledger.close()
 
 
+def cmd_archive_fulfilled(args) -> int:
+    from fulfillment.retention import archive_fulfilled
+
+    report = archive_fulfilled(
+        args.db,
+        older_than_days=args.days,
+        archive_path=args.out,
+        dry_run=not args.apply,
+    )
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
+
+
 def cmd_lookup(args) -> int:
     """Support lookup: full purchase + optional manifest hash by coin_id."""
     from shipgen.drbg import normalize_coin_id
@@ -365,6 +378,20 @@ def main() -> int:
     p.add_argument("--db", default="output/fulfillment/ledger.sqlite")
     p.add_argument("--coin-id", required=True)
     p.set_defaults(fn=cmd_lookup)
+
+    p = sub.add_parser(
+        "archive-fulfilled",
+        help="export (and optionally delete) old fulfilled purchase rows",
+    )
+    p.add_argument("--db", default="output/fulfillment/ledger.sqlite")
+    p.add_argument("--days", type=int, default=30, help="age cutoff in days")
+    p.add_argument("--out", required=True, help="JSON archive path")
+    p.add_argument(
+        "--apply",
+        action="store_true",
+        help="write archive and delete rows (default is dry-run count only)",
+    )
+    p.set_defaults(fn=cmd_archive_fulfilled)
 
     p = sub.add_parser("reconcile", help="cron entrypoint: poll source + fulfill (N loops)")
     src = p.add_mutually_exclusive_group(required=True)
