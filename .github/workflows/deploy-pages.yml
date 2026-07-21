@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       # GitHub Pages serves style.css / main.js / tiers.js / the DRBG module
       # with a 10-min browser cache and no content-hashed filenames, so edits
