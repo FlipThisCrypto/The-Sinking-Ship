@@ -11,6 +11,7 @@ from urllib.parse import urlencode
 
 from shipgen.drbg import normalize_coin_id
 
+from .circuit_breaker import CircuitBreaker
 from .types import PaymentSource, TierPurchase
 
 # (url) -> response body bytes. Injectable for tests.
@@ -118,10 +119,12 @@ class CoinsetPollingSource(PaymentSource):
         network: str = "testnet11",
         http_get: HttpGet | None = None,
         timeout_s: float = DEFAULT_HTTP_TIMEOUT_S,
+        circuit_breaker: CircuitBreaker | None = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.network = network
         self.timeout_s = float(timeout_s)
+        self.breaker = circuit_breaker or CircuitBreaker()
         if http_get is not None:
             self._http_get = http_get
         else:
@@ -131,17 +134,25 @@ class CoinsetPollingSource(PaymentSource):
             self._http_get = self_http_get
 
     def _get_json(self, path: str, query: dict | None = None) -> dict:
+        if not self.breaker.allow():
+            raise RuntimeError(
+                f"coinset scan incomplete (circuit {self.breaker.state}): "
+                f"{self.breaker.snapshot()}"
+            )
         url = f"{self.base_url}{path}"
         if query:
             url = f"{url}?{urlencode(query)}"
         try:
             raw = self._http_get(url)
         except (urllib.error.URLError, TimeoutError, OSError) as e:
+            self.breaker.record_failure()
             raise RuntimeError(f"coinset scan incomplete (transport): {e}") from e
         try:
             doc = json.loads(raw.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as e:
+            self.breaker.record_failure()
             raise RuntimeError(f"coinset scan incomplete (bad JSON): {e}") from e
+        self.breaker.record_success()
         if not isinstance(doc, dict):
             raise RuntimeError("coinset scan incomplete: root must be object")
         return doc
