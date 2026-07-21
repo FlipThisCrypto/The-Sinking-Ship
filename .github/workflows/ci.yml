@@ -93,6 +93,12 @@ jobs:
       - name: Fulfillment burst soak (40 purchases)
         run: python scripts/soak_fulfillment.py --purchases 40
 
+      - name: Disaster recovery drill (backup restore)
+        run: python scripts/dr_drill.py
+
+      - name: Chaos coinset fail-closed recovery
+        run: python scripts/chaos_coinset.py
+
       # Spec 4.1 rarity targets (±5% relative). Mythic is sparse, so use
       # multiple replicates to damp Poisson noise — same gate as launch
       # checklist section A. Failures exit 2 from simulate.py --check.
