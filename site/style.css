@@ -117,6 +117,7 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 500; color: var(--bone);
              justify-content: flex-end; letter-spacing: 0.04em; }
 .nav-links a { color: var(--ash); }
 .nav-links a:hover { color: var(--pale-gold); }
+.nav-links a[aria-current="page"] { color: var(--chia-bright); }
 @media (max-width: 720px) {
   .nav { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
   .nav-links { gap: 0.8rem; font-size: 0.72rem; justify-content: flex-start; }
