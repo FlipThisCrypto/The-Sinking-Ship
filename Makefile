@@ -1,8 +1,8 @@
 # THE SINKING SHIP — common operator targets (Windows-friendly via make/GNU or WSL)
-.PHONY: test validate sprites vectors smoke load sellout site-data grails share og-image fairness-check ci lint help
+.PHONY: test validate sprites vectors smoke load sellout site-data grails share og-image fairness-check ci lint secrets-check help
 
 help:
-	@echo "make test | validate | sprites | vectors | smoke | load | sellout | site-data | grails | share | og-image | fairness-check | lint | ci"
+	@echo "make test | validate | sprites | vectors | smoke | load | sellout | site-data | grails | share | og-image | fairness-check | lint | secrets-check | ci"
 
 test:
 	python -m pytest tests/ -q
@@ -44,6 +44,9 @@ fairness-check: vectors
 lint:
 	python -m ruff check .
 
+secrets-check:
+	python scripts/check_no_secrets.py
+
 # Local mirror of .github/workflows/ci.yml (minus the matrix / Pages deploy).
-ci: lint validate sprites test smoke sellout load fairness-check
+ci: lint secrets-check validate sprites test smoke sellout load fairness-check
 	@echo "make ci: all local CI gates green"

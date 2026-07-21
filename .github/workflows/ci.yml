@@ -37,6 +37,10 @@ jobs:
       - name: Run ruff
         run: python -m ruff check .
 
+      # Mint salt / private keys must never be in the published tree.
+      - name: Secret-path hygiene
+        run: python scripts/check_no_secrets.py
+
   test:
     name: tests & config validation (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
