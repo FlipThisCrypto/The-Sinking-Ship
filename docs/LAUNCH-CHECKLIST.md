@@ -32,7 +32,7 @@ Work this list top-to-bottom before any mainnet salt commitment.
 
 - [ ] Landing + fairness + reveal + wallet pages reviewed
 - [ ] GitHub Pages deploy green
-- [ ] Incident runbook: RPC down, double-fulfill attempt, reveal site down
+- [x] Incident runbook: RPC down, double-fulfill attempt, reveal site down (`docs/INCIDENT-RUNBOOK.md`)
 - [ ] Scuttling ceremony steps rehearsed (`docs/SCUTTLING-PROCEDURE.md`)
 
 ## E. Go / no-go
