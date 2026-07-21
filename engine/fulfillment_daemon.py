@@ -85,6 +85,7 @@ def cmd_tick(args) -> int:
 
 
 def cmd_status(args) -> int:
+    from fulfillment.health import build_health
     from fulfillment.metrics import status_to_prometheus
 
     cfg, ledger = _ledger(args)
@@ -101,6 +102,14 @@ def cmd_status(args) -> int:
             else:
                 print(text, end="")
             return 0 if summary.get("integrity_ok", True) else 1
+        if getattr(args, "health", False):
+            health = build_health(
+                status=summary,
+                public_mint_budget=budget,
+                network=getattr(args, "network", "testnet11") or "testnet11",
+            )
+            print(json.dumps(health, indent=2, sort_keys=True))
+            return 0 if health["level"] != "critical" else 2
         print(json.dumps(summary, indent=2, sort_keys=True))
         return 0 if summary.get("integrity_ok", True) else 1
     finally:
@@ -341,7 +350,13 @@ def main() -> int:
         action="store_true",
         help="emit Prometheus text exposition instead of JSON",
     )
+    p.add_argument(
+        "--health",
+        action="store_true",
+        help="emit composite health document (ok/degraded/critical)",
+    )
     p.add_argument("--out", default=None, help="with --metrics: write to file")
+    p.add_argument("--network", default="testnet11", help="label for --health")
     p.set_defaults(fn=cmd_status)
 
     p = sub.add_parser("export-refused", help="export refused purchases (dead letter)")
