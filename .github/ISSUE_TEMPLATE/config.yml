@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security advisory
+    url: https://github.com/FlipThisCrypto/The-Sinking-Ship/security/advisories/new
+    about: Report vulnerabilities privately (preferred over public issues).
+  - name: Incident runbook
+    url: https://github.com/FlipThisCrypto/The-Sinking-Ship/blob/main/docs/INCIDENT-RUNBOOK.md
+    about: Operator procedures for mint-window failures.
