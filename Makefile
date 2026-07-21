@@ -16,6 +16,7 @@ sprites:
 vectors:
 	python scripts/export_fairness_vectors.py
 	node site/js/verify_vectors.mjs
+	node site/js/verify_manifest_shape.mjs
 
 smoke:
 	python scripts/smoke_fulfillment.py

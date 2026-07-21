@@ -137,3 +137,6 @@ jobs:
 
       - name: Verify JS port reproduces the Python vectors
         run: node site/js/verify_vectors.mjs
+
+      - name: Verify demo chest manifest shape (reveal contract)
+        run: node site/js/verify_manifest_shape.mjs
