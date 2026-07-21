@@ -204,10 +204,10 @@ class StmWebhookIngest:
         Raises ValueError on malformed/untrusted shape. Caller records PENDING
         only — never rolls from this alone.
         """
-        if self.rate_limiter is not None and not self.rate_limiter.allow():
-            raise ValueError("webhook rate limit exceeded")
         if not isinstance(payload, dict):
             raise ValueError("webhook payload must be an object")
+        # Auth before rate-limit accounting so failed secrets cannot burn the
+        # budget (or at least: reject before counting when secret is required).
         if self.shared_secret:
             headers = headers or {}
             provided = (
@@ -217,6 +217,8 @@ class StmWebhookIngest:
             )
             if provided != self.shared_secret:
                 raise ValueError("webhook shared secret mismatch")
+        if self.rate_limiter is not None and not self.rate_limiter.allow():
+            raise ValueError("webhook rate limit exceeded")
         # Ignore client-supplied "confirmed" claims entirely.
         try:
             coin = normalize_coin_id(str(payload["coin_id"]))
