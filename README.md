@@ -83,6 +83,11 @@ node site/js/verify_vectors.mjs
 
 # 12. Roll load test (p95 target 100ms)
 python scripts/load_test_rolls.py --chests 200
+
+# 13. Ops preflight (mint window)
+python scripts/generate_salt.py --out secrets/test.salt
+python scripts/ops_preflight.py --salt-file secrets/test.salt --skip-sprites
+python scripts/soak_fulfillment.py --purchases 40
 ```
 
 
