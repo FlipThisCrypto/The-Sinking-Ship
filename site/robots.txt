@@ -3,3 +3,6 @@ User-agent: *
 Allow: /
 
 Sitemap: https://flipthiscrypto.github.io/The-Sinking-Ship/sitemap.xml
+
+# Security contact (also at /.well-known/security.txt)
+# https://flipthiscrypto.github.io/The-Sinking-Ship/.well-known/security.txt

@@ -1,0 +1,8 @@
+# THE SINKING SHIP — security contact (RFC 9116)
+Contact: https://github.com/FlipThisCrypto/The-Sinking-Ship/security/advisories/new
+Contact: https://github.com/FlipThisCrypto/The-Sinking-Ship/issues
+Policy: https://github.com/FlipThisCrypto/The-Sinking-Ship/blob/main/docs/INCIDENT-RUNBOOK.md
+Preferred-Languages: en
+Canonical: https://flipthiscrypto.github.io/The-Sinking-Ship/.well-known/security.txt
+# Fairness disputes after salt reveal: use chest_roller.py verify + public commitment hash.
+# Never send mint salt or private keys to issues — report privately via advisories.
