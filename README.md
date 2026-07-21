@@ -1,5 +1,7 @@
 # THE SINKING SHIP
 
+[![CI](https://github.com/FlipThisCrypto/The-Sinking-Ship/actions/workflows/ci.yml/badge.svg)](https://github.com/FlipThisCrypto/The-Sinking-Ship/actions/workflows/ci.yml)
+
 > *Hope never sinks.*
 
 A 44,444-supply hand-drawn NFT collection on the **Chia blockchain**, in a
@@ -106,6 +108,10 @@ and anyone can recompute every chest with `chest_roller.py verify`. See
 - SPDX `MIT` header in every source file. An ADR for every significant decision.
 - Testnet-first: anything that will touch the chain is designed for testnet11
   dry runs.
+- CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs config
+  validation, the full test suite, the fulfillment smoke, and the Python↔JS
+  fairness-vector parity check on every push and PR — a determinism or parity
+  regression cannot reach `main` silently.
 
 ## Status
 

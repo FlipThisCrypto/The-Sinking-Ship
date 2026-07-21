@@ -1,0 +1,90 @@
+# Continuous integration: guard the invariants that make this collection
+# trustworthy — deterministic rolls, valid configs, and Python↔JS fairness
+# parity. Runs on every push and pull request so a regression can never reach
+# main silently. Nothing here touches the chain, a secret, or the network.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: tests & config validation (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validate configs against schemas
+        run: python engine/validate_configs.py
+
+      - name: Run test suite
+        run: python -m pytest tests/ -q
+
+      - name: Fulfillment offline smoke
+        run: python scripts/smoke_fulfillment.py
+
+  fairness-parity:
+    name: Python↔JS fairness vector parity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Regenerate fairness vectors from the Python engine
+        run: python scripts/export_fairness_vectors.py
+
+      # The committed vectors are the published cross-language contract. If a
+      # code change alters them, the committed copy must be regenerated in the
+      # same commit — otherwise the browser verifier drifts from the engine.
+      - name: Fail if committed fairness vectors are stale
+        run: |
+          if ! git diff --quiet -- site/fairness_vectors.json; then
+            echo "::error::site/fairness_vectors.json is out of date. Run 'python scripts/export_fairness_vectors.py' and commit the result."
+            git --no-pager diff -- site/fairness_vectors.json
+            exit 1
+          fi
+
+      - name: Verify JS port reproduces the Python vectors
+        run: node site/js/verify_vectors.mjs
