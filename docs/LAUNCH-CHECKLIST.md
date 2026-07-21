@@ -4,12 +4,12 @@ Work this list top-to-bottom before any mainnet salt commitment.
 
 ## A. Config & fairness
 
-- [ ] `python engine/validate_configs.py` green
+- [x] `python engine/validate_configs.py` green (also gated in CI; includes collection/palette/render)
 - [x] `python engine/simulate.py --profile sellout --seed launch --replicates 5 --check` green (also gated in CI with `--seed ci`)
 - [ ] OQ-1/2/3/4/10/11 decisions frozen in `config/` + ADRs
 - [ ] Provenance commitment plan: who holds salt, where hash is published
-- [ ] `python scripts/export_fairness_vectors.py` committed to `site/`
-- [ ] `node site/js/verify_vectors.mjs` PASS
+- [x] `python scripts/export_fairness_vectors.py` committed to `site/` (CI fails if stale)
+- [x] `node site/js/verify_vectors.mjs` PASS (gated in CI)
 
 ## B. Art & metadata
 
@@ -21,10 +21,10 @@ Work this list top-to-bottom before any mainnet salt commitment.
 
 ## C. Fulfillment (testnet11 first)
 
-- [ ] Fixture smoke: `python scripts/smoke_fulfillment.py`
+- [x] Fixture smoke: `python scripts/smoke_fulfillment.py` (gated in CI)
 - [ ] Mock coinset → real coinset URL swap tested
 - [ ] Sage mTLS certs bootstrapped; `SageRpcClient.health` green on testnet
-- [ ] Double-pay / crash-resume / budget edge tests green
+- [x] Double-pay / crash-resume / budget edge tests green (pytest)
 - [ ] `reconcile` cron dry-run for ≥1 hour without errors
 - [x] Load: `python scripts/load_test_rolls.py --chests 200` p95 &lt; 100ms (also gated in CI)
 
