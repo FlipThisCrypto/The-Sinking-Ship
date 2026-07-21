@@ -12,10 +12,16 @@ from typing import Any
 def status_to_prometheus(status: dict[str, Any], *, job: str = "sinking_ship_fulfillment") -> str:
     """Convert SqliteLedger.status_summary() (+ optional tick fields) to text."""
     lines: list[str] = [
-        f'# HELP sinking_ship_fulfillment_info Static labels for the fulfillment job.',
-        f'# TYPE sinking_ship_fulfillment_info gauge',
+        "# HELP sinking_ship_fulfillment_info Static labels for the fulfillment job.",
+        "# TYPE sinking_ship_fulfillment_info gauge",
         f'sinking_ship_fulfillment_info{{job="{_esc(job)}"}} 1',
     ]
+    if status.get("schema_version") is not None:
+        lines.append("# HELP sinking_ship_ledger_schema_version Ledger meta schema_version")
+        lines.append("# TYPE sinking_ship_ledger_schema_version gauge")
+        lines.append(
+            f"sinking_ship_ledger_schema_version {int(status['schema_version'])}"
+        )
     by_state = status.get("by_state") or {}
     lines.append("# HELP sinking_ship_purchases_by_state Purchase rows by ledger state")
     lines.append("# TYPE sinking_ship_purchases_by_state gauge")
