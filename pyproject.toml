@@ -1,0 +1,15 @@
+# Project + tooling config for THE SINKING SHIP engine.
+# The engine deliberately uses only stdlib + Pillow + numpy (see README); there
+# is no package to build here, so this file exists purely to configure tooling.
+
+[tool.ruff]
+# Match the engine's minimum supported runtime (README: Python 3.11+).
+target-version = "py311"
+line-length = 100
+extend-exclude = ["output", ".pytest_cache"]
+
+[tool.ruff.lint]
+# Ruff's default rule set (pyflakes + a curated pycodestyle subset): catches
+# undefined names, unused imports/variables, and other real correctness smells
+# without imposing opinionated style churn on the existing codebase.
+select = ["E4", "E7", "E9", "F", "W"]

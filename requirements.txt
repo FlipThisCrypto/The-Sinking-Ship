@@ -4,3 +4,4 @@ numpy>=1.26
 
 # Development / tests
 pytest>=8.0
+ruff>=0.15

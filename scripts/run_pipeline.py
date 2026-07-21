@@ -127,7 +127,7 @@ def main() -> int:
     print(f"metadata files emitted:        {len(meta_files)} (= {total_nfts} generated NFTs)")
     if not args.skip_render:
         print(f"sample renders (active profile): {len(renders)} NFTs")
-    print(f"all chests verified:           True")
+    print("all chests verified:           True")
     print("outputs in output/pipeline/ (gitignored)")
     return 0
 

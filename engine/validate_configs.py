@@ -34,7 +34,7 @@ def main() -> int:
         return 1
 
     log.info("traits.json: %d layers, %d traits",
-             len(cfg.layers), sum(len(l.traits) for l in cfg.layers))
+             len(cfg.layers), sum(len(ly.traits) for ly in cfg.layers))
     log.info("tiers.json: %d tiers, supply cap %d, public mint budget %d",
              len(cfg.tiers), cfg.supply["cap"], cfg.supply["public_mint_budget"])
     if cfg.weights is not None:

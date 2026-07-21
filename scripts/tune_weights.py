@@ -193,7 +193,7 @@ def main() -> int:
     targets = {k: v / GENERATED_POOL for k, v in TARGET_COUNTS.items()}
     mixture = tier_mixture(cfg)
     log.info("sellout luck mixture: %s",
-             ", ".join(f"{l / 1000:.2f}x:{s:.3f}" for l, s in mixture))
+             ", ".join(f"{luck / 1000:.2f}x:{s:.3f}" for luck, s in mixture))
 
     # ---- stage 1: analytic calibration ----
     scales = {b: 1.0 for b in BASE_WEIGHTS}

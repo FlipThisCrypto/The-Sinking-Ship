@@ -223,8 +223,8 @@ def compose(store: SpriteStore, traits: dict, zone: str | None) -> Image.Image:
         canvas = Image.new("RGBA", (size, size), (*bone, 255))
     else:
         canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    layers = sorted((l for l in store.cfg.layers if l.z_order is not None),
-                    key=lambda l: l.z_order)
+    layers = sorted((ly for ly in store.cfg.layers if ly.z_order is not None),
+                    key=lambda ly: ly.z_order)
     for layer in layers:
         sprite = store.get(layer.name, traits, zone)
         if sprite is None:

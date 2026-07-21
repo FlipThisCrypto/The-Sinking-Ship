@@ -80,7 +80,7 @@ class GenConfig:
                 traits=[Trait(t["name"], t["sprite_filename"], t["rarity_bucket"],
                               t.get("series")) for t in ld["traits"]],
             ))
-        self.layer_by_name = {l.name: l for l in self.layers}
+        self.layer_by_name = {ly.name: ly for ly in self.layers}
         self.roll_order: list[str] = list(self.traits_doc["roll_order"])
         self.exclusions = self.traits_doc["exclusions"]
         self.pairings = self.traits_doc["pairings"]

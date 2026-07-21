@@ -25,7 +25,7 @@ import math
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "engine"))
 
@@ -189,12 +189,13 @@ def draw_sea(key: str, name: str, size: int) -> Image.Image:
     )
     if "whirlpool" in name.lower():
         cx, cy = 0.5 * size, 0.82 * size
+        px, py = None, None
         for t in range(90):
             ang = t / 90 * 2.8 * math.tau
             rad = size * 0.18 * (1 - t / 100)
             x = cx + rad * math.cos(ang)
             y = cy + rad * math.sin(ang) * 0.45
-            if t > 0:
+            if px is not None:
                 ink.stroke([(px, py), (x, y)], stops, max(1.2, size * 0.002), 160)
             px, py = x, y
     if "storm" in name.lower() or "swell" in name.lower():
@@ -537,7 +538,6 @@ def draw_condition(key: str, name: str, size: int) -> Image.Image:
 
 
 def draw_body(key: str, variant: str, pose: str, size: int) -> Image.Image:
-    det = Det(key)
     mood = BODY_COLORS.get(variant, "green")
     stops = mood_ramp(mood)
     ink = InkCanvas(size, y0=0.25, y1=0.75)
@@ -565,7 +565,6 @@ def draw_body(key: str, variant: str, pose: str, size: int) -> Image.Image:
 
 
 def draw_clothing(key: str, name: str, size: int) -> Image.Image:
-    det = Det(key)
     mood = mood_for(name)
     stops = mood_ramp(mood if mood != "blue" else "ink")
     ink = InkCanvas(size, y0=0.35, y1=0.72)
@@ -667,7 +666,6 @@ def draw_mouth(key: str, name: str, size: int) -> Image.Image:
 
 
 def draw_hat(key: str, name: str, size: int) -> Image.Image:
-    det = Det(key)
     low = name.lower()
     stops = mood_ramp(mood_for(name))
     gold = mood_ramp("gold")

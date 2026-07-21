@@ -13,7 +13,7 @@ Used by scripts/gen_placeholder_sprites.py and scripts/style_score.py.
 from __future__ import annotations
 
 import math
-from typing import Iterable, Sequence
+from typing import Sequence
 
 from PIL import Image, ImageDraw
 
@@ -234,7 +234,6 @@ def crystal(
     fill_alpha: int = 180,
 ) -> None:
     """Faceted gem — solid fill + edge strokes (ships_amano signature motif)."""
-    pts = []
     # elongated hexagon-ish crystal pointing up
     top = (cx + math.sin(tilt) * h * 0.2, cy - h)
     bot = (cx - math.sin(tilt) * h * 0.1, cy + h * 0.15)
@@ -591,7 +590,6 @@ def grade_vertical_ink(
     if not mask.any():
         return img
 
-    ys = np.linspace(0.0, 1.0, h, dtype=np.float32)[:, None]
     # build ramp image
     ramp = np.zeros((h, 3), dtype=np.float32)
     for y in range(h):

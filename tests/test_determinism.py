@@ -6,7 +6,7 @@ from conftest import TEST_SALT, COIN_A, COIN_B
 
 from shipgen.canon import canon_json, hash_obj
 from shipgen.config import GenConfig
-from shipgen.roll import RollEngine, build_commitment, derive_placements
+from shipgen.roll import RollEngine, derive_placements
 
 
 def roll(engine, placements, coin, tier="submarine_captain", ordinal=1, start=1000):

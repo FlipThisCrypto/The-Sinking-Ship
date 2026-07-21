@@ -20,7 +20,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import shutil
 import sys
 from pathlib import Path
 
@@ -156,9 +155,8 @@ def main() -> int:
         installed += 1
 
     if not args.no_blank_characters:
-        # blank all character-related sprites so layered samples stay ship-only
-        cfg_path = ROOT / "config" / "traits.json"
-        # minimal: blank every png under character layers
+        # blank all character-related sprites so layered samples stay ship-only:
+        # blank every png under character layers
         for layer in CHARACTER_LAYERS:
             ldir = ROOT / "sprites" / layer
             if not ldir.exists():
