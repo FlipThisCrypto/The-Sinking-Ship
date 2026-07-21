@@ -20,6 +20,21 @@ def coin(n: int) -> str:
     return hashlib.sha256(f"mock-coinset:{n}".encode()).hexdigest()
 
 
+def test_mock_coinset_health_endpoint(tmp_path):
+    import json
+    import urllib.request
+
+    purchases = [
+        TierPurchase(coin(1), "castaway", "txch1buyerone", 10, "testnet11"),
+    ]
+    with MockCoinsetServer(purchases=purchases, height=7) as server:
+        with urllib.request.urlopen(server.base_url + "/health", timeout=5) as resp:
+            doc = json.loads(resp.read().decode())
+        assert doc["ok"] is True
+        assert doc["height"] == 7
+        assert doc["purchases"] == 1
+
+
 def test_mock_coinset_poll_and_fulfill(tmp_path):
     cfg = GenConfig()
     caps = {t["name"]: t["passes"] for t in cfg.tiers_doc["tiers"]}
