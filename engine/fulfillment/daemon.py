@@ -209,6 +209,14 @@ class FulfillmentDaemon:
         if manifest is None:
             return "skipped"
 
+        event(
+            log, "fulfill_one",
+            coin_prefix=coin_id[:12],
+            tier=row["tier_name"],
+            just_rolled=just_rolled,
+            quantity=manifest.get("quantity"),
+            dry_run=bool(dry_run),
+        )
         meta_paths = self._write_metadata_paths(manifest, dry_run=dry_run)
         launchers = self.offers.mint_nfts(
             meta_paths, self.did, self.royalty_basis_points,
