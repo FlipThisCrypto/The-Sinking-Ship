@@ -208,6 +208,43 @@ def test_daemon_minting_overrides_respected(tmp_path, ledger, cfg):
     assert daemon.royalty_basis_points == 100
 
 
+def test_cli_refuses_mainnet_without_allow_flag(tmp_path, monkeypatch):
+    """Live mainnet tick/reconcile must not run by accident."""
+    import fulfillment_daemon as fd
+
+    salt = tmp_path / "t.salt"
+    salt.write_bytes(b"x" * 16)
+    fixture = tmp_path / "empty.json"
+    fixture.write_text("[]", encoding="utf-8")
+    db = str(tmp_path / "l.sqlite")
+
+    def run(argv: list[str]) -> int:
+        monkeypatch.setattr(
+            "sys.argv",
+            ["fulfillment_daemon.py"] + argv,
+        )
+        return fd.main()
+
+    code = run([
+        "tick", "--fixture", str(fixture), "--salt-file", str(salt),
+        "--db", db, "--network", "mainnet",
+    ])
+    assert code == 2
+
+    code = run([
+        "reconcile", "--fixture", str(fixture), "--salt-file", str(salt),
+        "--db", db, "--network", "mainnet", "--loops", "1",
+    ])
+    assert code == 2
+
+    # dry-run still allowed for dress rehearsal
+    code = run([
+        "tick", "--fixture", str(fixture), "--salt-file", str(salt),
+        "--db", db, "--network", "mainnet", "--dry-run",
+    ])
+    assert code == 0
+
+
 def test_export_audit_includes_fulfillment_actions(tmp_path, ledger, cfg):
     """Incident recovery: audit trail must record purchase + fulfill events."""
     c = coin(42)

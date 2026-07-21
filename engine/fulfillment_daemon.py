@@ -201,6 +201,11 @@ def main() -> int:
     p.add_argument("--metadata-outdir", default="output/fulfillment/metadata")
     p.add_argument("--dry-run", action="store_true",
                    help="roll in memory / log wallet ops without persisting fulfill")
+    p.add_argument(
+        "--allow-mainnet",
+        action="store_true",
+        help="required with --network mainnet for live (non-dry-run) fulfill",
+    )
     p.set_defaults(fn=cmd_tick)
 
     p = sub.add_parser("status", help="print ledger state counts and supply")
@@ -235,16 +240,32 @@ def main() -> int:
     p.add_argument("--manifest-outdir", default="output/fulfillment/chests")
     p.add_argument("--metadata-outdir", default="output/fulfillment/metadata")
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument(
+        "--allow-mainnet",
+        action="store_true",
+        help="required with --network mainnet for live (non-dry-run) fulfill",
+    )
     p.add_argument("--loops", type=int, default=1, help="reconcile cycles (default 1)")
     p.add_argument("--interval", type=float, default=0.0, help="seconds between loops")
     p.set_defaults(fn=cmd_reconcile)
 
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    if getattr(args, "network", None) == "mainnet" and not getattr(args, "dry_run", True):
-        if args.cmd == "tick" and not args.dry_run:
-            log.error("refusing mainnet without an explicit future go-live flag")
-            return 2
+    # Refuse live mainnet fulfillment until go-live is an explicit opt-in.
+    # Covers tick + reconcile (cron); dry-run still allowed for dress rehearsals.
+    write_cmds = {"tick", "reconcile"}
+    if (
+        args.cmd in write_cmds
+        and getattr(args, "network", None) == "mainnet"
+        and not getattr(args, "dry_run", False)
+        and not getattr(args, "allow_mainnet", False)
+    ):
+        log.error(
+            "refusing mainnet %s without --dry-run or --allow-mainnet "
+            "(go-live flag; default is testnet-first)",
+            args.cmd,
+        )
+        return 2
     return args.fn(args)
 
 
