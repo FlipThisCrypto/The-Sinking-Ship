@@ -65,6 +65,33 @@ def test_coinset_timeout_and_user_agent_defaults():
     assert "github.com/FlipThisCrypto/The-Sinking-Ship" in DEFAULT_USER_AGENT
 
 
+def test_webhook_rate_limit_and_shared_secret():
+    from fulfillment import SlidingWindowRateLimiter, StmWebhookIngest
+
+    lim = SlidingWindowRateLimiter(max_events=2, window_s=60.0)
+    ingest = StmWebhookIngest(
+        allowed_tiers={"castaway"},
+        shared_secret="s3cret",
+        rate_limiter=lim,
+    )
+    body = {
+        "coin_id": "cc" * 32,
+        "tier_name": "castaway",
+        "buyer_address": "txch1buyer",
+        "block_height": 1,
+    }
+    with pytest.raises(ValueError, match="secret"):
+        ingest.parse_hint(body)
+    assert ingest.parse_hint(body, headers={"X-Sinking-Ship-Secret": "s3cret"})
+    body2 = dict(body)
+    body2["coin_id"] = "dd" * 32
+    assert ingest.parse_hint(body2, headers={"X-Sinking-Ship-Secret": "s3cret"})
+    body3 = dict(body)
+    body3["coin_id"] = "ee" * 32
+    with pytest.raises(ValueError, match="rate limit"):
+        ingest.parse_hint(body3, headers={"X-Sinking-Ship-Secret": "s3cret"})
+
+
 def test_webhook_hint_never_implies_confirmed(tmp_path):
     cfg = GenConfig()
     caps = {t["name"]: t["passes"] for t in cfg.tiers_doc["tiers"]}

@@ -17,7 +17,12 @@ from .types import (
     OfferBuilder,
 )
 from .ledger import SqliteLedger
-from .sources import CoinsetPollingSource, FixturePaymentSource, StmWebhookIngest
+from .sources import (
+    CoinsetPollingSource,
+    FixturePaymentSource,
+    SlidingWindowRateLimiter,
+    StmWebhookIngest,
+)
 from .offers import DryRunOfferBuilder
 from .sage_rpc import SageOfferBuilder, SageRpcClient, SageRpcError
 from .daemon import FulfillmentDaemon, load_minting_defaults
@@ -35,6 +40,7 @@ __all__ = [
     "FixturePaymentSource",
     "CoinsetPollingSource",
     "StmWebhookIngest",
+    "SlidingWindowRateLimiter",
     "DryRunOfferBuilder",
     "SageRpcClient",
     "SageOfferBuilder",

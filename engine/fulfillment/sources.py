@@ -157,6 +157,28 @@ class CoinsetPollingSource(PaymentSource):
         return out
 
 
+class SlidingWindowRateLimiter:
+    """Simple in-process rate limiter (hints/min). Not a network WAF."""
+
+    def __init__(self, max_events: int, window_s: float = 60.0):
+        if max_events < 1:
+            raise ValueError("max_events must be >= 1")
+        self.max_events = int(max_events)
+        self.window_s = float(window_s)
+        self._times: list[float] = []
+
+    def allow(self, now: float | None = None) -> bool:
+        import time
+
+        t = time.monotonic() if now is None else float(now)
+        cutoff = t - self.window_s
+        self._times = [x for x in self._times if x >= cutoff]
+        if len(self._times) >= self.max_events:
+            return False
+        self._times.append(t)
+        return True
+
+
 class StmWebhookIngest:
     """Optional STM webhook → untrusted PENDING hints only.
 
@@ -164,19 +186,37 @@ class StmWebhookIngest:
     CoinsetPollingSource (or equivalent) before rolling a chest.
     """
 
-    def __init__(self, network: str = "testnet11",
-                 allowed_tiers: set[str] | None = None):
+    def __init__(
+        self,
+        network: str = "testnet11",
+        allowed_tiers: set[str] | None = None,
+        shared_secret: str | None = None,
+        rate_limiter: SlidingWindowRateLimiter | None = None,
+    ):
         self.network = network
         self.allowed_tiers = allowed_tiers
+        self.shared_secret = shared_secret
+        self.rate_limiter = rate_limiter
 
-    def parse_hint(self, payload: dict) -> TierPurchase:
+    def parse_hint(self, payload: dict, *, headers: dict | None = None) -> TierPurchase:
         """Validate a webhook JSON body into a TierPurchase candidate.
 
         Raises ValueError on malformed/untrusted shape. Caller records PENDING
         only — never rolls from this alone.
         """
+        if self.rate_limiter is not None and not self.rate_limiter.allow():
+            raise ValueError("webhook rate limit exceeded")
         if not isinstance(payload, dict):
             raise ValueError("webhook payload must be an object")
+        if self.shared_secret:
+            headers = headers or {}
+            provided = (
+                headers.get("X-Sinking-Ship-Secret")
+                or headers.get("x-sinking-ship-secret")
+                or payload.get("shared_secret")
+            )
+            if provided != self.shared_secret:
+                raise ValueError("webhook shared secret mismatch")
         # Ignore client-supplied "confirmed" claims entirely.
         try:
             coin = normalize_coin_id(str(payload["coin_id"]))

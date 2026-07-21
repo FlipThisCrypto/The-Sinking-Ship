@@ -121,11 +121,21 @@ def cmd_export_refused(args) -> int:
 
 def cmd_ingest_hint(args) -> int:
     """Record an STM webhook / client hint as PENDING only (never rolls)."""
+    from fulfillment import SlidingWindowRateLimiter
+
     cfg, ledger = _ledger(args)
     try:
         payload = json.loads(Path(args.json_file).read_text(encoding="utf-8"))
         allowed = {t["name"] for t in cfg.tiers_doc["tiers"]}
-        ingest = StmWebhookIngest(network=args.network, allowed_tiers=allowed)
+        limiter = None
+        if getattr(args, "rate_limit", None):
+            limiter = SlidingWindowRateLimiter(max_events=int(args.rate_limit))
+        ingest = StmWebhookIngest(
+            network=args.network,
+            allowed_tiers=allowed,
+            shared_secret=getattr(args, "webhook_secret", None) or None,
+            rate_limiter=limiter,
+        )
         purchase = ingest.parse_hint(payload)
         ledger.record_pending_hint(purchase)
         print(json.dumps({
@@ -296,6 +306,17 @@ def main() -> int:
     p.add_argument("--db", default="output/fulfillment/ledger.sqlite")
     p.add_argument("--json-file", required=True)
     p.add_argument("--network", default="testnet11")
+    p.add_argument(
+        "--webhook-secret",
+        default=None,
+        help="require payload.shared_secret to match (abuse resistance)",
+    )
+    p.add_argument(
+        "--rate-limit",
+        type=int,
+        default=None,
+        help="max hints accepted per process per 60s window",
+    )
     p.set_defaults(fn=cmd_ingest_hint)
 
     p = sub.add_parser("export-audit", help="export append-only audit log (incident recovery)")
