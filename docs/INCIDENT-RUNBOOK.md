@@ -22,10 +22,12 @@ manifest hash.
 **Always collect before changing state:**
 
 ```bash
+python scripts/ops_preflight.py --salt-file "$SALT" --db "$LEDGER_DB"
 python engine/fulfillment_daemon.py status --db "$LEDGER_DB"
+python engine/fulfillment_daemon.py status --db "$LEDGER_DB" --metrics --out metrics.prom
 python engine/fulfillment_daemon.py export-audit --db "$LEDGER_DB" --out "incident-audit-$(date +%Y%m%dT%H%M%S).json"
+python engine/fulfillment_daemon.py backup --db "$LEDGER_DB" --out "ledger-backup.sqlite"
 # Windows PowerShell: use Get-Date -Format yyyyMMddTHHmmss
-copy /Y "%LEDGER_DB%" "ledger-backup-%DATE%.sqlite"   # or Copy-Item on PowerShell
 ```
 
 Publish a short status line (X/Discord/site banner): what is broken, what is
