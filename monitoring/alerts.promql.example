@@ -1,0 +1,38 @@
+# Example Prometheus alert rules for THE SINKING SHIP fulfillment.
+# Import into your rules file; paths assume metrics from
+# `fulfillment_daemon.py status --metrics`.
+
+groups:
+  - name: sinking_ship_mint
+    rules:
+      - alert: SinkingShipLedgerIntegrityFailed
+        expr: sinking_ship_ledger_integrity_ok == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Ledger quick_check failed"
+
+      - alert: SinkingShipBudgetExhausted
+        expr: sinking_ship_budget_remaining == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Public mint budget remaining is zero"
+
+      - alert: SinkingShipFulfillmentBacklog
+        expr: sinking_ship_purchases_by_state{state="confirmed"} > 50
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Confirmed purchases waiting for fulfill"
+
+      - alert: SinkingShipSchemaVersionUnexpected
+        expr: sinking_ship_ledger_schema_version != 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Ledger schema_version is not the expected 1"
