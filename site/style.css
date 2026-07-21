@@ -123,6 +123,20 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 500; color: var(--bone);
   .nav-links { gap: 0.8rem; font-size: 0.72rem; justify-content: flex-start; }
 }
 
+/* Print: fairness docs and launch reviews without sticky chrome */
+@media print {
+  .nav, .skip-link, .cta-row, .btn { display: none !important; }
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  a { color: #000 !important; text-decoration: underline; }
+  .hero, .section, main {
+    background: transparent !important;
+    filter: none !important;
+  }
+}
+
 /* ---------- hero ---------- */
 .hero {
   position: relative; min-height: 96vh;
