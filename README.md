@@ -142,7 +142,7 @@ coinset poll client, STM webhook PENDING hints, CLI (`tick` / `status` /
 **P8 / P9 site surfaces:** [site/reveal.html](site/reveal.html),
 [site/fairness.html](site/fairness.html), [site/wallet.html](site/wallet.html),
 [site/fairness_vectors.json](site/fairness_vectors.json). Launch checklist:
-[docs/LAUNCH-CHECKLIST.md](docs/LAUNCH-CHECKLIST.md). Incident runbook:
+[docs/LAUNCH-CHECKLIST.md](docs/LAUNCH-CHECKLIST.md). Service levels: [docs/SLO.md](docs/SLO.md). Incident runbook:
 [docs/INCIDENT-RUNBOOK.md](docs/INCIDENT-RUNBOOK.md). Contributing:
 [CONTRIBUTING.md](CONTRIBUTING.md). Security: [SECURITY.md](SECURITY.md).
 
