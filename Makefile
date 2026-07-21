@@ -1,8 +1,8 @@
 # THE SINKING SHIP — common operator targets (Windows-friendly via make/GNU or WSL)
-.PHONY: test validate vectors smoke load site-data grails share fairness-check help
+.PHONY: test validate vectors smoke load site-data grails share og-image fairness-check help
 
 help:
-	@echo "make test | validate | vectors | smoke | load | site-data | grails | share | fairness-check"
+	@echo "make test | validate | vectors | smoke | load | site-data | grails | share | og-image | fairness-check"
 
 test:
 	python -m pytest tests/ -q
@@ -29,5 +29,8 @@ grails:
 
 share:
 	python scripts/gen_share_card.py --from-manifest site/demo_chest.json --out output/share_card.png
+
+og-image:
+	python scripts/gen_og_image.py
 
 fairness-check: vectors
