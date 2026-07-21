@@ -172,13 +172,16 @@ def cmd_verify(args) -> int:
     return 0
 
 
-VERSION = "1.0.0"
-
-
 def main() -> int:
+    from shipgen import __version__ as shipgen_version
+
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--version", action="version", version=f"chest_roller {VERSION}")
+    ap.add_argument(
+        "--version",
+        action="version",
+        version=f"chest_roller {shipgen_version} (shipgen {shipgen_version})",
+    )
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     p = sub.add_parser("commit", help="build the provenance commitment")
