@@ -183,9 +183,13 @@ def cmd_reconcile(args) -> int:
         ledger.close()
 
 
+VERSION = "1.0.0"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--version", action="version", version=f"fulfillment_daemon {VERSION}")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     p = sub.add_parser("tick", help="poll source and fulfill pending purchases")
