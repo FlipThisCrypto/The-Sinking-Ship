@@ -52,5 +52,12 @@ site-links:
 	python scripts/check_site_links.py
 
 # Local mirror of .github/workflows/ci.yml (minus the matrix / Pages deploy).
+preflight:
+	@echo "usage: make preflight SALT=path/to.salt [DB=ledger.sqlite]"
+	python scripts/ops_preflight.py --salt-file "$(SALT)" $(if $(DB),--db $(DB),)
+
+soak:
+	python scripts/soak_fulfillment.py --purchases 40
+
 ci: lint secrets-check site-links validate sprites test smoke sellout load fairness-check
 	@echo "make ci: all local CI gates green"
