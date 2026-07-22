@@ -63,3 +63,11 @@ def test_validate_configs_enforces_identity():
         assert validate_configs.main() == 0  # real config passes the CI gate
     finally:
         sys.argv = argv
+
+
+def test_change_me_placeholder_rejected():
+    doc = _base()
+    doc["minting"]["royalty_address"] = "change_me_placeholder_xch1"
+    problems = check_chain_identity(doc)
+    assert any("placeholder" in p.lower() or "royalty_address" in p for p in problems)
+
