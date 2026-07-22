@@ -56,3 +56,23 @@ def test_vectors_consistent_with_fresh_engine():
     m = engine.roll_chest(salt, c["coin_id"], c["tier"], c["pass_ordinal"],
                           c["start_index"], placements, prov)
     assert m["manifest_hash"] == c["manifest_hash"]
+
+
+def test_node_js_verifiers_cli():
+    import shutil
+    import subprocess
+
+    node_bin = shutil.which("node")
+    if not node_bin:
+        return
+
+    res_v = subprocess.run([node_bin, "site/js/verify_vectors.mjs"],
+                           cwd=str(ROOT), capture_output=True, text=True)
+    assert res_v.returncode == 0, res_v.stderr + res_v.stdout
+    assert '"ok": true' in res_v.stdout
+
+    res_r = subprocess.run([node_bin, "site/js/verify_roll.mjs"],
+                           cwd=str(ROOT), capture_output=True, text=True)
+    assert res_r.returncode == 0, res_r.stderr + res_r.stdout
+    assert '"ok": true' in res_r.stdout
+
