@@ -16,3 +16,12 @@ def test_prometheus_export_contains_core_gauges():
     assert "sinking_ship_supply_consumed 13" in text
     assert "sinking_ship_ledger_integrity_ok 1" in text
     assert text.endswith("\n")
+
+
+def test_prometheus_export_escapes_special_characters():
+    text = status_to_prometheus(
+        {"by_state": {"custom_state": 2}},
+        job='test_"job"_name',
+    )
+    assert 'job="test_\\"job\\"_name"' in text
+    assert 'state="custom_state"' in text
