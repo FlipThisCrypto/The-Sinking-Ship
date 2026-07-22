@@ -66,5 +66,6 @@ preflight:
 soak:
 	python scripts/soak_fulfillment.py --purchases 40
 
-ci: lint secrets-check site-links validate sprites test smoke sellout load fairness-check
+ci: lint secrets-check site-links validate sprites test smoke sellout load fairness-check roll-vectors
 	@echo "make ci: all local CI gates green"
+
