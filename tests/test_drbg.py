@@ -94,3 +94,14 @@ def test_coin_id_normalization():
     for bad in ("zz" * 32, "ab" * 31, "", "0x1234"):
         with pytest.raises(ValueError):
             normalize_coin_id(bad)
+
+
+def test_derive_seed_key_different_salts():
+    coin_hex = "a1" * 32
+    key1 = derive_seed_key(b"salt_alpha_01", coin_hex)
+    key2 = derive_seed_key(b"salt_beta_02", coin_hex)
+
+    assert isinstance(key1, bytes)
+    assert len(key1) == 32
+    assert key1 != key2
+
