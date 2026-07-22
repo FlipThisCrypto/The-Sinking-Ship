@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: MIT
 """Validate HTML5 semantics, SEO meta tags, accessibility attributes, and asset refs.
 
+Scans site/*.html and root *.html files.
+
 Usage:
     python scripts/validate_site_html.py
 """
@@ -10,7 +12,8 @@ import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
-SITE = Path(__file__).resolve().parent.parent / "site"
+ROOT = Path(__file__).resolve().parent.parent
+SITE = ROOT / "site"
 
 
 class PageValidator(HTMLParser):
@@ -27,7 +30,6 @@ class PageValidator(HTMLParser):
         self.has_description = False
         self.has_canonical = False
         self.has_main = False
-        self.tag_stack: list[str] = []
         self.in_title = False
 
     def handle_decl(self, decl: str) -> None:
@@ -64,7 +66,6 @@ class PageValidator(HTMLParser):
 
         elif tag == "img":
             alt = attr_dict.get("alt")
-            # Images should have alt attribute (even if empty for decorative, but structural should be non-empty)
             if alt is None:
                 self.errors.append("<img> tag missing 'alt' attribute")
 
@@ -93,18 +94,21 @@ def validate_html_file(path: Path) -> list[str]:
         errs.append("Missing <title> tag")
     if not parser.has_charset:
         errs.append("Missing or non-utf-8 <meta charset>")
-    if not parser.has_viewport:
-        errs.append("Missing <meta name='viewport'>")
-    if not parser.has_description and path.name != "dashboard.html":
-        errs.append("Missing <meta name='description'>")
-    if not parser.has_main:
-        errs.append("Missing <main> ARIA landmark container")
+
+    # Site pages require description and main landmark container
+    if path.parent == SITE:
+        if not parser.has_viewport:
+            errs.append("Missing <meta name='viewport'>")
+        if not parser.has_description and path.name != "dashboard.html":
+            errs.append("Missing <meta name='description'>")
+        if not parser.has_main:
+            errs.append("Missing <main> ARIA landmark container")
 
     return [f"{path.name}: {e}" for e in errs]
 
 
 def main() -> int:
-    html_files = sorted(SITE.glob("*.html"))
+    html_files = sorted(list(SITE.glob("*.html")) + list(ROOT.glob("*.html")))
     if not html_files:
         print("validate_site_html: no html files found", file=sys.stderr)
         return 1
@@ -120,7 +124,7 @@ def main() -> int:
             print(f"  {e}", file=sys.stderr)
         return 1
 
-    print(f"validate_site_html: ok ({len(html_files)} pages validated)")
+    print(f"validate_site_html: ok ({len(html_files)} pages validated across site/ and repo root)")
     return 0
 
 
