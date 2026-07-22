@@ -5,7 +5,8 @@ Two renderers, chosen by render profile (config/render.json):
 
   pixel        — the original 48x48 solid-block placeholders (kept verbatim).
   illustration — Amano ink stand-ins matching ships_amano/ + ART-DIRECTION:
-                 bone-white ground, vertical gradient linework (warm→navy),
+                 bone-white ground, vertical gradient linework (warm->navy),
+
                  calligraphic hulls, crystals, wave ribbons, gestural figures.
                  Deterministic per trait (sha256 of the sprite key).
                  Measured by scripts/style_score.py against ships_amano.
