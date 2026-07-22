@@ -1,8 +1,9 @@
 # THE SINKING SHIP — common operator targets (Windows-friendly via make/GNU or WSL)
-.PHONY: test validate sprites vectors roll-vectors smoke load sellout site-data grails share og-image brand-assets fairness-check ci lint secrets-check site-links validate-html preflight soak help
+.PHONY: test validate sprites vectors roll-vectors smoke load sellout site-data grails share og-image brand-assets fairness-check ci lint secrets-check site-links doc-links validate-html preflight soak help
 
 help:
-	@echo "make test | validate | sprites | vectors | smoke | load | sellout | site-data | grails | share | og-image | fairness-check | lint | secrets-check | site-links | validate-html | preflight | soak | ci"
+	@echo "make test | validate | sprites | vectors | smoke | load | sellout | site-data | grails | share | og-image | fairness-check | lint | secrets-check | site-links | doc-links | validate-html | preflight | soak | ci"
+
 
 
 test:
@@ -62,6 +63,9 @@ site-links:
 validate-html:
 	python scripts/validate_site_html.py
 
+doc-links:
+	python scripts/check_doc_links.py
+
 # Local mirror of .github/workflows/ci.yml (minus the matrix / Pages deploy).
 preflight:
 	@echo "usage: make preflight SALT=path/to.salt [DB=ledger.sqlite]"
@@ -70,7 +74,8 @@ preflight:
 soak:
 	python scripts/soak_fulfillment.py --purchases 40
 
-ci: lint secrets-check site-links validate-html validate sprites test smoke sellout load fairness-check roll-vectors
+ci: lint secrets-check site-links doc-links validate-html validate sprites test smoke sellout load fairness-check roll-vectors
 	@echo "make ci: all local CI gates green"
+
 
 

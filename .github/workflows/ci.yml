@@ -47,6 +47,8 @@ jobs:
       - name: Site HTML validation
         run: python scripts/validate_site_html.py
 
+      - name: Documentation link check
+        run: python scripts/check_doc_links.py
 
       - name: Fail if site/tiers.js is stale vs configs
         run: |
