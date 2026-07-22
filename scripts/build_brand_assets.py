@@ -46,21 +46,28 @@ def _cover_resize(im: Image.Image, w: int, h: int) -> Image.Image:
     return resized.crop((left, top, left + w, top + h))
 
 
-def build(src_dir: Path) -> list[Path]:
+def build(
+    src_dir: Path,
+    brand_dir: Path | None = None,
+    og_out: Path | None = None,
+) -> list[Path]:
+    target_brand = brand_dir or (ROOT / "site" / "assets" / "brand")
+    target_og = og_out or (ROOT / "site" / "assets" / "og-image.png")
+
     icon_src = _open_rgb(src_dir / "icon.png")
     banner_src = _open_rgb(src_dir / "banner.png")
-    BRAND.mkdir(parents=True, exist_ok=True)
+    target_brand.mkdir(parents=True, exist_ok=True)
     out: list[Path] = []
 
     # Icon + banner are opaque illustrations — JPEG q90 is visually lossless at
     # these sizes and ~10x smaller than PNG, which matters for marketplace loads.
     icon = _cover_resize(icon_src, 600, 600)
-    p = BRAND / "icon.jpg"
+    p = target_brand / "icon.jpg"
     icon.save(p, "JPEG", quality=90, optimize=True)
     out.append(p)
 
     banner = _cover_resize(banner_src, 1600, 400)
-    p = BRAND / "banner.jpg"
+    p = target_brand / "banner.jpg"
     banner.save(p, "JPEG", quality=90, optimize=True)
     out.append(p)
 
@@ -70,11 +77,11 @@ def build(src_dir: Path) -> list[Path]:
     art = icon_src.copy()
     art.thumbnail((630, 630), Image.LANCZOS)
     og.paste(art, ((1200 - art.width) // 2, (630 - art.height) // 2))
-    p = ROOT / "site" / "assets" / "og-image.png"
-    og.save(p, "PNG", optimize=True)
-    out.append(p)
-    og.save(p.with_suffix(".jpg"), "JPEG", quality=88)
-    out.append(p.with_suffix(".jpg"))
+    target_og.parent.mkdir(parents=True, exist_ok=True)
+    og.save(target_og, "PNG", optimize=True)
+    out.append(target_og)
+    og.save(target_og.with_suffix(".jpg"), "JPEG", quality=88)
+    out.append(target_og.with_suffix(".jpg"))
 
     return out
 
@@ -83,11 +90,14 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Build web/marketplace brand assets.")
     ap.add_argument("--src-dir", type=Path, default=ROOT,
                     help="directory holding source icon.png + banner.png")
+    ap.add_argument("--brand-dir", type=Path, default=None)
+    ap.add_argument("--og-out", type=Path, default=None)
     args = ap.parse_args()
-    for p in build(args.src_dir):
+    for p in build(args.src_dir, brand_dir=args.brand_dir, og_out=args.og_out):
         size = p.stat().st_size
-        print(f"wrote {p.relative_to(ROOT)} ({size // 1024} KB)")
+        print(f"wrote {p} ({size // 1024} KB)")
     return 0
+
 
 
 if __name__ == "__main__":
