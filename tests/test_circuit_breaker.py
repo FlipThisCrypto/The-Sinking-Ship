@@ -38,3 +38,20 @@ def test_coinset_respects_open_circuit():
     src = CoinsetPollingSource("http://x", http_get=http_get, circuit_breaker=b)
     with pytest.raises(RuntimeError, match="circuit"):
         src.current_height()
+
+
+def test_breaker_snapshot_and_half_open_probe():
+    b = CircuitBreaker(failure_threshold=2, open_seconds=0.01)
+    b.record_failure()
+    sn = b.snapshot()
+    assert sn["state"] == "closed"
+    assert sn["failures"] == 1
+
+    b.record_failure()
+    assert b.state == "open"
+
+    import time
+    time.sleep(0.02)
+    assert b.allow() is True
+    assert b.state == "half_open"
+
