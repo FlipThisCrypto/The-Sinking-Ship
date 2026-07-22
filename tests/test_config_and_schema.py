@@ -86,3 +86,16 @@ def test_collection_json_public_urls_are_live_pages():
     assert "flipthiscrypto.github.io" in c["website"]
     assert doc["minting"]["royalty_percentage_basis_points"] == 1000  # owner-set 10%
     assert doc["minting"]["series_total"] == 44444
+
+
+def test_all_8_json_schemas_are_valid_and_non_empty():
+    schemas_dir = CONFIG / "schemas"
+    schema_files = sorted(list(schemas_dir.glob("*.schema.json")))
+    assert len(schema_files) == 8, f"expected 8 schema files, found {len(schema_files)}"
+
+    for sfile in schema_files:
+        doc = load_json(sfile)
+        assert isinstance(doc, dict), f"{sfile.name} is not a JSON object"
+        assert "$schema" in doc or "type" in doc, f"{sfile.name} missing schema header"
+        assert "properties" in doc or "type" in doc, f"{sfile.name} missing properties/type"
+
