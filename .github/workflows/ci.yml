@@ -44,6 +44,10 @@ jobs:
       - name: Site local link check
         run: python scripts/check_site_links.py
 
+      - name: Site HTML validation
+        run: python scripts/validate_site_html.py
+
+
       - name: Fail if site/tiers.js is stale vs configs
         run: |
           python scripts/build_site_data.py
