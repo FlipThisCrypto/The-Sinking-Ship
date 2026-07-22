@@ -137,18 +137,17 @@ def measured_distribution(seeds: list[str]) -> dict[str, float]:
 
 
 def write_weights(cfg: GenConfig, weights: dict, scales: dict[str, float],
-                  targets: dict[str, float], polish_report: list[dict]) -> Path:
+                  targets: dict[str, float], polish_report: list[dict],
+                  out_path: Path | None = None) -> Path:
     doc = {
         "$schema": "./schemas/weights.schema.json",
         "config_name": "weights",
         "version": "1.0.0",
-        "method": {
-            "generator": "scripts/tune_weights.py",
-            "adr": "ADR-0006",
-            "base_weights_milli": BASE_WEIGHTS,
-            "description": (
-                "per-trait weight = spec 4.2 bucket base weight x global bucket scale, "
-                "in integer milli-units; None weights hold the design None-shares; "
+        "spec_reference": "sinking-ship-master-spec.md Section 4.1 (rarity targets), 4.2 (base weights)",
+        "meta": {
+            "method": (
+                "ADR-0006 analytic + polish loop: base weights scaled per bucket; "
+                "scene_element/mouth/hat/aura fixed at spec/lore design None-shares; "
                 "scales calibrated analytically then polished through the real roll "
                 "engine on full-sellout Monte Carlo (see polish_report)"),
             "tuning_objective": (
@@ -168,7 +167,7 @@ def write_weights(cfg: GenConfig, weights: dict, scales: dict[str, float],
         "depth_luck": {t["name"]: t["depth_luck_permille"] for t in cfg.tiers_doc["tiers"]},
         "guarantees": {t["name"]: t["guarantee"] for t in cfg.tiers_doc["tiers"]},
     }
-    path = CONFIG_DIR / "weights.json"
+    path = out_path or (CONFIG_DIR / "weights.json")
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(doc, f, indent=2, ensure_ascii=False)
         f.write("\n")
@@ -186,6 +185,7 @@ def main() -> int:
     ap.add_argument("--replicates", type=int, default=3,
                     help="full-sellout MC replicates averaged per polish iteration")
     ap.add_argument("--damp", type=float, default=0.6)
+    ap.add_argument("--out", type=Path, default=None, help="output path for tuned weights JSON")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
@@ -213,7 +213,7 @@ def main() -> int:
 
     # ---- stage 2: polish through the real engine ----
     polish_report = []
-    write_weights(cfg, weights, scales, targets, polish_report)
+    write_weights(cfg, weights, scales, targets, polish_report, out_path=args.out)
     for it in range(args.polish_iters):
         seeds = [f"tune-{it}-{r}" for r in range(args.replicates)]
         measured = measured_distribution(seeds)
@@ -232,11 +232,11 @@ def main() -> int:
         for b in ("mythic", "legendary", "epic", "rare", "uncommon"):
             scales[b] *= (targets[b] / measured[b]) ** args.damp
         weights = build_weights(cfg, scales)
-        write_weights(cfg, weights, scales, targets, polish_report)
+        write_weights(cfg, weights, scales, targets, polish_report, out_path=args.out)
     else:
         log.warning("polish did not reach tolerance within --polish-iters")
 
-    path = write_weights(cfg, weights, scales, targets, polish_report)
+    path = write_weights(cfg, weights, scales, targets, polish_report, out_path=args.out)
     log.info("wrote %s", path)
     log.info("verify with: python engine/simulate.py --profile sellout --seed verify --check")
     return 0
