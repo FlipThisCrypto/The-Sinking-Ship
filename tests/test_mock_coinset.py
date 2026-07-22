@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import hashlib
+import pytest
 
 from fulfillment import (
+
     CoinsetPollingSource,
     DryRunOfferBuilder,
     FulfillmentDaemon,
@@ -78,3 +80,14 @@ def test_mock_coinset_since_height_filter():
         only_new = src.poll_confirmed(10)
         assert len(only_new) == 1
         assert only_new[0].coin_id == coin(4)
+
+
+def test_mock_coinset_404_on_unknown_path():
+    import urllib.error
+    import urllib.request
+
+    with MockCoinsetServer() as server:
+        with pytest.raises(urllib.error.HTTPError) as exc_info:
+            urllib.request.urlopen(server.base_url + "/unknown_route", timeout=5)
+        assert exc_info.value.code == 404
+
