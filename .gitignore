@@ -29,3 +29,10 @@ Thumbs.db
 
 # Windows shortcut used locally to reach the skills library
 *.lnk
+
+# Owner-supplied high-res source art (multi-MB). Only the web/marketplace
+# derivatives under site/assets/brand/ (built by scripts/build_brand_assets.py)
+# are committed; keep the originals local (or in a bucket/IPFS per ADR-0001).
+/banner.png
+/banner1.png
+/icon.png

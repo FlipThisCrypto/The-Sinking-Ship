@@ -1,5 +1,5 @@
 # THE SINKING SHIP — common operator targets (Windows-friendly via make/GNU or WSL)
-.PHONY: test validate sprites vectors smoke load sellout site-data grails share og-image fairness-check ci lint secrets-check site-links preflight soak help
+.PHONY: test validate sprites vectors smoke load sellout site-data grails share og-image brand-assets fairness-check ci lint secrets-check site-links preflight soak help
 
 help:
 	@echo "make test | validate | sprites | vectors | smoke | load | sellout | site-data | grails | share | og-image | fairness-check | lint | secrets-check | site-links | preflight | soak | ci"
@@ -39,6 +39,9 @@ share:
 
 og-image:
 	python scripts/gen_og_image.py
+
+brand-assets:
+	python scripts/build_brand_assets.py
 
 fairness-check: vectors
 
