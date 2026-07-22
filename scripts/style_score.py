@@ -216,9 +216,10 @@ def main() -> int:
 
     if not args.quiet:
         print(f"Golden refs: {len(ref_rows)} images, mean overall {ref_mean:.1f}%")
-        print(f"  target axes: white≥{TARGETS['white_ground']}, "
-              f"edge≈{TARGETS['edge_density']}, ramp≥{TARGETS['vertical_ramp']}, "
-              f"dark≤{TARGETS['dark_fill']}")
+        print(f"  target axes: white>={TARGETS['white_ground']}, "
+              f"edge~={TARGETS['edge_density']}, ramp>={TARGETS['vertical_ramp']}, "
+              f"dark<={TARGETS['dark_fill']}")
+
         if sample_rows:
             mean = float(np.mean([r["scores"]["overall"] for r in sample_rows]))
             print(f"\nSamples: {len(sample_rows)} images, mean overall {mean:.1f}% "
@@ -265,8 +266,9 @@ def main() -> int:
         # refs should average well above 85 on their own grammar
         ok = ref_mean >= 80.0
         if not args.quiet:
-            print(f"\nSelf-check {'PASS' if ok else 'FAIL'} (refs mean {ref_mean:.1f}, want ≥80)")
+            print(f"\nSelf-check {'PASS' if ok else 'FAIL'} (refs mean {ref_mean:.1f}, want >=80)")
         return 0 if ok else 1
+
 
     if not sample_rows:
         return 0
