@@ -33,7 +33,9 @@ log = logging.getLogger("metadata_gen")
 
 NAME_FMT = "Sinking Ship #{:05d}"
 # Reject manifests whose quantity exceeds any plausible chest (ops footgun).
-MAX_CHEST_QUANTITY = 64
+# Admiral chests can contain up to 270 NFTs (config/tiers.json: chest_max=270).
+MAX_CHEST_QUANTITY = 300
+
 
 
 class MetadataGenerator:
