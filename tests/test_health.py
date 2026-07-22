@@ -36,3 +36,18 @@ def test_health_critical_budget_exhausted_with_backlog():
     )
     assert h["level"] == "critical"
     assert "budget_exhausted_with_backlog" in h["reasons"]
+
+
+def test_health_degraded_when_circuit_open():
+    h = build_health(
+        status={
+            "integrity_ok": True,
+            "supply_consumed": 1000,
+            "by_state": {"fulfilled": 10},
+            "circuit_breaker": {"state": "open"},
+        },
+        public_mint_budget=44000,
+    )
+    assert h["level"] == "degraded"
+    assert "coinset_circuit_open" in h["reasons"]
+
