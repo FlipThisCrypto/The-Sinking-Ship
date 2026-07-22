@@ -3,7 +3,7 @@
   "config_name": "collection",
   "version": "1.0.0",
   "collection": {
-    "id": "col-the-sinking-ship-v1",
+    "id": "1fdf2873-db1f-41e1-9b6c-22cc6bac732f",
     "name": "The Sinking Ship",
     "description": "44,444 hand-drawn Amano-style salvage records from the wreck everyone abandoned. The world sees a sinking ship. You see a salvage operation. Hope never sinks.",
     "icon": "https://flipthiscrypto.github.io/The-Sinking-Ship/assets/og-image.png",
@@ -15,13 +15,13 @@
   "minting": {
     "minting_tool": "sinking-ship-shipgen-1.0.0",
     "series_total": 44444,
-    "royalty_percentage_basis_points": 500,
-    "did": "TODO: project DID (spec 5.4) — set before testnet11 dry run",
-    "royalty_address": "TODO: royalty XCH address — set before testnet11 dry run"
+    "royalty_percentage_basis_points": 1000,
+    "did": "did:chia:18uwh9krvd4et69ps3ydspy9nt66wxw595ws0geuw0zxy86vxwa5qp42x20",
+    "royalty_address": "xch1kdzqtkpd42n2avcr6qwdvj69fjn97xl555v0lkpvfg84gdfuchsqee3j04"
   },
   "notes": [
-    "OQ-8: collection.id is a placeholder slug; CHIP-0007 examples use a UUID and marketplaces treat it as an opaque unique string. Owner to confirm final id format before mint.",
+    "OQ-8 RESOLVED (owner 2026-07-21): collection.id is the CHIP-0007 UUID 1fdf2873-db1f-41e1-9b6c-22cc6bac732f. Chain identity (DID, royalty address, 10% = 1000 bp) supplied by owner and validated by engine/shipgen/identity.py (gated in validate_configs + ops_preflight).",
     "OQ-9: series_total is the 44,444 cap; under The Scuttling the realized supply will be lower. CHIP-0007 has no post-hoc mutation story — series_total is committed pre-mint at the cap. Flagged for the fairness docs.",
-    "icon/banner/website point at the live GitHub Pages site until a custom domain is cut over; DID and royalty XCH address remain owner-supplied before testnet11."
+    "icon/banner point at the live GitHub Pages OG card until owner-supplied banner/icon art is committed to site/assets and the URLs are cut over."
   ]
 }

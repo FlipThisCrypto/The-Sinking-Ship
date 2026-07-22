@@ -717,9 +717,9 @@ const TASKS = [
     body: `<p>Single ops view: direction, tracks, full task list, how-to, docs map.</p>`
   },
   {
-    id: "OPS-1", track: "chain", status: "todo",
+    id: "OPS-1", track: "chain", status: "done",
     title: "Collection identity for chain",
-    body: `<p>Set project DID, royalty address, final collection id (OQ-8) in <code>config/collection.json</code> before testnet mint.</p>`
+    body: `<p>Owner-supplied DID, royalty address (10%), and CHIP-0007 collection UUID (OQ-8) wired into <code>config/collection.json</code> and format-validated by <code>engine/shipgen/identity.py</code> — gated in <code>validate_configs</code> (CI) and <code>ops_preflight</code> so a placeholder or malformed identity can never mint.</p>`
   },
   {
     id: "OPS-2", track: "launch", status: "todo",

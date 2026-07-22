@@ -58,6 +58,22 @@ def main() -> int:
         results.append(check("configs", False, str(e), errors, warnings))
         cfg = None
 
+    # Chain identity (OPS-1): DID, royalty address, collection id must be real
+    # before any mint — a placeholder here would mint under the wrong identity.
+    try:
+        from shipgen.config import load_json as _load_json
+        from shipgen.identity import check_chain_identity
+        coll = _load_json(ROOT / "config" / "collection.json")
+        problems = check_chain_identity(coll)
+        results.append(check(
+            "chain_identity", not problems,
+            "ok (DID, royalty, collection id set)" if not problems
+            else "; ".join(problems),
+            errors, warnings,
+        ))
+    except Exception as e:
+        results.append(check("chain_identity", False, str(e), errors, warnings))
+
     # Salt
     salt_path = Path(args.salt_file)
     if not salt_path.is_file():

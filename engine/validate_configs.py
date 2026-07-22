@@ -16,6 +16,7 @@ import sys
 from pathlib import Path
 
 from shipgen.config import GenConfig, CONFIG_DIR, load_json
+from shipgen.identity import check_chain_identity
 from shipgen.schema import SchemaError, validate
 
 log = logging.getLogger("validate_configs")
@@ -31,6 +32,13 @@ def _validate_extra(config_dir: Path) -> None:
         schema = load_json(config_dir / "schemas" / f"{name}.schema.json")
         validate(doc, schema)
         log.info("%s.json: schema ok", name)
+        if name == "collection":
+            problems = check_chain_identity(doc)
+            if problems:
+                raise ValueError(
+                    "collection.json chain identity invalid:\n  - "
+                    + "\n  - ".join(problems))
+            log.info("collection.json: chain identity valid (DID, royalty, id)")
 
 
 def main() -> int:

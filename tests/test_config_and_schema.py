@@ -84,5 +84,5 @@ def test_collection_json_public_urls_are_live_pages():
         assert url.startswith("https://"), key
         assert "example" not in url.lower(), f"{key} still placeholder: {url}"
     assert "flipthiscrypto.github.io" in c["website"]
-    assert doc["minting"]["royalty_percentage_basis_points"] == 500
+    assert doc["minting"]["royalty_percentage_basis_points"] == 1000  # owner-set 10%
     assert doc["minting"]["series_total"] == 44444

@@ -248,8 +248,8 @@ def test_daemon_minting_defaults_match_collection_json(tmp_path, ledger, cfg):
         minting["royalty_percentage_basis_points"]
     )
     assert daemon.did == minting["did"]
-    # Guard against the old hardcoded 300 bp default drifting from config.
-    assert daemon.royalty_basis_points == 500
+    # Guard against the mint royalty drifting from config (owner-set 10%).
+    assert daemon.royalty_basis_points == 1000
 
 
 def test_daemon_minting_overrides_respected(tmp_path, ledger, cfg):
