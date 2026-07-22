@@ -24,3 +24,14 @@ def test_stale_lock_break(tmp_path):
     lock = LedgerFileLock(path, stale_seconds=1)
     lock.acquire()  # should break stale
     lock.release()
+
+
+def test_context_manager_releases_on_exit(tmp_path):
+    path = tmp_path / "ctx.lock"
+    with LedgerFileLock(path):
+        assert path.exists()
+    assert not path.exists()
+    # Can re-acquire after context exit
+    with LedgerFileLock(path):
+        assert path.exists()
+
