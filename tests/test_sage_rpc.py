@@ -61,3 +61,25 @@ def test_offer_builder_live_path():
     lids = b.mint_nfts(["a.json"], "did:x", 300, "testnet11", dry_run=False)
     assert lids == ["launcher1", "launcher2"]
     assert b.build_claim_offer(lids, "txch1x", "testnet11", dry_run=False) == "offer1_real_demo"
+
+
+def test_health_fallback_to_ping_on_health_method_error():
+    def http_post(url, body, headers):
+        req = json.loads(body.decode())
+        if req["method"] == "health":
+            return json.dumps({
+                "jsonrpc": "2.0", "id": req["id"],
+                "error": {"code": -32601, "message": "Method not found"},
+            }).encode()
+        if req["method"] == "ping":
+            return json.dumps({
+                "jsonrpc": "2.0", "id": req["id"],
+                "result": "pong",
+            }).encode()
+        raise AssertionError(req["method"])
+
+    c = SageRpcClient(http_post=http_post)
+    h = c.health()
+    assert h["ok"] is True
+    assert h["result"] == "pong"
+
