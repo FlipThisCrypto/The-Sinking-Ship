@@ -38,3 +38,29 @@ def test_configure_logging_json_mode(capsys):
     doc = json.loads(err)
     assert doc["event"] == "unit_probe"
     assert doc["ok"] is True
+
+
+def test_json_line_formatter_exception_logging():
+    import sys
+
+    fmt = JsonLineFormatter()
+    try:
+        raise ValueError("test exception for log")
+    except ValueError:
+        exc_info = sys.exc_info()
+
+    record = logging.LogRecord(
+        name="fulfillment.err",
+        level=logging.ERROR,
+        pathname=__file__,
+        lineno=1,
+        msg="an error occurred",
+        args=(),
+        exc_info=exc_info,
+    )
+    line = fmt.format(record)
+    doc = json.loads(line)
+    assert doc["level"] == "ERROR"
+    assert "exc_info" in doc
+    assert "ValueError: test exception for log" in doc["exc_info"]
+
