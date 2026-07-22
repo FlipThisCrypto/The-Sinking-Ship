@@ -51,6 +51,7 @@ jobs:
               -e "s|main\.js\"|main.js?v=${V}\"|g" \
               -e "s|tiers\.js\"|tiers.js?v=${V}\"|g" \
               -e "s|shipgen_drbg\.js\"|shipgen_drbg.js?v=${V}\"|g" \
+              -e "s|shipgen_roll\.js\"|shipgen_roll.js?v=${V}\"|g" \
               "$f"
           done
           echo "Stamped asset version ${V}:"

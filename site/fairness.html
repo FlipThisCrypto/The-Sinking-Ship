@@ -97,6 +97,17 @@
   <button class="btn btn-primary" type="button" id="selfcheck-btn">Run fairness self-check</button>
   <pre id="selfcheck-out" style="margin-top:1rem;background:var(--ink);border:1px solid var(--navy);padding:1rem;overflow:auto;font-size:.85rem;color:var(--pale);min-height:3rem">Ready.</pre>
 
+  <h2 class="section-title" style="margin-top:2.5rem">Recompute full chests — in your browser</h2>
+  <p style="color:var(--ash);margin-bottom:.75rem;font-size:.95rem">
+    The strong claim: not just the DRBG, but <strong style="color:var(--bone)">whole chests</strong>.
+    This re-derives the committed grail/Torn placements from the demo salt and re-rolls a
+    sample of published chests — every trait, guarantee, pity upgrade, and The&nbsp;Torn — then
+    checks each <code>manifest_hash</code> matches the engine bit-for-bit. Same math as
+    <code>chest_roller.py verify</code>, running entirely in your browser.
+  </p>
+  <button class="btn btn-primary" type="button" id="chestcheck-btn">Recompute chests from the salt</button>
+  <pre id="chestcheck-out" style="margin-top:1rem;background:var(--ink);border:1px solid var(--navy);padding:1rem;overflow:auto;font-size:.85rem;color:var(--pale);min-height:3rem">Ready.</pre>
+
   <h2 class="section-title" style="margin-top:2.5rem">Verify a chest</h2>
   <pre style="background:var(--ink);border:1px solid var(--navy);padding:1rem;overflow:auto;font-size:.85rem;color:var(--pale)">python engine/chest_roller.py verify \
   --manifest path/to/chest_….json \
@@ -137,7 +148,8 @@
 
 <script src="tiers.js"></script>
 <script type="module">
-import { verifyFairnessVectors } from "./js/shipgen_drbg.js";
+import { verifyFairnessVectors, hexToBytes } from "./js/shipgen_drbg.js";
+import { RollEngine, derivePlacements, canonJson } from "./js/shipgen_roll.js";
 
 function td(text) {
   const c = document.createElement("td");
@@ -217,6 +229,61 @@ if (selfBtn) {
     } finally {
       selfBtn.disabled = false;
       selfBtn.setAttribute("aria-busy", "false");
+    }
+  });
+}
+
+// Full-chest recompute: derive placements from the salt, re-roll a sample of
+// published chests, and confirm each manifest_hash matches bit-for-bit.
+const chestBtn = document.getElementById("chestcheck-btn");
+if (chestBtn) {
+  chestBtn.addEventListener("click", async () => {
+    const out = document.getElementById("chestcheck-out");
+    if (!out) return;
+    out.style.color = "var(--pale)";
+    out.textContent = "Loading roll vectors…";
+    chestBtn.disabled = true;
+    chestBtn.setAttribute("aria-busy", "true");
+    try {
+      const resp = await fetch("roll_vectors.json");
+      if (!resp.ok) throw new Error("HTTP " + resp.status + " loading roll_vectors.json");
+      const doc = await resp.json();
+      const engine = new RollEngine(doc.config);
+      const salt = hexToBytes(doc.salt_hex);
+
+      out.textContent = "Re-deriving committed placements from the salt…";
+      const placements = await derivePlacements(salt, engine);
+      const placementsOk = canonJson(placements) === canonJson(doc.placements);
+
+      // Verify a fast, representative sample in-browser (CI verifies all).
+      const sample = doc.chests.filter((c) => c.qty <= 60).slice(0, 15);
+      let passed = 0;
+      const fails = [];
+      for (let i = 0; i < sample.length; i++) {
+        const c = sample[i];
+        out.textContent = `Recomputing chest ${i + 1}/${sample.length} (${c.tier}, ${c.qty} NFTs)…`;
+        const m = await engine.rollChest(
+          salt, c.coin_id, c.tier, c.pass_ordinal, c.start_index,
+          placements, doc.provenance_hash, doc.config_version_hash);
+        if (m.manifest_hash === c.manifest_hash) passed++;
+        else fails.push(`${c.tier}: got ${m.manifest_hash.slice(0, 12)}…`);
+      }
+
+      const ok = placementsOk && fails.length === 0;
+      out.textContent = (ok ? "PASS\n" : "FAIL\n") + JSON.stringify({
+        placements_match: placementsOk,
+        chests_recomputed: sample.length,
+        manifest_hashes_matched: passed,
+        failures: fails,
+        note: `Full set of ${doc.chests.length} chests is verified in CI.`,
+      }, null, 2);
+      out.style.color = ok ? "var(--chia-bright)" : "var(--coral)";
+    } catch (e) {
+      out.textContent = "ERROR: " + e;
+      out.style.color = "var(--coral)";
+    } finally {
+      chestBtn.disabled = false;
+      chestBtn.setAttribute("aria-busy", "false");
     }
   });
 }

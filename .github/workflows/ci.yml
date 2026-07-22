@@ -152,3 +152,19 @@ jobs:
 
       - name: Verify demo chest manifest shape (reveal contract)
         run: node site/js/verify_manifest_shape.mjs
+
+      - name: Regenerate full-chest roll vectors from the Python engine
+        run: python scripts/export_roll_vectors.py
+
+      - name: Fail if committed roll vectors are stale
+        run: |
+          if ! git diff --quiet -- site/roll_vectors.json; then
+            echo "::error::site/roll_vectors.json is out of date. Run 'python scripts/export_roll_vectors.py' and commit the result."
+            git --no-pager diff --stat -- site/roll_vectors.json
+            exit 1
+          fi
+
+      # The headline guarantee: the browser roll port reproduces every full
+      # chest manifest_hash (and the derived placements) bit-for-bit.
+      - name: Verify JS reproduces full chest manifests
+        run: node site/js/verify_roll.mjs

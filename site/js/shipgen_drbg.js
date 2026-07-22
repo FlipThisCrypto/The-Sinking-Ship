@@ -105,6 +105,51 @@ export class Drbg {
       if (v < limit) return Number(v % nn);
     }
   }
+
+  /** Uniform integer in [a, b] inclusive (mirror of drbg.py rand_int). */
+  async randInt(a, b) {
+    if (b < a) throw new Error("rand_int requires a <= b");
+    return a + (await this.randBelow(b - a + 1));
+  }
+
+  /** Index proportional to integer weights (mirror of drbg.py weighted_index).
+   *  `total` may be precomputed; the draw sequence is identical either way. */
+  async weightedIndex(weights, total = null) {
+    if (total === null) {
+      total = 0;
+      for (const w of weights) {
+        if (w < 0) throw new Error("negative weight");
+        total += w;
+      }
+    } else {
+      for (const w of weights) if (w < 0) throw new Error("negative weight");
+    }
+    if (total <= 0) throw new Error("all weights are zero");
+    const r = await this.randBelow(total);
+    let acc = 0;
+    for (let i = 0; i < weights.length; i++) {
+      acc += weights[i];
+      if (r < acc) return i;
+    }
+    throw new Error("unreachable");
+  }
+
+  /** k distinct integers from [0, population), in draw order. */
+  async sampleDistinct(population, k) {
+    if (population < 0 || k < 0) throw new Error("population and k must be >= 0");
+    if (k > population) throw new Error("sample larger than population");
+    if (k === 0) return [];
+    const seen = new Set();
+    const out = [];
+    while (out.length < k) {
+      const v = await this.randBelow(population);
+      if (!seen.has(v)) {
+        seen.add(v);
+        out.push(v);
+      }
+    }
+    return out;
+  }
 }
 
 /** Run golden KAT from fairness_vectors.json drbg_kat block. */
