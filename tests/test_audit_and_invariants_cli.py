@@ -100,3 +100,19 @@ def test_signed_and_verify_audit_export_scripts(tmp_path: Path):
     assert res_tampered.returncode == 1
     doc_tampered = json.loads(res_tampered.stdout)
     assert doc_tampered["ok"] is False
+
+
+def test_verify_audit_export_missing_content_sha256(tmp_path: Path):
+    bad_json = tmp_path / "no_sha.json"
+    bad_json.write_text(json.dumps({"schema": "sinking-ship-audit-export-v1", "rows": []}), encoding="utf-8")
+
+    res = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "verify_audit_export.py"), str(bad_json)],
+        capture_output=True,
+        text=True,
+    )
+    assert res.returncode == 1
+    doc = json.loads(res.stdout)
+    assert doc["ok"] is False
+    assert "missing content_sha256" in doc["error"]
+
