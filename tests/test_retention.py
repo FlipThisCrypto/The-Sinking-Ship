@@ -44,3 +44,18 @@ def test_archive_fulfilled_dry_run_and_apply(tmp_path):
         assert led2.status_summary()["total_purchases"] == 0
     finally:
         led2.close()
+
+
+def test_parse_cutoff_days_validation():
+    import pytest
+
+    from fulfillment.retention import parse_cutoff_days
+
+    with pytest.raises(ValueError, match="days must be >= 1"):
+        parse_cutoff_days(0)
+    with pytest.raises(ValueError, match="days must be >= 1"):
+        parse_cutoff_days(-5)
+    c = parse_cutoff_days(10)
+    assert isinstance(c, str)
+    assert "T" in c
+
