@@ -17,3 +17,9 @@ def test_utilization_bounds():
     assert utilization(50, 100) == 0.5
     assert utilization(100, 100) == 1.0
     assert utilization(120, 100) == 1.0
+
+
+def test_utilization_zero_budget():
+    assert utilization(0, 0) == 1.0
+    assert utilization(5, -10) == 1.0
+
