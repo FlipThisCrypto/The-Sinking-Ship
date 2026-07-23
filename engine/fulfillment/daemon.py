@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import uuid
 from pathlib import Path
 
 from shipgen.config import GenConfig, load_json
@@ -83,10 +84,17 @@ class FulfillmentDaemon:
         self.budget = int(self.cfg.supply["public_mint_budget"])
 
     def tick(self, dry_run: bool = False) -> dict:
-        """One poll+fulfill cycle. Returns a summary dict for ops/logging."""
+        """One poll+fulfill cycle. Returns a summary dict for ops/logging.
+
+        Every tick generates a unique ``trace_id`` (UUID4) that is embedded in
+        all structured log events for the duration of this call, enabling
+        operators to grep a full tick's story from a mixed-coin log stream.
+        """
         from datetime import datetime, timezone
 
+        trace_id = str(uuid.uuid4())
         summary = {
+            "trace_id": trace_id,
             "recorded": 0,
             "rolled": 0,
             "fulfilled": 0,
@@ -102,6 +110,7 @@ class FulfillmentDaemon:
         since = self.ledger.last_polled_height()
         event(
             log, "tick_start",
+            trace_id=trace_id,
             network=self.network, dry_run=bool(dry_run), since_height=since,
         )
         try:
@@ -111,7 +120,8 @@ class FulfillmentDaemon:
             # fail closed: do not advance height, do not shrink confirmed set
             log.error("payment scan incomplete — fail closed: %s", e)
             summary["errors"].append(f"poll: {e}")
-            event(log, "tick_fail_closed", error=str(e), since_height=since)
+            event(log, "tick_fail_closed", trace_id=trace_id,
+                  error=str(e), since_height=since)
             return summary
 
         for p in purchases:
@@ -127,7 +137,8 @@ class FulfillmentDaemon:
 
         for coin_id in self.ledger.purchases_needing_work():
             try:
-                result = self._fulfill_one(coin_id, dry_run=dry_run)
+                result = self._fulfill_one(coin_id, dry_run=dry_run,
+                                           trace_id=trace_id)
                 summary[result] = summary.get(result, 0) + 1
             except Exception as e:
                 log.error("fulfill %s: %s", coin_id[:12], e)
@@ -144,6 +155,7 @@ class FulfillmentDaemon:
         )
         event(
             log, "tick_complete",
+            trace_id=trace_id,
             recorded=summary["recorded"],
             rolled=summary.get("rolled", 0),
             fulfilled=summary["fulfilled"],
@@ -156,7 +168,8 @@ class FulfillmentDaemon:
         )
         return summary
 
-    def _fulfill_one(self, coin_id: str, dry_run: bool = False) -> str:
+    def _fulfill_one(self, coin_id: str, dry_run: bool = False,
+                     trace_id: str | None = None) -> str:
         row = self.ledger.get_row(coin_id)
         if row is None:
             return "skipped"
@@ -211,6 +224,7 @@ class FulfillmentDaemon:
 
         event(
             log, "fulfill_one",
+            trace_id=trace_id,
             coin_prefix=coin_id[:12],
             tier=row["tier_name"],
             just_rolled=just_rolled,
