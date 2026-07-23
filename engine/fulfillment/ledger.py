@@ -32,7 +32,24 @@ class SqliteLedger(FulfillmentLedger):
     def close(self) -> None:
         self._conn.close()
 
+    # ---------------------------------------------------------------------------
+    # Versioned migration framework.  Add new entries to _MIGRATIONS to make
+    # forward-compatible schema changes.  Migrations run in version order and
+    # are each wrapped in an IMMEDIATE transaction so a partial upgrade on crash
+    # is rolled back automatically.  Schema version 0 is the pre-meta state;
+    # version 1 is the initial full schema.  New migrations start at version 2.
+    # ---------------------------------------------------------------------------
+    _MIGRATIONS: dict[int, str] = {
+        # v1 → v2: add archived_at for retention archiving (retention.py).
+        # Using ALTER TABLE ADD COLUMN (SQLite supports nullable / defaulted
+        # additions without table reconstruction).
+        2: "ALTER TABLE purchases ADD COLUMN archived_at TEXT",
+    }
+    # Highest known version after applying all migrations.
+    _SCHEMA_TARGET: int = max(_MIGRATIONS) if _MIGRATIONS else 1
+
     def _migrate(self) -> None:
+        # Phase 1: create baseline schema (idempotent CREATE IF NOT EXISTS).
         self._conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS meta (
@@ -71,21 +88,40 @@ class SqliteLedger(FulfillmentLedger):
             CREATE INDEX IF NOT EXISTS idx_purchases_state ON purchases(state);
             """
         )
-        cur = self._conn.execute(
-            "SELECT value FROM meta WHERE key = 'next_start_index'")
-        if cur.fetchone() is None:
-            self._conn.execute(
-                "INSERT INTO meta(key, value) VALUES ('next_start_index', '1')")
-        cur = self._conn.execute(
-            "SELECT value FROM meta WHERE key = 'schema_version'")
-        if cur.fetchone() is None:
-            self._conn.execute(
-                "INSERT INTO meta(key, value) VALUES ('schema_version', '1')")
-        cur = self._conn.execute(
-            "SELECT value FROM meta WHERE key = 'last_polled_height'")
-        if cur.fetchone() is None:
-            self._conn.execute(
-                "INSERT INTO meta(key, value) VALUES ('last_polled_height', '0')")
+        # Phase 2: seed required meta keys.
+        for key, default in (
+            ("next_start_index", "1"),
+            ("schema_version", "1"),
+            ("last_polled_height", "0"),
+        ):
+            if self._conn.execute(
+                "SELECT 1 FROM meta WHERE key = ?", (key,)
+            ).fetchone() is None:
+                self._conn.execute(
+                    "INSERT INTO meta(key, value) VALUES (?, ?)", (key, default)
+                )
+        # Phase 3: apply any pending versioned migrations in order.
+        current = int(self._conn.execute(
+            "SELECT value FROM meta WHERE key = 'schema_version'"
+        ).fetchone()[0])
+        for version in sorted(self._MIGRATIONS):
+            if version <= current:
+                continue
+            sql = self._MIGRATIONS[version]
+            self._conn.execute("BEGIN IMMEDIATE")
+            try:
+                self._conn.execute(sql)
+                self._conn.execute(
+                    "UPDATE meta SET value = ? WHERE key = 'schema_version'",
+                    (str(version),),
+                )
+                self._conn.execute("COMMIT")
+                current = version
+            except Exception:
+                self._conn.execute("ROLLBACK")
+                raise
+
+
 
     def _audit(self, coin_id: str | None, action: str, detail: dict | None = None) -> None:
         self._conn.execute(
@@ -358,6 +394,7 @@ class SqliteLedger(FulfillmentLedger):
             "db_path": str(self.path),
             "integrity_ok": self.integrity_ok(),
             "schema_version": int(self._meta_get("schema_version") or "1"),
+            "schema_target": self._SCHEMA_TARGET,
         }
 
     def list_refused(self) -> list[dict]:

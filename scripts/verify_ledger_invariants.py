@@ -40,8 +40,12 @@ def main() -> int:
         st = led.status_summary()
         if not st.get("integrity_ok"):
             problems.append("integrity_ok is false")
-        if st.get("schema_version") != 1:
-            problems.append(f"unexpected schema_version {st.get('schema_version')}")
+        sv = st.get("schema_version", 0)
+        target = st.get("schema_target", sv)
+        if sv < 1 or sv != target:
+            problems.append(
+                f"schema_version {sv} does not match expected target {target}"
+            )
         conn = led._conn
         rows = conn.execute(
             "SELECT state, quantity FROM purchases").fetchall()
