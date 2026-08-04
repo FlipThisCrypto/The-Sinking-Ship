@@ -25,7 +25,7 @@ Contract for every file, whatever its status:
 | sea | 11 | **production** (`artgen.sea`) | background bottom; perspective wave band with a ragged hem |
 | scene_element | 40 | empty stand-in | series-prefixed filenames (harbor_/military_/pirate_/wizard_/crystal_) |
 | ship_class | 16 | externally authored, **repaired** | 16 distinct illustrations; residual white matte removed (`scripts/repair_art.py`) |
-| ship_condition | 11 | empty stand-in | overlays |
+| ship_condition | 11 | **production** (`artgen.ship_condition`) | overlays; water keys off the waterline, damage off measured ship occupancy |
 | body | 48 | externally authored | 8 variants × 6 poses, `{variant}_{pose}.png` — only 12 unique images |
 | clothing | 14 | empty stand-in | |
 | eyes | 16 | empty stand-in | |

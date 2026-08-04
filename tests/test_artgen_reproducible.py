@@ -11,7 +11,7 @@ downcast its edge arithmetic from float64 to float32 shifted nine pixels per
 sky plate by one 8-bit level. The sea layer was regenerated afterwards, the sky
 layer was not, so the two layers were built by different code.
 
-Full-resolution and therefore slow (~2 min for both layers). Deselect with
+Full-resolution and therefore slow (~3 min across the generated layers). Deselect with
 ``-m "not slow"`` when iterating on something unrelated.
 """
 from __future__ import annotations
@@ -26,9 +26,9 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "engine"))
 
-from artgen import sea, sky  # noqa: E402
+from artgen import sea, ship_condition, sky  # noqa: E402
 
-LAYERS = {"sky": sky, "sea": sea}
+LAYERS = {"sky": sky, "sea": sea, "ship_condition": ship_condition}
 
 
 def _cases() -> list[tuple[str, str]]:

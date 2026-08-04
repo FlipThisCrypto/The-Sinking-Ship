@@ -7,7 +7,8 @@
   "notes": [
     "active_profile selects how render_engine composites and validates. The owner chose full Amano illustration (ADR-0008), so 'illustration' is active.",
     "The 'pixel' profile is retained verbatim (the original spec behaviour) so a hybrid pixel side-line is a one-word switch.",
-    "Real illustration art is authored at master_px; other output sizes are LANCZOS-resampled from it. Bump master_px to 4000 and author there if maximum fidelity at 4000 is required (heavier)."
+    "Real illustration art is authored at master_px; other output sizes are LANCZOS-resampled from it. Bump master_px to 4000 and author there if maximum fidelity at 4000 is required (heavier).",
+    "ship_condition deliberately has NO layer transform. Its water effects must reach the frame edges, and a transform would confine them to the ship's 0.8 box and render them as a rectangle mid-frame. engine/artgen/ship_condition.py instead reads ship_class's transform and maps ship-plate coordinates into canvas space itself, so damage still lands on the hull."
   ],
   "profiles": {
     "pixel": {
@@ -15,17 +16,31 @@
       "binarize_alpha": true,
       "palette_snap": true,
       "resample": "nearest",
-      "outputs": [48, 2048, 4000]
+      "outputs": [
+        48,
+        2048,
+        4000
+      ]
     },
     "illustration": {
       "master_px": 2048,
       "binarize_alpha": false,
       "palette_snap": false,
       "resample": "lanczos",
-      "outputs": [512, 2048, 4000],
+      "outputs": [
+        512,
+        2048,
+        4000
+      ],
       "layer_transforms": {
-        "body": {"scale": 0.84, "anchor_y": 1.0},
-        "ship_class": {"scale": 0.80, "anchor_y": 0.80}
+        "body": {
+          "scale": 0.84,
+          "anchor_y": 1.0
+        },
+        "ship_class": {
+          "scale": 0.8,
+          "anchor_y": 0.8
+        }
       }
     }
   }

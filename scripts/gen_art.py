@@ -32,6 +32,7 @@ CONFIG = ROOT / "config"
 RENDERERS = {
     "sky": "artgen.sky",
     "sea": "artgen.sea",
+    "ship_condition": "artgen.ship_condition",
 }
 
 
