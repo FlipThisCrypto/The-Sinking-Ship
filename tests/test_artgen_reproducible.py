@@ -26,9 +26,10 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "engine"))
 
-from artgen import sea, ship_condition, sky  # noqa: E402
+from artgen import aura, sea, ship_condition, sky  # noqa: E402
 
-LAYERS = {"sky": sky, "sea": sea, "ship_condition": ship_condition}
+LAYERS = {"sky": sky, "sea": sea, "ship_condition": ship_condition,
+          "aura": aura}
 
 
 def _cases() -> list[tuple[str, str]]:

@@ -31,7 +31,7 @@ Contract for every file, whatever its status:
 | eyes | 16 | empty stand-in | |
 | mouth | 10 | empty stand-in | plus None (no file) |
 | hat | 14 | empty stand-in | includes `the_torn_halo_horns.png` (quota-only) |
-| aura | 9 | empty stand-in | plus None; top layer |
+| aura | 9 | **production** (`artgen.aura`) | plus None; top layer — rim light with a face guard |
 
 "Empty stand-in" is literal: `scripts/gen_placeholder_sprites.py` emitted a
 fully transparent canvas for those layers, and all files in each are
