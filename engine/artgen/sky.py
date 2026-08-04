@@ -28,6 +28,7 @@ from . import ink
 from .core import (
     Canvas,
     blur,
+    master_scale,
     domain_warp,
     fbm,
     load_palette,
@@ -73,7 +74,14 @@ class SkySpec:
 
 @dataclass
 class SkyCtx:
-    """Mutable drawing context handed to a motif callback."""
+    """Mutable drawing context handed to a motif callback.
+
+    Every length a motif passes to a drawing primitive — stroke width, blur
+    radius, star size — is in **master-reference pixels** and must go through
+    :meth:`px` (or :meth:`soft`, which applies it for blur). That is what makes
+    a 512 px render a faithful preview of the 2048 px master instead of a
+    differently-weighted drawing.
+    """
 
     spec: SkySpec
     size: int
@@ -85,6 +93,19 @@ class SkyCtx:
     @property
     def h(self) -> int:
         return self.size
+
+    @property
+    def k(self) -> float:
+        """Master-reference -> canvas pixel scale."""
+        return master_scale(self.size)
+
+    def px(self, value: float) -> float:
+        """Convert a master-reference length to canvas pixels."""
+        return value * self.k
+
+    def soft(self, mask: np.ndarray, sigma: float) -> np.ndarray:
+        """Blur by a master-reference radius."""
+        return blur(mask, self.px(sigma))
 
     def ink_mask(self) -> np.ndarray:
         return np.zeros((self.size, self.size), dtype=np.float32)
@@ -128,8 +149,9 @@ def motif_moon(ctx: SkyCtx) -> None:
     d = np.hypot(xs - (cx - r * 0.46), ys - (cy - r * 0.20))
     ctx.paint(smoothstep(r * 0.98, r * 0.94, d) * 0.94, PAL["deep_navy"])
     m = ctx.ink_mask()
-    ink.star_field(m, rng, 210, y_range=(0.02, 0.46), size_range=(0.7, 2.0))
-    ctx.paint(ink.glow(m, 9.0, 0.45), PAL["bone_white"], 0.78)
+    ink.star_field(m, rng, 210, y_range=(0.02, 0.46),
+                   size_range=(ctx.px(2.8), ctx.px(8.0)))
+    ctx.paint(np.clip(m + ctx.soft(m, 9.0) * 0.45, 0, 1), PAL["bone_white"], 0.78)
 
 
 def motif_sun(ctx: SkyCtx) -> None:
@@ -143,8 +165,9 @@ def motif_sun(ctx: SkyCtx) -> None:
     for i in range(26):
         a = -math.pi + i * math.pi / 25.0
         ink.polyline(m, [(cx, cy), (cx + math.cos(a) * s * 0.62,
-                                    cy + math.sin(a) * s * 0.40)], 2.0, 0.30)
-    ctx.paint(blur(m, 5.0) * 0.55, warm, 0.5)
+                                    cy + math.sin(a) * s * 0.40)],
+                     ctx.px(3.6), 0.22)
+    ctx.paint(ctx.soft(m, 9.0) * 0.45, warm, 0.42)
 
 
 def motif_rain(ctx: SkyCtx) -> None:
@@ -156,7 +179,8 @@ def motif_rain(ctx: SkyCtx) -> None:
         y = float(rng.uniform(0, s * (HORIZON + 0.06)))
         ln = float(rng.uniform(s * 0.020, s * 0.062))
         ink.polyline(m, [(x, y), (x + ln * slant, y + ln)],
-                     float(rng.uniform(0.9, 1.9)), float(rng.uniform(0.35, 0.85)))
+                     ctx.px(float(rng.uniform(2.4, 4.8))),
+                     float(rng.uniform(0.35, 0.85)))
     fade = smoothstep(HORIZON + 0.06, HORIZON - 0.34,
                       np.linspace(0, 1, s, dtype=np.float32))[:, None]
     ctx.paint(m * fade, PAL["steel_blue"], 0.62)
@@ -166,9 +190,11 @@ def motif_bolt(ctx: SkyCtx) -> None:
     s, rng = ctx.size, ctx.rng
     m = ctx.ink_mask()
 
+    w_floor = ctx.px(2.4)
+
     def fork(x: float, y: float, dx: float, ylimit: float, w: float, depth: int) -> None:
         pts = [(x, y)]
-        while y < ylimit and w > 0.6:
+        while y < ylimit and w > w_floor:
             step = float(rng.uniform(s * 0.028, s * 0.062))
             x += float(rng.uniform(-1, 1)) * step * 0.62 + dx * step * 0.35
             y += step
@@ -179,11 +205,11 @@ def motif_bolt(ctx: SkyCtx) -> None:
         ink.calligraphic_stroke(m, pts, w, w * 0.35, taper=1.1)
 
     for k in range(2):
-        fork(s * (0.34 + 0.30 * k) + float(rng.uniform(-60, 60)), s * 0.05,
-             float(rng.uniform(-0.6, 0.6)), s * (HORIZON - 0.02),
-             7.0 - 2.0 * k, 0)
-    ctx.paint(ink.glow(m, 26.0, 0.85), PAL["bone_white"], 0.95)
-    ctx.paint(blur(m, 90.0) * 0.5, PAL["lavender"], 0.55)
+        fork(s * (0.34 + 0.30 * k) + s * float(rng.uniform(-0.03, 0.03)),
+             s * 0.05, float(rng.uniform(-0.6, 0.6)), s * (HORIZON - 0.02),
+             ctx.px(28.0 - 8.0 * k), 0)
+    ctx.paint(np.clip(m + ctx.soft(m, 26.0) * 0.85, 0, 1), PAL["bone_white"], 0.95)
+    ctx.paint(ctx.soft(m, 90.0) * 0.5, PAL["lavender"], 0.55)
 
 
 def motif_aurora(ctx: SkyCtx) -> None:
@@ -216,23 +242,26 @@ def motif_aurora(ctx: SkyCtx) -> None:
             length = drop * (0.35 + 0.65 * drape)
             pts = [(fx + lean * length * t + math.sin(t * 2.2) * s * 0.006,
                     fy + length * t) for t in (i / 12.0 for i in range(13))]
-            ink.calligraphic_stroke(m, pts, 4.6, 0.9, taper=0.7,
+            ink.calligraphic_stroke(m, pts, ctx.px(4.6), ctx.px(0.9), taper=0.7,
                                     intensity=side * float(rng.uniform(0.5, 1.0)))
         col = cols[band % len(cols)]
         # keep the sharp pass genuinely sharp: the vertical striation IS the
         # read on an aurora, and it is the first thing a wide blur destroys
-        ctx.paint(blur(m, 2.0) * 1.0, col, 0.60)
-        ctx.paint(blur(m, 34.0) * 0.9, col, 0.28)
+        ctx.paint(ctx.soft(m, 2.0) * 1.0, col, 0.60)
+        ctx.paint(ctx.soft(m, 34.0) * 0.9, col, 0.28)
     m = ctx.ink_mask()
-    ink.star_field(m, rng, 170, y_range=(0.01, 0.42), size_range=(0.6, 1.7))
-    ctx.paint(ink.glow(m, 7.0, 0.4), PAL["bone_white"], 0.7)
+    ink.star_field(m, rng, 170, y_range=(0.01, 0.42),
+                   size_range=(ctx.px(2.4), ctx.px(6.8)))
+    ctx.paint(np.clip(m + ctx.soft(m, 7.0) * 0.4, 0, 1), PAL["bone_white"], 0.7)
 
 
 def motif_meteors(ctx: SkyCtx) -> None:
     s, rng = ctx.size, ctx.rng
     stars = ctx.ink_mask()
-    ink.star_field(stars, rng, 300, y_range=(0.0, 0.48), size_range=(0.6, 1.8))
-    ctx.paint(ink.glow(stars, 8.0, 0.4), PAL["bone_white"], 0.72)
+    ink.star_field(stars, rng, 300, y_range=(0.0, 0.48),
+                   size_range=(ctx.px(2.4), ctx.px(7.2)))
+    ctx.paint(np.clip(stars + ctx.soft(stars, 8.0) * 0.4, 0, 1),
+              PAL["bone_white"], 0.72)
     # Long, fine, near-parallel streaks with a slight fan — a shower reads as a
     # radiant, so a shared angle with small jitter beats independent angles.
     base_ang = 0.72
@@ -244,10 +273,11 @@ def motif_meteors(ctx: SkyCtx) -> None:
         ang = base_ang + float(rng.uniform(-0.10, 0.10))
         head = (x + math.cos(ang) * ln, y + math.sin(ang) * ln)
         ink.calligraphic_stroke(m, ink.catmull_rom([(x, y), (
-            (x + head[0]) / 2 + float(rng.uniform(-10, 10)),
-            (y + head[1]) / 2), head]), 0.6, 3.4, taper=2.4)
-        ctx.paint(ink.glow(m, 7.0, 0.55), PAL["bone_white"], 0.95)
-        ctx.paint(blur(m, 26.0) * 0.7,
+            (x + head[0]) / 2 + s * float(rng.uniform(-0.005, 0.005)),
+            (y + head[1]) / 2), head]), ctx.px(1.6), ctx.px(7.2), taper=2.6)
+        ctx.paint(np.clip(m + ctx.soft(m, 7.0) * 0.55, 0, 1),
+                  PAL["bone_white"], 0.95)
+        ctx.paint(ctx.soft(m, 26.0) * 0.7,
                   PAL["pale_gold"] if i % 3 else PAL["coral"], 0.34)
 
 
@@ -263,7 +293,7 @@ def motif_blood_moon(ctx: SkyCtx) -> None:
         y = s * float(rng.uniform(0.08, 0.44))
         ink.tendril(m, -s * 0.05, y, s * float(rng.uniform(0.45, 0.95)),
                     float(rng.uniform(-0.16, 0.16)), rng,
-                    width=float(rng.uniform(3.0, 5.5)),
+                    width=ctx.px(float(rng.uniform(3.0, 5.5))),
                     curl_radius=float(rng.uniform(0.05, 0.13)), sway=0.30)
     ctx.paint(m, PAL["ink_black"], 0.52)
 
@@ -272,8 +302,8 @@ def motif_fire(ctx: SkyCtx) -> None:
     s, rng = ctx.size, ctx.rng
     m = ctx.ink_mask()
     ink.sparks(m, rng, 420, y_range=(0.06, HORIZON + 0.01),
-               size=(1.8, 5.6) if s >= 1024 else (1.0, 3.2), rise=2.4)
-    ctx.paint(ink.glow(m, 10.0, 0.6), PAL["pale_gold"], 0.80)
+               size=(ctx.px(4.4), ctx.px(14.0)), rise=2.8)
+    ctx.paint(np.clip(m + ctx.soft(m, 10.0) * 0.6, 0, 1), PAL["pale_gold"], 0.80)
     curls = ctx.ink_mask()
     for i in range(11):
         # flame tongues climb, so tendrils launch upward off the waterline
@@ -281,7 +311,7 @@ def motif_fire(ctx: SkyCtx) -> None:
                     s * float(rng.uniform(0.34, HORIZON)),
                     s * float(rng.uniform(0.22, 0.46)),
                     -math.pi / 2 + float(rng.uniform(-0.7, 0.7)), rng,
-                    width=float(rng.uniform(3.8, 6.0)),
+                    width=ctx.px(float(rng.uniform(3.8, 6.0))),
                     curl_radius=float(rng.uniform(0.10, 0.22)), sway=0.55)
     ctx.paint(curls, PAL["blood_red"], 0.52)
 
@@ -301,8 +331,9 @@ def motif_eclipse(ctx: SkyCtx) -> None:
         ink.calligraphic_stroke(m, [
             (cx + math.cos(a) * r * 1.01, cy + math.sin(a) * r * 1.01),
             (cx + math.cos(a) * ln, cy + math.sin(a) * ln)],
-            2.4, 0.4, taper=1.8, intensity=float(rng.uniform(0.45, 1.0)))
-    ctx.paint(ink.glow(m, 20.0, 0.75), PAL["sand"], 0.78)
+            ctx.px(2.4), ctx.px(0.4), taper=1.8,
+            intensity=float(rng.uniform(0.45, 1.0)))
+    ctx.paint(np.clip(m + ctx.soft(m, 20.0) * 0.75, 0, 1), PAL["sand"], 0.78)
     # bright limb then the occulting disc
     ys, xs = np.mgrid[0:s, 0:s].astype(np.float32)
     d = np.hypot(xs - cx, ys - cy)
@@ -310,8 +341,10 @@ def motif_eclipse(ctx: SkyCtx) -> None:
     ctx.paint(ring, PAL["bone_white"], 1.0)
     ctx.paint(smoothstep(r, r * 0.97, d), PAL["ink_black"], 0.985)
     stars = ctx.ink_mask()
-    ink.star_field(stars, rng, 130, y_range=(0.0, 0.46), size_range=(0.6, 1.6))
-    ctx.paint(ink.glow(stars, 7.0, 0.4), PAL["bone_white"], 0.55)
+    ink.star_field(stars, rng, 130, y_range=(0.0, 0.46),
+                   size_range=(ctx.px(2.4), ctx.px(6.4)))
+    ctx.paint(np.clip(stars + ctx.soft(stars, 7.0) * 0.4, 0, 1),
+              PAL["bone_white"], 0.55)
 
 
 def motif_fog_veils(ctx: SkyCtx) -> None:
@@ -322,8 +355,10 @@ def motif_fog_veils(ctx: SkyCtx) -> None:
         amp = float(rng.uniform(s * 0.006, s * 0.022))
         ink.wave_ribbon(m, y, s, rng, amplitude=amp,
                         wavelength=float(rng.uniform(s * 0.5, s * 1.4)),
-                        width=float(rng.uniform(4.0, 11.0)), crest_curls=0)
-        ctx.paint(blur(m, float(rng.uniform(18, 46))) * 0.9, PAL["bone_white"], 0.55)
+                        width=ctx.px(float(rng.uniform(4.0, 11.0))),
+                        crest_curls=0)
+        ctx.paint(ctx.soft(m, float(rng.uniform(18, 46))) * 0.9,
+                  PAL["bone_white"], 0.55)
 
 
 def motif_cirrus(ctx: SkyCtx) -> None:
@@ -337,9 +372,10 @@ def motif_cirrus(ctx: SkyCtx) -> None:
             (x0 + span * t, y + math.sin(t * math.pi * float(rng.uniform(1, 2.4)))
              * s * float(rng.uniform(0.004, 0.016)))
             for t in np.linspace(0, 1, 7)])
-        ink.calligraphic_stroke(m, pts, float(rng.uniform(2.0, 4.5)), 0.6, taper=1.3)
-    ctx.paint(blur(m, 4.0), PAL["bone_white"], 0.60)
-    ctx.paint(blur(m, 30.0) * 0.7, PAL["pale_blue"], 0.35)
+        ink.calligraphic_stroke(m, pts, ctx.px(float(rng.uniform(2.0, 4.5))),
+                                ctx.px(0.6), taper=1.3)
+    ctx.paint(ctx.soft(m, 4.0), PAL["bone_white"], 0.60)
+    ctx.paint(ctx.soft(m, 30.0) * 0.7, PAL["pale_blue"], 0.35)
 
 
 def motif_storm_curls(ctx: SkyCtx) -> None:
@@ -351,15 +387,15 @@ def motif_storm_curls(ctx: SkyCtx) -> None:
         y = s * float(rng.uniform(0.03, 0.46))
         ang = float(rng.uniform(-0.28, 0.28)) + (0.0 if i % 2 == 0 else math.pi)
         ink.tendril(m, s * side, y, s * float(rng.uniform(0.40, 0.85)), ang, rng,
-                    width=float(rng.uniform(3.5, 6.5)),
+                    width=ctx.px(float(rng.uniform(3.5, 6.5))),
                     curl_radius=float(rng.uniform(0.08, 0.18)), sway=0.42)
     for _ in range(4):
         ink.curl_flourish(m, float(rng.uniform(0.12, 0.88)) * s,
                           float(rng.uniform(0.06, 0.40)) * s,
                           float(rng.uniform(s * 0.03, s * 0.075)), rng,
-                          turns=float(rng.uniform(1.4, 2.4)), width=3.2)
+                          turns=float(rng.uniform(1.4, 2.4)), width=ctx.px(3.2))
     ctx.paint(m, PAL["deep_violet"], 0.62)
-    ctx.paint(blur(m, 40.0) * 0.7, PAL["amethyst"], 0.30)
+    ctx.paint(ctx.soft(m, 40.0) * 0.7, PAL["amethyst"], 0.30)
 
 
 # ------------------------------------------------------------------ specs
@@ -474,7 +510,7 @@ def render(trait_key: str, size: int = 2048) -> Canvas:
     # --- cloud field: warped fBm, contrast-shaped into form
     base = fbm(size, size, rng, octaves=spec.cloud_octaves, cells=spec.cloud_cells,
                gain=0.52, lacunarity=2.05)
-    cloud = domain_warp(base, rng, amount=spec.warp, cells=3)
+    cloud = domain_warp(base, rng, amount=spec.warp * master_scale(size), cells=3)
     # squash vertically so cloud reads as horizontal weather, not blobs
     cloud = cv2_vsquash(cloud, 0.55)
     lo = 0.5 - spec.cloud_contrast * 0.5
@@ -498,15 +534,19 @@ def render(trait_key: str, size: int = 2048) -> Canvas:
     # Few, wide, open arcs only: closed loops and small blobs read as scribble.
     if spec.line_alpha > 0.02:
         lines = np.zeros((size, size), dtype=np.float32)
-        ink.contour_strokes(lines, cloud, spec.line_level, width=spec.line_width,
+        # min_points counts contour vertices, which scale with resolution, so
+        # it has to scale too or small renders silently drop every cloud edge.
+        min_pts = max(8, int(40 * ctx.k))
+        ink.contour_strokes(lines, cloud, spec.line_level,
+                            width=ctx.px(spec.line_width),
                             max_contours=7, smooth=size * 0.016,
-                            min_area_frac=0.020, prefer_wide=1.35,
-                            arc_frac=0.62, rng=rng)
+                            min_points=min_pts, min_area_frac=0.020,
+                            prefer_wide=1.35, arc_frac=0.62, rng=rng)
         ink.contour_strokes(lines, cloud, spec.line_level + 0.16,
-                            width=spec.line_width * 0.55, max_contours=5,
-                            smooth=size * 0.013, min_area_frac=0.010,
-                            prefer_wide=1.1, arc_frac=0.5, intensity=0.65,
-                            rng=rng)
+                            width=ctx.px(spec.line_width * 0.55), max_contours=5,
+                            smooth=size * 0.013, min_points=min_pts,
+                            min_area_frac=0.010, prefer_wide=1.1, arc_frac=0.5,
+                            intensity=0.65, rng=rng)
         lines = ink.ink_texture(lines, rng, cells=180, depth=0.22)
         ctx.paint(lines * _alpha_profile(size, 1.0), PAL[spec.ink_color],
                   spec.line_alpha)

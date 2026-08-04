@@ -32,6 +32,21 @@ from PIL import Image
 RGB = tuple[int, int, int]
 CONFIG_DIR = Path(__file__).resolve().parent.parent.parent / "config"
 
+MASTER_REF_PX = 2048
+"""Resolution every hand-tuned length in a layer renderer is expressed in.
+
+Stroke widths, blur radii and sprite-scale detail are authored against this
+number and converted with :func:`master_scale`. Without that conversion a
+preview render is a different *drawing*, not a smaller one: a 3 px ray is
+legible at 2048 and gone at 512, so what you tune at preview size is not what
+ships. See :func:`master_scale`.
+"""
+
+
+def master_scale(size: int) -> float:
+    """Factor converting a master-reference length to ``size`` canvas pixels."""
+    return float(size) / MASTER_REF_PX
+
 
 # ------------------------------------------------------------------ palette
 

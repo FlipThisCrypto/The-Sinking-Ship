@@ -42,6 +42,15 @@ def test_module_constants_match_configs():
     assert load_palette()["bone_white"] == BONE_WHITE
 
 
+def test_master_scale_is_unity_at_the_reference_resolution():
+    from artgen.core import MASTER_REF_PX, master_scale
+
+    assert MASTER_REF_PX == MASTER_PX
+    assert master_scale(MASTER_REF_PX) == pytest.approx(1.0)
+    assert master_scale(512) == pytest.approx(0.25)
+    assert master_scale(4096) == pytest.approx(2.0)
+
+
 def test_hex_to_rgb():
     assert hex_to_rgb("#0d0d16") == (13, 13, 22)
     assert hex_to_rgb("f4f4f0") == (244, 244, 240)

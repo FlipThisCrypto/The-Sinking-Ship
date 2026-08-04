@@ -135,6 +135,43 @@ def test_render_honours_requested_size():
     assert sky.render("overcast", size=128).to_image().size == (128, 128)
 
 
+@pytest.mark.parametrize("key", ["aurora", "purple_storm", "overcast", "fire_sky"])
+def test_render_is_resolution_independent(key):
+    """A small render must be a *smaller drawing*, not a differently-weighted one.
+
+    Lengths are authored in master-reference pixels and converted with
+    ``ctx.px``. Before that existed, a 3 px aurora ray was legible at 2048 and
+    gone at 512 — so previews lied and every visual check cost a full-res
+    render. Comparing a 512 render against the 1024 master downsampled to 512
+    catches any length that slipped through unscaled.
+    """
+    import cv2
+
+    big = np.asarray(sky.render(key, size=1024).to_image(), dtype=np.float32)
+    small = np.asarray(sky.render(key, size=512).to_image(), dtype=np.float32)
+    ref = cv2.resize(big, (512, 512), interpolation=cv2.INTER_AREA)
+
+    a_small = small[:, :, 3] / 255.0
+    a_ref = ref[:, :, 3] / 255.0
+    assert a_small.mean() == pytest.approx(a_ref.mean(), rel=0.22), \
+        f"{key}: ink weight differs between resolutions"
+    assert (a_small > 0.02).mean() == pytest.approx((a_ref > 0.02).mean(), abs=0.09), \
+        f"{key}: coverage differs between resolutions"
+    # Structural agreement: row-wise alpha profiles must track each other.
+    corr = np.corrcoef(a_small.mean(axis=1), a_ref.mean(axis=1))[0, 1]
+    assert corr > 0.97, f"{key}: vertical structure differs between resolutions"
+
+
+def test_ctx_px_scales_from_the_master_reference():
+    ctx = sky.SkyCtx(spec=sky.SKY_SPECS["fog"], size=1024,
+                     rng=np.random.default_rng(0), canvas=None, ramp=None, cloud=None)
+    assert ctx.k == pytest.approx(0.5)
+    assert ctx.px(8.0) == pytest.approx(4.0)
+    full = sky.SkyCtx(spec=sky.SKY_SPECS["fog"], size=2048,
+                      rng=np.random.default_rng(0), canvas=None, ramp=None, cloud=None)
+    assert full.px(8.0) == pytest.approx(8.0)
+
+
 def test_alpha_profile_peaks_at_top_and_dies_at_horizon():
     prof = sky._alpha_profile(256, 1.0)[:, 0]
     assert prof[0] == pytest.approx(prof.max(), abs=1e-6)

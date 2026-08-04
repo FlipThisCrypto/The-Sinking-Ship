@@ -16,9 +16,17 @@ The engine is a thin, dependency-light stack over numpy + OpenCV:
     Stroke vocabulary: tapered calligraphic polylines, curl flourishes, wave
     ribbons, filigree, star fields and glow.
 
-Every renderer is **deterministic**: output depends only on the sprite key, so
-regenerating a layer twice produces byte-identical PNGs and the git history
-stays meaningful.
+Two properties every layer renderer must hold:
+
+**Deterministic.** Output depends only on the sprite key, so regenerating a
+layer twice produces byte-identical PNGs and the git history stays meaningful.
+
+**Resolution-independent.** Every hand-tuned length — stroke width, blur
+radius, star size — is authored in *master-reference pixels* (see
+``core.MASTER_REF_PX``) and converted with the render context's ``px()``
+helper. Without that, a small render is a different drawing rather than a
+smaller one, previews cannot be trusted, and every visual check costs a
+full-resolution render.
 """
 from __future__ import annotations
 
@@ -34,11 +42,13 @@ BONE_WHITE = (244, 244, 240)
 """The composite ground. Layers stay transparent; this is what shows through."""
 
 from .core import (  # noqa: E402
+    MASTER_REF_PX,
     Canvas,
     domain_warp,
     fbm,
     hex_to_rgb,
     load_palette,
+    master_scale,
     ramp_color,
     ramp_image,
     save_sprite,
@@ -56,9 +66,11 @@ from .ink import (  # noqa: E402
 
 __all__ = [
     "MASTER_PX",
+    "MASTER_REF_PX",
     "HORIZON",
     "BONE_WHITE",
     "Canvas",
+    "master_scale",
     "calligraphic_stroke",
     "curl_flourish",
     "domain_warp",

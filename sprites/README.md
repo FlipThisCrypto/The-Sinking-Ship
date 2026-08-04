@@ -40,9 +40,13 @@ byte-identical. They render as nothing.
 ## Authoring production art
 
 `engine/artgen/` is the illustration engine; `scripts/gen_art.py --layer <name>`
-writes a layer's final art. Output is deterministic — the same trait key always
-produces byte-identical bytes — so regenerating a layer produces no git churn
-unless the renderer actually changed.
+writes a layer's final art.
+
+- **Deterministic** — the same trait key always produces byte-identical bytes,
+  so regenerating a layer produces no git churn unless the renderer changed.
+- **Resolution-independent** — lengths are authored in master-reference pixels
+  and scaled by the render context, so `--size 512` is a faithful preview of
+  the 2048 master (and ~20× faster to iterate on).
 
 ```bash
 python scripts/gen_art.py --layer sky                     # write the layer
