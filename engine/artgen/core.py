@@ -117,15 +117,27 @@ def smoothstep(edge0: np.ndarray | float, edge1: np.ndarray | float,
     envelopes rely on that. Edges may also be arrays, so a boundary can vary
     across the canvas (e.g. a per-column ragged hem).
     """
+    xf = np.asarray(x, dtype=np.float32)
+    if np.ndim(edge0) == 0 and np.ndim(edge1) == 0:
+        # Scalar edges keep the span in Python float precision. Computing it in
+        # float32 instead shifts a handful of pixels per plate by one 8-bit
+        # level, which is enough to break the "regenerating a layer produces no
+        # git churn" guarantee.
+        lo, hi = float(edge0), float(edge1)
+        if hi == lo:
+            return np.asarray(np.where(xf < lo, 0.0, 1.0), dtype=np.float32)
+        t = np.clip((xf - lo) / (hi - lo), 0.0, 1.0)
+        return (t * t * (3.0 - 2.0 * t)).astype(np.float32)
+
     e0 = np.asarray(edge0, dtype=np.float32)
     e1 = np.asarray(edge1, dtype=np.float32)
     span = e1 - e0
     degenerate = span == 0
     safe = np.where(degenerate, 1.0, span)
-    t = np.clip((np.asarray(x, dtype=np.float32) - e0) / safe, 0.0, 1.0)
+    t = np.clip((xf - e0) / safe, 0.0, 1.0)
     out = t * t * (3.0 - 2.0 * t)
     if degenerate.any():
-        out = np.where(degenerate, np.where(np.asarray(x) < e0, 0.0, 1.0), out)
+        out = np.where(degenerate, np.where(xf < e0, 0.0, 1.0), out)
     return np.asarray(out, dtype=np.float32)
 
 

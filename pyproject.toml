@@ -18,4 +18,10 @@ select = ["E4", "E7", "E9", "F", "W"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = [
+    # Full-resolution art regeneration checks. Kept in the default run because
+    # silent sprite drift is exactly the failure they exist to catch; deselect
+    # with -m "not slow" when iterating on unrelated code.
+    "slow: full-resolution sprite regeneration (~2 min)",
+]
 

@@ -13,6 +13,7 @@ filigree from crawling at 2048x2048.
 from __future__ import annotations
 
 import math
+import threading
 from typing import Sequence
 
 import cv2
@@ -28,10 +29,72 @@ _SUB = 1 << SUBPX_BITS
 
 
 def _pts(points: Sequence[Point]) -> np.ndarray:
-    return np.asarray(
-        [[int(round(x * _SUB)), int(round(y * _SUB))] for x, y in points],
-        dtype=np.int32,
-    ).reshape(-1, 1, 2)
+    """Polyline in OpenCV fixed-point form.
+
+    ``np.rint`` is round-half-to-even, matching Python's ``round``, so this is
+    numerically identical to the scalar loop it replaces.
+    """
+    arr = np.asarray(points, dtype=np.float64)
+    return np.rint(arr * _SUB).astype(np.int32).reshape(-1, 1, 2)
+
+
+# --------------------------------------------------------------- scratch ROI
+#
+# Strokes are composited with `maximum`, which needs a clean buffer to draw
+# into. Allocating one per segment costs far more than the drawing itself: a
+# single 2048px sea plate issued 17,547 full-canvas `zeros_like` calls, 54% of
+# its runtime, while cv2.polylines accounted for 1.5%.
+#
+# Instead one scratch buffer is reused per canvas shape, and only the segment's
+# bounding box is cleared, drawn, and merged. Coordinates stay in full-canvas
+# space so OpenCV's anti-aliased rasterisation is bit-for-bit what it was.
+
+_local = threading.local()
+
+ROI_MARGIN = 4
+"""Padding (px) added to a segment's bbox to cover thickness and AA spread.
+
+Must exceed anything the rasteriser can put outside the geometric bounds, or
+stale scratch pixels leak into a later segment's ROI.
+"""
+
+
+def _scratch(mask: np.ndarray) -> np.ndarray:
+    cache = getattr(_local, "scratch", None)
+    if cache is None or cache.shape != mask.shape or cache.dtype != mask.dtype:
+        cache = np.zeros_like(mask)
+        _local.scratch = cache
+    return cache
+
+
+def _roi(mask: np.ndarray, points: Sequence[Point], width: float
+         ) -> tuple[int, int, int, int] | None:
+    """Clipped bbox of ``points`` grown for stroke width; None if fully offscreen."""
+    h, w = mask.shape[:2]
+    arr = np.asarray(points, dtype=np.float64)
+    pad = width * 0.5 + ROI_MARGIN
+    x0 = int(math.floor(arr[:, 0].min() - pad))
+    x1 = int(math.ceil(arr[:, 0].max() + pad)) + 1
+    y0 = int(math.floor(arr[:, 1].min() - pad))
+    y1 = int(math.ceil(arr[:, 1].max() + pad)) + 1
+    x0, y0 = max(0, x0), max(0, y0)
+    x1, y1 = min(w, x1), min(h, y1)
+    if x1 <= x0 or y1 <= y0:
+        return None
+    return x0, y0, x1, y1
+
+
+def _stamp(mask: np.ndarray, roi: tuple[int, int, int, int],
+           draw, scale: float = 1.0) -> None:
+    """Clear the ROI in scratch, run ``draw`` on it, merge back with maximum."""
+    x0, y0, x1, y1 = roi
+    scratch = _scratch(mask)
+    view = scratch[y0:y1, x0:x1]
+    view[:] = 0.0
+    draw(scratch)
+    if scale != 1.0:
+        view *= scale
+    np.maximum(mask[y0:y1, x0:x1], view, out=mask[y0:y1, x0:x1])
 
 
 # ------------------------------------------------------------------ curves
@@ -95,13 +158,18 @@ def calligraphic_stroke(mask: np.ndarray, points: Sequence[Point],
         # taper > 1 pushes the mass toward the head of the stroke
         e = t ** taper
         w = max(0.55, width_start + (width_end - width_start) * e)
-        seg = np.zeros_like(mask)
-        cv2.polylines(seg, [_pts(pts[i:i + 2])], False, float(intensity),
-                      thickness=max(1, int(round(w))), lineType=cv2.LINE_AA,
-                      shift=SUBPX_BITS)
-        if w < 1.0:
-            seg *= w
-        np.maximum(mask, seg, out=mask)
+        seg_pts = pts[i:i + 2]
+        roi = _roi(mask, seg_pts, w)
+        if roi is None:
+            continue
+        thickness = max(1, int(round(w)))
+        _stamp(
+            mask, roi,
+            lambda buf, p=seg_pts, th=thickness: cv2.polylines(
+                buf, [_pts(p)], False, float(intensity), thickness=th,
+                lineType=cv2.LINE_AA, shift=SUBPX_BITS),
+            scale=w if w < 1.0 else 1.0,
+        )
     return mask
 
 
@@ -110,13 +178,17 @@ def polyline(mask: np.ndarray, points: Sequence[Point], width: float,
     """Constant-width anti-aliased polyline."""
     if len(points) < 2:
         return mask
-    seg = np.zeros_like(mask)
-    cv2.polylines(seg, [_pts(points)], closed, float(intensity),
-                  thickness=max(1, int(round(width))), lineType=cv2.LINE_AA,
-                  shift=SUBPX_BITS)
-    if width < 1.0:
-        seg *= width
-    np.maximum(mask, seg, out=mask)
+    roi = _roi(mask, points, width)
+    if roi is None:
+        return mask
+    thickness = max(1, int(round(width)))
+    _stamp(
+        mask, roi,
+        lambda buf: cv2.polylines(
+            buf, [_pts(points)], closed, float(intensity), thickness=thickness,
+            lineType=cv2.LINE_AA, shift=SUBPX_BITS),
+        scale=width if width < 1.0 else 1.0,
+    )
     return mask
 
 
@@ -125,10 +197,12 @@ def fill_poly(mask: np.ndarray, points: Sequence[Point],
     """Solid fill — used sparingly (crystals, hull shadow) per the style guide."""
     if len(points) < 3:
         return mask
-    seg = np.zeros_like(mask)
-    cv2.fillPoly(seg, [_pts(points)], float(intensity), lineType=cv2.LINE_AA,
-                 shift=SUBPX_BITS)
-    np.maximum(mask, seg, out=mask)
+    roi = _roi(mask, points, 0.0)
+    if roi is None:
+        return mask
+    _stamp(mask, roi,
+           lambda buf: cv2.fillPoly(buf, [_pts(points)], float(intensity),
+                                    lineType=cv2.LINE_AA, shift=SUBPX_BITS))
     return mask
 
 

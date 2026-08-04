@@ -1,8 +1,8 @@
 # THE SINKING SHIP — common operator targets (Windows-friendly via make/GNU or WSL)
-.PHONY: test validate sprites vault vectors roll-vectors smoke load sellout site-data grails share og-image brand-assets fairness-check ci lint secrets-check site-links doc-links validate-html preflight soak help
+.PHONY: test validate sprites vault art-verify vectors roll-vectors smoke load sellout site-data grails share og-image brand-assets fairness-check ci lint secrets-check site-links doc-links validate-html preflight soak help
 
 help:
-	@echo "make test | validate | sprites | vault | vectors | smoke | load | sellout | site-data | grails | share | og-image | fairness-check | lint | secrets-check | site-links | doc-links | validate-html | preflight | soak | ci"
+	@echo "make test | validate | sprites | vault | art-verify | vectors | smoke | load | sellout | site-data | grails | share | og-image | fairness-check | lint | secrets-check | site-links | doc-links | validate-html | preflight | soak | ci"
 
 
 
@@ -18,6 +18,10 @@ sprites:
 vault:
 	python scripts/vault_tool.py verify
 	python scripts/vault_tool.py diff
+
+# Every committed sprite must regenerate byte-identically from its renderer.
+art-verify:
+	python -m pytest tests/test_artgen_reproducible.py -q
 
 vectors:
 	python scripts/export_fairness_vectors.py

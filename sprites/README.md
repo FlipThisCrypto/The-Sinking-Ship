@@ -51,4 +51,10 @@ writes a layer's final art.
 ```bash
 python scripts/gen_art.py --layer sky                     # write the layer
 python scripts/gen_art.py --layer sky --size 512 --dry-run --sheet /tmp/s.png
+make art-verify                                           # committed art == renderers
 ```
+
+A full layer regenerates in well under two minutes at 2048 (sky 15 plates
+~78 s, sea 11 plates ~27 s). `tests/test_artgen_reproducible.py` re-renders
+every committed plate and fails if one has drifted from its renderer — the
+guard on the determinism promise above.
