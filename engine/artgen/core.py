@@ -109,12 +109,24 @@ def ramp_image(stops: Sequence[Sequence[float]], h: int, w: int,
     return np.repeat(col[:, None, :], w, axis=1)
 
 
-def smoothstep(edge0: float, edge1: float, x: np.ndarray | float) -> np.ndarray:
-    """Hermite smoothstep; ``edge0 == edge1`` degenerates to a hard step."""
-    if edge1 == edge0:
-        return np.asarray(np.where(np.asarray(x) < edge0, 0.0, 1.0), dtype=np.float32)
-    t = np.clip((np.asarray(x, dtype=np.float32) - edge0) / (edge1 - edge0), 0.0, 1.0)
-    return (t * t * (3.0 - 2.0 * t)).astype(np.float32)
+def smoothstep(edge0: np.ndarray | float, edge1: np.ndarray | float,
+               x: np.ndarray | float) -> np.ndarray:
+    """Hermite smoothstep; ``edge0 == edge1`` degenerates to a hard step.
+
+    ``edge0`` may exceed ``edge1``, which gives a falling ramp — several
+    envelopes rely on that. Edges may also be arrays, so a boundary can vary
+    across the canvas (e.g. a per-column ragged hem).
+    """
+    e0 = np.asarray(edge0, dtype=np.float32)
+    e1 = np.asarray(edge1, dtype=np.float32)
+    span = e1 - e0
+    degenerate = span == 0
+    safe = np.where(degenerate, 1.0, span)
+    t = np.clip((np.asarray(x, dtype=np.float32) - e0) / safe, 0.0, 1.0)
+    out = t * t * (3.0 - 2.0 * t)
+    if degenerate.any():
+        out = np.where(degenerate, np.where(np.asarray(x) < e0, 0.0, 1.0), out)
+    return np.asarray(out, dtype=np.float32)
 
 
 # ------------------------------------------------------------------- noise

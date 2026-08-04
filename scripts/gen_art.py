@@ -31,6 +31,7 @@ CONFIG = ROOT / "config"
 # layer name -> module exposing render(key, size) and all_keys()
 RENDERERS = {
     "sky": "artgen.sky",
+    "sea": "artgen.sea",
 }
 
 

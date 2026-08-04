@@ -22,7 +22,7 @@ Contract for every file, whatever its status:
 | layer | files | status | notes |
 |---|---|---|---|
 | sky | 15 | **production** (`artgen.sky`) | background top; atmosphere wash + cloud linework + per-trait motif |
-| sea | 11 | empty stand-in | background bottom; snaps to zone sub-palette |
+| sea | 11 | **production** (`artgen.sea`) | background bottom; perspective wave band with a ragged hem |
 | scene_element | 40 | empty stand-in | series-prefixed filenames (harbor_/military_/pirate_/wizard_/crystal_) |
 | ship_class | 16 | externally authored | 16 distinct illustrations; the strongest existing material |
 | ship_condition | 11 | empty stand-in | overlays |
