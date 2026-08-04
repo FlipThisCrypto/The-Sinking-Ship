@@ -1,10 +1,5 @@
 # sprites/ — layer sprite trees
 
-> The pre-revision originals are frozen byte-exact in
-> [`vault/sprites-v1/`](../vault/README.md). `sprites/` always holds the
-> **latest** art; the vault holds what it replaced. Check drift with
-> `make vault`.
-
 One directory per rendered layer from `config/traits.json` (the `pose`
 dimension has no directory — it composes into `body/` filenames). Each layer
 directory has its own README listing every required filename and the trait it

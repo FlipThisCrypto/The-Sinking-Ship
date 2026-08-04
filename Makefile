@@ -1,8 +1,8 @@
 # THE SINKING SHIP — common operator targets (Windows-friendly via make/GNU or WSL)
-.PHONY: test validate sprites vectors roll-vectors smoke load sellout site-data grails share og-image brand-assets fairness-check ci lint secrets-check site-links doc-links validate-html preflight soak help
+.PHONY: test validate sprites vault vectors roll-vectors smoke load sellout site-data grails share og-image brand-assets fairness-check ci lint secrets-check site-links doc-links validate-html preflight soak help
 
 help:
-	@echo "make test | validate | sprites | vectors | smoke | load | sellout | site-data | grails | share | og-image | fairness-check | lint | secrets-check | site-links | doc-links | validate-html | preflight | soak | ci"
+	@echo "make test | validate | sprites | vault | vectors | smoke | load | sellout | site-data | grails | share | og-image | fairness-check | lint | secrets-check | site-links | doc-links | validate-html | preflight | soak | ci"
 
 
 
@@ -14,6 +14,10 @@ validate:
 
 sprites:
 	python engine/render_engine.py --validate-sprites
+
+vault:
+	python scripts/vault_tool.py verify
+	python scripts/vault_tool.py diff
 
 vectors:
 	python scripts/export_fairness_vectors.py
@@ -74,7 +78,7 @@ preflight:
 soak:
 	python scripts/soak_fulfillment.py --purchases 40
 
-ci: lint secrets-check site-links doc-links validate-html validate sprites test smoke sellout load fairness-check roll-vectors
+ci: lint secrets-check site-links doc-links validate-html validate sprites vault test smoke sellout load fairness-check roll-vectors
 	@echo "make ci: all local CI gates green"
 
 
