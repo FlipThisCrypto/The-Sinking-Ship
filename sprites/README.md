@@ -24,7 +24,7 @@ Contract for every file, whatever its status:
 | sky | 15 | **production** (`artgen.sky`) | background top; atmosphere wash + cloud linework + per-trait motif |
 | sea | 11 | **production** (`artgen.sea`) | background bottom; perspective wave band with a ragged hem |
 | scene_element | 40 | empty stand-in | series-prefixed filenames (harbor_/military_/pirate_/wizard_/crystal_) |
-| ship_class | 16 | externally authored | 16 distinct illustrations; the strongest existing material |
+| ship_class | 16 | externally authored, **repaired** | 16 distinct illustrations; residual white matte removed (`scripts/repair_art.py`) |
 | ship_condition | 11 | empty stand-in | overlays |
 | body | 48 | externally authored | 8 variants × 6 poses, `{variant}_{pose}.png` — only 12 unique images |
 | clothing | 14 | empty stand-in | |
