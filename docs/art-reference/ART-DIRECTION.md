@@ -156,6 +156,8 @@ pixels. The fork, as presented to the owner:
 
 | Tool | Role |
 |---|---|
+| `engine/artgen/` | **Production** illustration engine (Canvas, fBm/domain warp, calligraphic strokes, flow bundles, contour inking) |
+| `scripts/gen_art.py --layer <name>` | Author a layer's final art, deterministically |
 | `engine/shipgen/amano_ink.py` | Shared ink primitives + vertical grade |
 | `scripts/gen_placeholder_sprites.py --profile illustration` | Procedural stand-ins matching ships_amano grammar |
 | `scripts/style_score.py --threshold 92` | Measure composites vs `ships_amano/` |

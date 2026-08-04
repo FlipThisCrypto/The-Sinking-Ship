@@ -10,25 +10,41 @@ dimension has no directory — it composes into `body/` filenames). Each layer
 directory has its own README listing every required filename and the trait it
 belongs to.
 
-**Everything here is currently a generated PLACEHOLDER** (see
-`scripts/gen_placeholder_sprites.py`): solid fills with an accent stripe and
-a 3-px checker notch. Replace file-for-file with final art:
+Contract for every file, whatever its status:
 
-- 48×48 RGBA PNG, alpha strictly 0/255 (no partial transparency)
-- colors from the 32-color master palette (`config/palette.json`) —
+- 2048×2048 RGBA PNG (illustration profile, `config/render.json`)
+- colours from the 32-colour master palette (`config/palette.json`) —
   `python engine/render_engine.py --validate-sprites` warns on drift
 - filenames and dimensions must not change (they are the traits.json contract)
+- RGB zeroed under `alpha == 0` — noisy transparent pixels defeat PNG
+  filtering and inflate the layer by an order of magnitude
 
-| layer | files | notes |
-|---|---|---|
-| sky | 15 | background top; snaps to zone sub-palette at render |
-| sea | 11 | background bottom; snaps to zone sub-palette |
-| scene_element | 40 | series-prefixed filenames (harbor_/military_/pirate_/wizard_/crystal_) |
-| ship_class | 16 | |
-| ship_condition | 11 | overlays |
-| body | 48 | 8 variants × 6 poses, pre-composited: `{variant}_{pose}.png` |
-| clothing | 14 | |
-| eyes | 16 | |
-| mouth | 10 | plus None (no file) |
-| hat | 14 | includes `the_torn_halo_horns.png` (quota-only) |
-| aura | 9 | plus None; top layer |
+| layer | files | status | notes |
+|---|---|---|---|
+| sky | 15 | **production** (`artgen.sky`) | background top; atmosphere wash + cloud linework + per-trait motif |
+| sea | 11 | empty stand-in | background bottom; snaps to zone sub-palette |
+| scene_element | 40 | empty stand-in | series-prefixed filenames (harbor_/military_/pirate_/wizard_/crystal_) |
+| ship_class | 16 | externally authored | 16 distinct illustrations; the strongest existing material |
+| ship_condition | 11 | empty stand-in | overlays |
+| body | 48 | externally authored | 8 variants × 6 poses, `{variant}_{pose}.png` — only 12 unique images |
+| clothing | 14 | empty stand-in | |
+| eyes | 16 | empty stand-in | |
+| mouth | 10 | empty stand-in | plus None (no file) |
+| hat | 14 | empty stand-in | includes `the_torn_halo_horns.png` (quota-only) |
+| aura | 9 | empty stand-in | plus None; top layer |
+
+"Empty stand-in" is literal: `scripts/gen_placeholder_sprites.py` emitted a
+fully transparent canvas for those layers, and all files in each are
+byte-identical. They render as nothing.
+
+## Authoring production art
+
+`engine/artgen/` is the illustration engine; `scripts/gen_art.py --layer <name>`
+writes a layer's final art. Output is deterministic — the same trait key always
+produces byte-identical bytes — so regenerating a layer produces no git churn
+unless the renderer actually changed.
+
+```bash
+python scripts/gen_art.py --layer sky                     # write the layer
+python scripts/gen_art.py --layer sky --size 512 --dry-run --sheet /tmp/s.png
+```

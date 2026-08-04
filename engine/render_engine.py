@@ -215,6 +215,19 @@ def _zone_ramp_name(zone: str | None) -> str:
     }.get(zone or "", "crimson_navy")
 
 
+def _place(sprite: Image.Image, size: int, tf: dict | None) -> Image.Image:
+    """Apply a layer's margin transform (scale about centre, vertical anchor)."""
+    if not tf or float(tf.get("scale", 1.0)) == 1.0:
+        return sprite
+    sc = float(tf["scale"])
+    new = sprite.resize((max(1, round(size * sc)),) * 2, Image.LANCZOS)
+    ax = (size - new.width) // 2
+    ay = round(float(tf.get("anchor_y", 1.0)) * (size - new.height))
+    layer_canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    layer_canvas.paste(new, (ax, ay))
+    return layer_canvas
+
+
 def compose(store: SpriteStore, traits: dict, zone: str | None) -> Image.Image:
     size = store.master_px
     # Illustration: bone-white ground (ships_amano / ART-DIRECTION). Pixel: clear.
@@ -225,28 +238,34 @@ def compose(store: SpriteStore, traits: dict, zone: str | None) -> Image.Image:
         canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     layers = sorted((ly for ly in store.cfg.layers if ly.z_order is not None),
                     key=lambda ly: ly.z_order)
+
+    # The global ink grade is the ships_amano signature, but it must only touch
+    # *ink*. Background atmosphere (sky/sea) already carries the zone identity
+    # in its own authored ramp, and pushing it through the grade both erases
+    # that identity and — because the grade gates on a hard alpha threshold —
+    # stamps a rectangular edge where the wash crosses it. So the subject
+    # layers are graded on their own transparent stack and then laid over the
+    # ungraded background. `palette.background_layers` names the exempt set.
+    graded = store.profile.name == "illustration"
+    exempt = store.palette.background_layers if graded else set()
+    subject = Image.new("RGBA", (size, size), (0, 0, 0, 0)) if graded else None
+
     for layer in layers:
         sprite = store.get(layer.name, traits, zone)
         if sprite is None:
             continue
-        tf = store.profile.layer_transforms.get(layer.name)
-        if tf and float(tf.get("scale", 1.0)) != 1.0:
-            # margin discipline: scale about horizontal center, anchored
-            # vertically (1.0 = bottom stays put) so grounding is preserved
-            sc = float(tf["scale"])
-            new = sprite.resize((max(1, round(size * sc)),) * 2, Image.LANCZOS)
-            ax = (size - new.width) // 2
-            ay = round(float(tf.get("anchor_y", 1.0)) * (size - new.height))
-            layer_canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-            layer_canvas.paste(new, (ax, ay))
-            sprite = layer_canvas
-        canvas.alpha_composite(sprite)
-    if store.profile.name == "illustration":
-        # Global vertical ink grade — the ships_amano signature on every mint.
+        sprite = _place(sprite, size, store.profile.layer_transforms.get(layer.name))
+        if graded and layer.name not in exempt:
+            subject.alpha_composite(sprite)
+        else:
+            canvas.alpha_composite(sprite)
+
+    if graded:
         from shipgen.amano_ink import RAMPS, grade_vertical_ink
-        canvas = grade_vertical_ink(
-            canvas, stops=RAMPS[_zone_ramp_name(zone)], strength=0.84,
+        subject = grade_vertical_ink(
+            subject, stops=RAMPS[_zone_ramp_name(zone)], strength=0.84,
         )
+        canvas.alpha_composite(subject)
     return canvas
 
 

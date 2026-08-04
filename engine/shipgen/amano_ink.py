@@ -585,9 +585,13 @@ def grade_vertical_ink(
     rgb = arr[:, :, :3]
     a = arr[:, :, 3]
     luma = rgb.mean(axis=2)
-    # ink = opaque-enough and not bone-white ground
-    mask = (a > 40) & (luma < white_cut)
-    if not mask.any():
+    # "ink" = opaque-enough and not bone-white ground. Both edges are ramped
+    # rather than thresholded: a hard cut stamps a visible contour wherever a
+    # soft wash crosses it (which is exactly what a graded sky plate does).
+    w_alpha = np.clip((a - 12.0) / 46.0, 0.0, 1.0)
+    w_luma = np.clip((white_cut - luma) / 22.0, 0.0, 1.0)
+    weight = (w_alpha * w_luma)[:, :, None]
+    if not (weight > 0).any():
         return img
 
     # build ramp image
@@ -597,13 +601,12 @@ def grade_vertical_ink(
     target = ramp[:, None, :].repeat(w, axis=1)
 
     # luminance-preserving blend toward ramp colour
-    out = rgb.copy()
     tl = target.mean(axis=2, keepdims=True)
     tl = np.maximum(tl, 1.0)
     # scale ramp to match local luma
     scaled = target * (luma[:, :, None] / tl)
     blended = rgb * (1.0 - strength) + scaled * strength
-    out[mask] = blended[mask]
+    out = rgb + (blended - rgb) * weight
     out = np.clip(out, 0, 255)
     result = np.dstack([out, a]).astype(np.uint8)
     return Image.fromarray(result, "RGBA")
