@@ -26,10 +26,10 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "engine"))
 
-from artgen import aura, sea, ship_condition, sky  # noqa: E402
+from artgen import aura, body, sea, ship_condition, sky  # noqa: E402
 
 LAYERS = {"sky": sky, "sea": sea, "ship_condition": ship_condition,
-          "aura": aura}
+          "aura": aura, "body": body}
 
 
 def _cases() -> list[tuple[str, str]]:
@@ -42,7 +42,8 @@ def test_committed_plate_matches_its_renderer(layer: str, key: str):
     path = ROOT / "sprites" / layer / f"{key}.png"
     assert path.is_file(), f"{layer}/{key}.png is missing"
     committed = np.asarray(Image.open(path).convert("RGBA"))
-    fresh = np.asarray(LAYERS[layer].render(key, size=2048).to_image())
+    result = LAYERS[layer].render(key, size=2048)
+    fresh = np.asarray(result.to_image() if hasattr(result, "to_image") else result)
     if np.array_equal(fresh, committed):
         return
     differing = int((np.abs(fresh.astype(int) - committed.astype(int)).max(axis=2) > 0).sum())

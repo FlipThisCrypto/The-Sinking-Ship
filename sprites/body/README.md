@@ -2,10 +2,52 @@
 
 z-order: 6 | required: True | dimensions: 2048x2048 RGBA PNG (illustration profile)
 
-> **PLACEHOLDERS**: procedural Amano-ink stand-ins (gradient linework
-> on transparent ground; corner checker tag). Match ships_amano/ +
-> docs/art-reference/ART-DIRECTION.md and CLAUDE-STYLE-PACK.md.
-> Replace file-for-file with final art; filenames must not change.
+> **DERIVED ART** — produced by `engine/artgen/body.py` from the vaulted source
+> plates, regenerate with `python scripts/gen_art.py --layer body`. Sources are
+> read from [`vault/sprites-v1/body/`](../../vault/README.md), never from this
+> directory, so the derivation is idempotent.
+
+## The defect this fixed
+
+These 48 filenames used to resolve to only **12 unique images**. `blue`,
+`emerald`, `green` and `zombie` were byte-identical to one another, and
+`chrome`, `corrupted`, `ghost` and `gold` each repeated a single image across
+all six poses — so "Blue Standing" and "Green Sitting" minted the *same
+picture*. That is a fairness problem as much as an art one: a buyer paying for
+a rarer combination received a duplicate.
+
+A second, quieter defect: the trait names did not describe the art.
+`blue_on_bow` rendered a **red** character.
+
+## How it works now
+
+The filename means what it says: **pose selects the composition, variant
+selects the colourway.**
+
+Each plate is its pose's drawing pushed through that variant's *gradient map* —
+a luminance-indexed remap onto a master-palette ramp. Line weight, shading and
+every tonal relationship survive exactly (alpha is passed through untouched);
+only the palette changes. All 48 outputs now differ.
+
+All twelve original illustrations stay in service: the five shared pose plates
+supply five poses, and each variant that had bespoke standing art keeps it as
+*its* standing source.
+
+| variant | bucket | colourway |
+|---|---|---|
+| green | common | natural muted green |
+| blue | uncommon | pale blue → ink |
+| zombie | rare | sickly; midtones grey before shadows go violet |
+| ghost | epic | spectral, but the shadow end still reaches a true dark — a ramp that stops at grey vanishes into the bone-white ground |
+| corrupted | epic | lavender → violet → ink |
+| gold | legendary | treasure light |
+| emerald | legendary | Chia-coded jewel contrast |
+| chrome | mythic | achromatic |
+
+Body plates are larger than the generated layers (~2.6 MB mean) and that is
+inherent: RGB accounts for ~3 MB of a 3.5 MB plate despite only ~240 distinct
+colours, because the source illustration's texture varies pixel to pixel and
+defeats PNG's predictors.
 
 | file | trait |
 |---|---|

@@ -14,7 +14,10 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
+import re
+import string
 import sys
 import time
 from pathlib import Path
@@ -34,6 +37,7 @@ RENDERERS = {
     "sea": "artgen.sea",
     "ship_condition": "artgen.ship_condition",
     "aura": "artgen.aura",
+    "body": "artgen.body",
 }
 
 
@@ -47,14 +51,37 @@ def _load(layer: str):
     return importlib.import_module(RENDERERS[layer])
 
 
+def _snake(name: str) -> str:
+    s = name.lower().replace("'", "").replace("-", " ")
+    s = re.sub(r"[^a-z0-9 ]", "", s)
+    return re.sub(r" +", "_", s.strip())
+
+
 def expected_filenames(layer: str) -> list[str]:
-    """Sprite filenames traits.json requires for ``layer`` (excludes None traits)."""
+    """Sprite filenames traits.json requires for ``layer`` (excludes None traits).
+
+    Handles both forms the config uses: one ``sprite_filename`` per trait, and
+    ``sprite_pattern`` layers like ``body``, whose filenames are the cross
+    product of the layer with the dimensions its pattern names (body x pose).
+    """
     doc = json.loads((CONFIG / "traits.json").read_text(encoding="utf-8"))
-    for entry in doc["layers"]:
-        if entry["name"] == layer:
-            return [t["sprite_filename"] for t in entry["traits"]
-                    if t.get("sprite_filename")]
-    raise SystemExit(f"layer {layer!r} not present in traits.json")
+    by_name = {ly["name"]: ly for ly in doc["layers"]}
+    entry = by_name.get(layer)
+    if entry is None:
+        raise SystemExit(f"layer {layer!r} not present in traits.json")
+
+    pattern = entry.get("sprite_pattern")
+    if not pattern:
+        return [t["sprite_filename"] for t in entry["traits"]
+                if t.get("sprite_filename")]
+
+    fields = [f for _, f, _, _ in string.Formatter().parse(pattern) if f]
+    names = {f: [_snake(t["name"]) for t in by_name[f]["traits"]] for f in fields}
+    out = []
+    for combo in itertools.product(*(names[f] for f in fields)):
+        rel = pattern.format(**dict(zip(fields, combo)))
+        out.append(Path(rel).name)
+    return sorted(out)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -93,8 +120,10 @@ def main(argv: list[str] | None = None) -> int:
     images = {}
     for key in keys:
         t0 = time.perf_counter()
-        canvas = mod.render(key, size=args.size)
-        img = canvas.to_image()
+        result = mod.render(key, size=args.size)
+        # Generated layers hand back a Canvas; derived layers (body) hand back
+        # a finished image directly.
+        img = result.to_image() if hasattr(result, "to_image") else result
         images[key] = img
         stats = alpha_stats(img)
         colors = unique_colors(img)
