@@ -2,10 +2,32 @@
 
 z-order: 8 | required: True | dimensions: 2048x2048 RGBA PNG (illustration profile)
 
-> **PLACEHOLDERS**: procedural Amano-ink stand-ins (gradient linework
-> on transparent ground; corner checker tag). Match ships_amano/ +
-> docs/art-reference/ART-DIRECTION.md and CLAUDE-STYLE-PACK.md.
-> Replace file-for-file with final art; filenames must not change.
+> **PRODUCTION ART** — authored by `engine/artgen/eyes.py`, regenerate with
+> `python scripts/gen_art.py --layer eyes`. Originals frozen in
+> [`vault/sprites-v1/`](../../vault/README.md).
+
+## Authored in canonical rig space
+
+Drawn once against `rig.CANONICAL` — eye at (0.520, 0.145), head height 0.190 —
+and landed on each body by `render_engine._place_face`. See the rig section of
+[`sprites/README.md`](../README.md).
+
+## Two rules
+
+**One eye, not two.** `ART-DIRECTION.md` names *a single large expressive eye
+in profile* as the species cue, and the body plates disagree about how many
+eyes are visible. So the rig anchor is the **dominant** eye — the only one on a
+profile head, the nearer and larger one where two are drawn — not the centre of
+the eye mass. Anchoring on the midpoint of a two-eyed face put the sprite on
+the bridge of the nose.
+
+**The eye occludes; it does not overlay.** The body already has an eye drawn at
+this spot, so every trait lays down an opaque bone-white eye body before inking
+its state onto it. That shape is always drawn at *full* extent even when the
+lid is down: shrinking it with the lid left the body's open eye showing around
+a sliver of closed lid, which is the exact artefact this layer exists to
+prevent. The eye is ~0.63 of head height — sized to cover the art beneath, and
+matching the reference character's very large eye.
 
 | file | trait |
 |---|---|

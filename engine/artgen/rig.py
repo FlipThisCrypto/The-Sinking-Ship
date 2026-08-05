@@ -46,9 +46,11 @@ FACE_LAYERS = ("eyes", "mouth", "hat")
 class Anchor:
     """Head geometry for one plate, in normalised plate coordinates.
 
-    ``eye_x``/``eye_y`` is the centre of the eye mass — between the eyes on a
-    frontal head, on the single visible eye in profile. It is the registration
-    point because it is the feature the face layers must agree with.
+    ``eye_x``/``eye_y`` is the **dominant** eye: the single visible eye on a
+    profile head, the nearer and larger one where two are drawn. Not the centre
+    of the eye mass — the eyes layer draws one eye (the species cue is *a
+    single large expressive eye*), so anchoring on the midpoint of a two-eyed
+    face lands it on the bridge of the nose.
 
     ``head_h`` is crown-to-chin, excluding hair. It sets the scale.
     """
@@ -67,18 +69,18 @@ transform: the largest resulting scale factor is about 1.6x.
 """
 
 ANNOTATIONS: dict[str, Anchor] = {
-    "blue_back_turned": Anchor(0.532, 0.108, 0.170),
-    "blue_looking_down": Anchor(0.530, 0.155, 0.190),
-    "blue_on_bow": Anchor(0.550, 0.125, 0.130),
-    "blue_saluting": Anchor(0.565, 0.185, 0.180),
-    "blue_sitting": Anchor(0.575, 0.165, 0.180),
+    "blue_back_turned": Anchor(0.513, 0.159, 0.170),
+    "blue_looking_down": Anchor(0.513, 0.213, 0.190),
+    "blue_on_bow": Anchor(0.474, 0.145, 0.130),
+    "blue_saluting": Anchor(0.536, 0.231, 0.180),
+    "blue_sitting": Anchor(0.557, 0.198, 0.180),
     "blue_standing": Anchor(0.830, 0.435, 0.180),
-    "chrome_standing": Anchor(0.350, 0.235, 0.330, facing="left"),
-    "corrupted_standing": Anchor(0.530, 0.200, 0.200),
-    "emerald_standing": Anchor(0.600, 0.190, 0.170),
-    "ghost_standing": Anchor(0.530, 0.225, 0.190),
-    "gold_standing": Anchor(0.530, 0.205, 0.200),
-    "green_standing": Anchor(0.565, 0.205, 0.190),
+    "chrome_standing": Anchor(0.476, 0.272, 0.330, facing="left"),
+    "corrupted_standing": Anchor(0.648, 0.263, 0.200),
+    "emerald_standing": Anchor(0.446, 0.284, 0.170),
+    "ghost_standing": Anchor(0.564, 0.209, 0.190),
+    "gold_standing": Anchor(0.645, 0.250, 0.200),
+    "green_standing": Anchor(0.664, 0.241, 0.190),
 }
 """Hand-annotated head anchors for the twelve unique source images.
 

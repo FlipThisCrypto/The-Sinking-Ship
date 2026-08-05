@@ -39,6 +39,7 @@ RENDERERS = {
     "aura": "artgen.aura",
     "body": "artgen.body",
     "scene_element": "artgen.scene_element",
+    "eyes": "artgen.eyes",
 }
 
 

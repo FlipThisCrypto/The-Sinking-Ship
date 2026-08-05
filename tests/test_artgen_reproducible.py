@@ -29,6 +29,7 @@ sys.path.insert(0, str(ROOT / "engine"))
 from artgen import (  # noqa: E402
     aura,
     body,
+    eyes,
     scene_element,
     sea,
     ship_condition,
@@ -36,7 +37,8 @@ from artgen import (  # noqa: E402
 )
 
 LAYERS = {"sky": sky, "sea": sea, "scene_element": scene_element,
-          "ship_condition": ship_condition, "aura": aura, "body": body}
+          "ship_condition": ship_condition, "aura": aura, "body": body,
+          "eyes": eyes}
 
 
 def _cases() -> list[tuple[str, str]]:

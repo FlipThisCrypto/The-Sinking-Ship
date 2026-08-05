@@ -28,7 +28,7 @@ Contract for every file, whatever its status:
 | ship_condition | 11 | **production** (`artgen.ship_condition`) | overlays; water keys off the waterline, damage off measured ship occupancy |
 | body | 48 | **derived** (`artgen.body`) | 8 colourways × 6 poses from 12 vaulted originals; all 48 now distinct |
 | clothing | 14 | empty stand-in | |
-| eyes | 16 | empty stand-in | |
+| eyes | 16 | **production** (`artgen.eyes`) | authored in canonical rig space; occludes the eye drawn on the body |
 | mouth | 10 | empty stand-in | plus None (no file) |
 | hat | 14 | empty stand-in | includes `the_torn_halo_horns.png` (quota-only) |
 | aura | 9 | **production** (`artgen.aura`) | plus None; top layer — rim light with a face guard |

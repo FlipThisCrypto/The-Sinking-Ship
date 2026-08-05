@@ -178,16 +178,22 @@ def test_place_face_without_a_body_transform_is_the_plain_rig():
 def test_mirrored_body_flips_the_sprite():
     """A profile eye must stay on the correct side of the skull."""
     size = 256
-    sprite = _marker_sprite(size, (0.20, rig.CANONICAL.eye_y))
+    # Offset from the eye rather than far across the plate: the left-facing
+    # body has the largest head in the set, so its transform scales ~1.7x and a
+    # distant marker would be pushed off-canvas.
+    mark_x = rig.CANONICAL.eye_x - 0.06
+    sprite = _marker_sprite(size, (mark_x, rig.CANONICAL.eye_y))
     left = next(n for n, a in rig.ANNOTATIONS.items() if a.facing == "left")
     plate = next(k for k in body.all_keys() if body.source_for(k) == left)
     placed = re_._place_face(sprite, size, DOC["plates"][plate], DOC["canonical"], None)
     got_x, _ = _found_at(placed)
     anchor = DOC["plates"][plate]
     scale = anchor["head_h"] / DOC["canonical"]["head_h"]
-    # 0.20 mirrors to 0.80, then rides the transform
-    expected = anchor["eye_x"] + (0.80 - (1.0 - DOC["canonical"]["eye_x"])) * scale
+    mirrored = 1.0 - mark_x
+    expected = anchor["eye_x"] + (mirrored - (1.0 - DOC["canonical"]["eye_x"])) * scale
     assert got_x == pytest.approx(expected, abs=0.02)
+    # and it must land on the opposite side of the anchor from where it started
+    assert got_x > anchor["eye_x"]
 
 
 # ------------------------------------------------------------- the compositor
