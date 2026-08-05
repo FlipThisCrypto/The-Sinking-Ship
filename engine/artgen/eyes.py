@@ -37,16 +37,19 @@ PAL = load_palette()
 EYE = (0.520, 0.145)
 """Eye centre in canonical rig space — must equal ``rig.CANONICAL`` eye."""
 
-EYE_W = 0.060
-"""Half-width of the eye opening.
+EYE_W = 0.031
+"""Half-width of the eye opening, so the drawn eye is ``rig.CANONICAL.eye_w``.
 
-Sized to *cover* the eye already drawn on the body, not merely to sit on it —
-at 0.048 the original eye's outline showed as a ring around the new one. This
-is ~0.63 of head height, which also matches the reference character's very
-large eye.
+This must equal half of the rig's canonical eye width. The compositor scales
+each plate by ``anchor.eye_w / canonical.eye_w``, so if the art here is drawn at
+a different size than the rig claims, every eye lands at the wrong scale —
+which is exactly what happened when this layer scaled by head height instead:
+eye-to-head ratio varies by more than 2x across the body plates, so head-based
+scaling made the eye far too large on small-eyed bodies like ``green_standing``
+(0.037) and too small on ``blue_back_turned`` (0.090).
 """
 
-EYE_H = 0.048
+EYE_H = 0.026
 LID_INK = "ink_black"
 MAX_ALPHA = 1.0
 

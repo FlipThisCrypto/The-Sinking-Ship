@@ -49,9 +49,12 @@ The plates cannot be normalised onto a shared rig without destroying their
 composition (`blue_standing` and `emerald_standing` are different pictures, not
 recolours), so the *face layers* are transformed per body instead:
 
-- [`config/rig.json`](../config/rig.json) records a head anchor — eye centre,
-  head height, facing — for each of the twelve unique source images, expanded
-  to all 48 plates. Values are **hand-annotated from the art and verified with
+- [`config/rig.json`](../config/rig.json) records an anchor per source image —
+  dominant-eye centre, **eye width**, head height, facing — expanded to all 48
+  plates. Face layers declare which measure scales them: `eyes` and `mouth`
+  track `eye_w` (they are features), `hat` tracks `head_h` (it sits on the
+  skull). One measure cannot serve both — eye-to-head ratio varies by more than
+  2x across these plates. Values are **hand-annotated from the art and verified with
   a proof sheet**; two automatic detectors were tried and discarded (one had a
   confidence score inversely correlated with correctness; the other found a
   cigarette).

@@ -6,374 +6,435 @@
     "eye_x": 0.52,
     "eye_y": 0.145,
     "head_h": 0.19,
+    "eye_w": 0.062,
     "facing": "right"
   },
-  "face_layers": [
-    "eyes",
-    "mouth",
-    "hat"
-  ],
+  "face_layers": {
+    "eyes": "eye_w",
+    "mouth": "eye_w",
+    "hat": "head_h"
+  },
   "sources": {
     "blue_back_turned": {
-      "eye_x": 0.513,
-      "eye_y": 0.159,
+      "eye_x": 0.5,
+      "eye_y": 0.163,
       "head_h": 0.17,
+      "eye_w": 0.09,
       "facing": "right"
     },
     "blue_looking_down": {
-      "eye_x": 0.513,
-      "eye_y": 0.213,
+      "eye_x": 0.507,
+      "eye_y": 0.24,
       "head_h": 0.19,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "blue_on_bow": {
-      "eye_x": 0.474,
-      "eye_y": 0.145,
+      "eye_x": 0.472,
+      "eye_y": 0.162,
       "head_h": 0.13,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "blue_saluting": {
-      "eye_x": 0.536,
-      "eye_y": 0.231,
+      "eye_x": 0.537,
+      "eye_y": 0.25,
       "head_h": 0.18,
+      "eye_w": 0.065,
       "facing": "right"
     },
     "blue_sitting": {
-      "eye_x": 0.557,
-      "eye_y": 0.198,
+      "eye_x": 0.565,
+      "eye_y": 0.21,
       "head_h": 0.18,
+      "eye_w": 0.045,
       "facing": "right"
     },
     "blue_standing": {
-      "eye_x": 0.83,
-      "eye_y": 0.435,
+      "eye_x": 0.832,
+      "eye_y": 0.424,
       "head_h": 0.18,
+      "eye_w": 0.065,
       "facing": "right"
     },
     "chrome_standing": {
-      "eye_x": 0.476,
-      "eye_y": 0.272,
+      "eye_x": 0.52,
+      "eye_y": 0.25,
       "head_h": 0.33,
+      "eye_w": 0.055,
       "facing": "left"
     },
     "corrupted_standing": {
-      "eye_x": 0.648,
-      "eye_y": 0.263,
+      "eye_x": 0.655,
+      "eye_y": 0.265,
       "head_h": 0.2,
+      "eye_w": 0.05,
       "facing": "right"
     },
     "emerald_standing": {
-      "eye_x": 0.446,
-      "eye_y": 0.284,
+      "eye_x": 0.448,
+      "eye_y": 0.288,
       "head_h": 0.17,
+      "eye_w": 0.065,
       "facing": "right"
     },
     "ghost_standing": {
-      "eye_x": 0.564,
-      "eye_y": 0.209,
+      "eye_x": 0.55,
+      "eye_y": 0.193,
       "head_h": 0.19,
+      "eye_w": 0.07,
       "facing": "right"
     },
     "gold_standing": {
-      "eye_x": 0.645,
-      "eye_y": 0.25,
+      "eye_x": 0.651,
+      "eye_y": 0.262,
       "head_h": 0.2,
+      "eye_w": 0.042,
       "facing": "right"
     },
     "green_standing": {
-      "eye_x": 0.664,
-      "eye_y": 0.241,
+      "eye_x": 0.653,
+      "eye_y": 0.262,
       "head_h": 0.19,
+      "eye_w": 0.037,
       "facing": "right"
     }
   },
   "plates": {
     "blue_back_turned": {
-      "eye_x": 0.513,
-      "eye_y": 0.159,
+      "eye_x": 0.5,
+      "eye_y": 0.163,
       "head_h": 0.17,
+      "eye_w": 0.09,
       "facing": "right"
     },
     "blue_looking_down": {
-      "eye_x": 0.513,
-      "eye_y": 0.213,
+      "eye_x": 0.507,
+      "eye_y": 0.24,
       "head_h": 0.19,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "blue_on_bow": {
-      "eye_x": 0.474,
-      "eye_y": 0.145,
+      "eye_x": 0.472,
+      "eye_y": 0.162,
       "head_h": 0.13,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "blue_saluting": {
-      "eye_x": 0.536,
-      "eye_y": 0.231,
+      "eye_x": 0.537,
+      "eye_y": 0.25,
       "head_h": 0.18,
+      "eye_w": 0.065,
       "facing": "right"
     },
     "blue_sitting": {
-      "eye_x": 0.557,
-      "eye_y": 0.198,
+      "eye_x": 0.565,
+      "eye_y": 0.21,
       "head_h": 0.18,
+      "eye_w": 0.045,
       "facing": "right"
     },
     "blue_standing": {
-      "eye_x": 0.83,
-      "eye_y": 0.435,
+      "eye_x": 0.832,
+      "eye_y": 0.424,
       "head_h": 0.18,
+      "eye_w": 0.065,
       "facing": "right"
     },
     "chrome_back_turned": {
-      "eye_x": 0.513,
-      "eye_y": 0.159,
+      "eye_x": 0.5,
+      "eye_y": 0.163,
       "head_h": 0.17,
+      "eye_w": 0.09,
       "facing": "right"
     },
     "chrome_looking_down": {
-      "eye_x": 0.513,
-      "eye_y": 0.213,
+      "eye_x": 0.507,
+      "eye_y": 0.24,
       "head_h": 0.19,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "chrome_on_bow": {
-      "eye_x": 0.474,
-      "eye_y": 0.145,
+      "eye_x": 0.472,
+      "eye_y": 0.162,
       "head_h": 0.13,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "chrome_saluting": {
-      "eye_x": 0.536,
-      "eye_y": 0.231,
+      "eye_x": 0.537,
+      "eye_y": 0.25,
       "head_h": 0.18,
+      "eye_w": 0.065,
       "facing": "right"
     },
     "chrome_sitting": {
-      "eye_x": 0.557,
-      "eye_y": 0.198,
+      "eye_x": 0.565,
+      "eye_y": 0.21,
       "head_h": 0.18,
+      "eye_w": 0.045,
       "facing": "right"
     },
     "chrome_standing": {
-      "eye_x": 0.476,
-      "eye_y": 0.272,
+      "eye_x": 0.52,
+      "eye_y": 0.25,
       "head_h": 0.33,
+      "eye_w": 0.055,
       "facing": "left"
     },
     "corrupted_back_turned": {
-      "eye_x": 0.513,
-      "eye_y": 0.159,
+      "eye_x": 0.5,
+      "eye_y": 0.163,
       "head_h": 0.17,
+      "eye_w": 0.09,
       "facing": "right"
     },
     "corrupted_looking_down": {
-      "eye_x": 0.513,
-      "eye_y": 0.213,
+      "eye_x": 0.507,
+      "eye_y": 0.24,
       "head_h": 0.19,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "corrupted_on_bow": {
-      "eye_x": 0.474,
-      "eye_y": 0.145,
+      "eye_x": 0.472,
+      "eye_y": 0.162,
       "head_h": 0.13,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "corrupted_saluting": {
-      "eye_x": 0.536,
-      "eye_y": 0.231,
+      "eye_x": 0.537,
+      "eye_y": 0.25,
       "head_h": 0.18,
+      "eye_w": 0.065,
       "facing": "right"
     },
     "corrupted_sitting": {
-      "eye_x": 0.557,
-      "eye_y": 0.198,
+      "eye_x": 0.565,
+      "eye_y": 0.21,
       "head_h": 0.18,
+      "eye_w": 0.045,
       "facing": "right"
     },
     "corrupted_standing": {
-      "eye_x": 0.648,
-      "eye_y": 0.263,
+      "eye_x": 0.655,
+      "eye_y": 0.265,
       "head_h": 0.2,
+      "eye_w": 0.05,
       "facing": "right"
     },
     "emerald_back_turned": {
-      "eye_x": 0.513,
-      "eye_y": 0.159,
+      "eye_x": 0.5,
+      "eye_y": 0.163,
       "head_h": 0.17,
+      "eye_w": 0.09,
       "facing": "right"
     },
     "emerald_looking_down": {
-      "eye_x": 0.513,
-      "eye_y": 0.213,
+      "eye_x": 0.507,
+      "eye_y": 0.24,
       "head_h": 0.19,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "emerald_on_bow": {
-      "eye_x": 0.474,
-      "eye_y": 0.145,
+      "eye_x": 0.472,
+      "eye_y": 0.162,
       "head_h": 0.13,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "emerald_saluting": {
-      "eye_x": 0.536,
-      "eye_y": 0.231,
+      "eye_x": 0.537,
+      "eye_y": 0.25,
       "head_h": 0.18,
+      "eye_w": 0.065,
       "facing": "right"
     },
     "emerald_sitting": {
-      "eye_x": 0.557,
-      "eye_y": 0.198,
+      "eye_x": 0.565,
+      "eye_y": 0.21,
       "head_h": 0.18,
+      "eye_w": 0.045,
       "facing": "right"
     },
     "emerald_standing": {
-      "eye_x": 0.446,
-      "eye_y": 0.284,
+      "eye_x": 0.448,
+      "eye_y": 0.288,
       "head_h": 0.17,
+      "eye_w": 0.065,
       "facing": "right"
     },
     "ghost_back_turned": {
-      "eye_x": 0.513,
-      "eye_y": 0.159,
+      "eye_x": 0.5,
+      "eye_y": 0.163,
       "head_h": 0.17,
+      "eye_w": 0.09,
       "facing": "right"
     },
     "ghost_looking_down": {
-      "eye_x": 0.513,
-      "eye_y": 0.213,
+      "eye_x": 0.507,
+      "eye_y": 0.24,
       "head_h": 0.19,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "ghost_on_bow": {
-      "eye_x": 0.474,
-      "eye_y": 0.145,
+      "eye_x": 0.472,
+      "eye_y": 0.162,
       "head_h": 0.13,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "ghost_saluting": {
-      "eye_x": 0.536,
-      "eye_y": 0.231,
+      "eye_x": 0.537,
+      "eye_y": 0.25,
       "head_h": 0.18,
+      "eye_w": 0.065,
       "facing": "right"
     },
     "ghost_sitting": {
-      "eye_x": 0.557,
-      "eye_y": 0.198,
+      "eye_x": 0.565,
+      "eye_y": 0.21,
       "head_h": 0.18,
+      "eye_w": 0.045,
       "facing": "right"
     },
     "ghost_standing": {
-      "eye_x": 0.564,
-      "eye_y": 0.209,
+      "eye_x": 0.55,
+      "eye_y": 0.193,
       "head_h": 0.19,
+      "eye_w": 0.07,
       "facing": "right"
     },
     "gold_back_turned": {
-      "eye_x": 0.513,
-      "eye_y": 0.159,
+      "eye_x": 0.5,
+      "eye_y": 0.163,
       "head_h": 0.17,
+      "eye_w": 0.09,
       "facing": "right"
     },
     "gold_looking_down": {
-      "eye_x": 0.513,
-      "eye_y": 0.213,
+      "eye_x": 0.507,
+      "eye_y": 0.24,
       "head_h": 0.19,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "gold_on_bow": {
-      "eye_x": 0.474,
-      "eye_y": 0.145,
+      "eye_x": 0.472,
+      "eye_y": 0.162,
       "head_h": 0.13,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "gold_saluting": {
-      "eye_x": 0.536,
-      "eye_y": 0.231,
+      "eye_x": 0.537,
+      "eye_y": 0.25,
       "head_h": 0.18,
+      "eye_w": 0.065,
       "facing": "right"
     },
     "gold_sitting": {
-      "eye_x": 0.557,
-      "eye_y": 0.198,
+      "eye_x": 0.565,
+      "eye_y": 0.21,
       "head_h": 0.18,
+      "eye_w": 0.045,
       "facing": "right"
     },
     "gold_standing": {
-      "eye_x": 0.645,
-      "eye_y": 0.25,
+      "eye_x": 0.651,
+      "eye_y": 0.262,
       "head_h": 0.2,
+      "eye_w": 0.042,
       "facing": "right"
     },
     "green_back_turned": {
-      "eye_x": 0.513,
-      "eye_y": 0.159,
+      "eye_x": 0.5,
+      "eye_y": 0.163,
       "head_h": 0.17,
+      "eye_w": 0.09,
       "facing": "right"
     },
     "green_looking_down": {
-      "eye_x": 0.513,
-      "eye_y": 0.213,
+      "eye_x": 0.507,
+      "eye_y": 0.24,
       "head_h": 0.19,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "green_on_bow": {
-      "eye_x": 0.474,
-      "eye_y": 0.145,
+      "eye_x": 0.472,
+      "eye_y": 0.162,
       "head_h": 0.13,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "green_saluting": {
-      "eye_x": 0.536,
-      "eye_y": 0.231,
+      "eye_x": 0.537,
+      "eye_y": 0.25,
       "head_h": 0.18,
+      "eye_w": 0.065,
       "facing": "right"
     },
     "green_sitting": {
-      "eye_x": 0.557,
-      "eye_y": 0.198,
+      "eye_x": 0.565,
+      "eye_y": 0.21,
       "head_h": 0.18,
+      "eye_w": 0.045,
       "facing": "right"
     },
     "green_standing": {
-      "eye_x": 0.664,
-      "eye_y": 0.241,
+      "eye_x": 0.653,
+      "eye_y": 0.262,
       "head_h": 0.19,
+      "eye_w": 0.037,
       "facing": "right"
     },
     "zombie_back_turned": {
-      "eye_x": 0.513,
-      "eye_y": 0.159,
+      "eye_x": 0.5,
+      "eye_y": 0.163,
       "head_h": 0.17,
+      "eye_w": 0.09,
       "facing": "right"
     },
     "zombie_looking_down": {
-      "eye_x": 0.513,
-      "eye_y": 0.213,
+      "eye_x": 0.507,
+      "eye_y": 0.24,
       "head_h": 0.19,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "zombie_on_bow": {
-      "eye_x": 0.474,
-      "eye_y": 0.145,
+      "eye_x": 0.472,
+      "eye_y": 0.162,
       "head_h": 0.13,
+      "eye_w": 0.075,
       "facing": "right"
     },
     "zombie_saluting": {
-      "eye_x": 0.536,
-      "eye_y": 0.231,
+      "eye_x": 0.537,
+      "eye_y": 0.25,
       "head_h": 0.18,
+      "eye_w": 0.065,
       "facing": "right"
     },
     "zombie_sitting": {
-      "eye_x": 0.557,
-      "eye_y": 0.198,
+      "eye_x": 0.565,
+      "eye_y": 0.21,
       "head_h": 0.18,
+      "eye_w": 0.045,
       "facing": "right"
     },
     "zombie_standing": {
-      "eye_x": 0.664,
-      "eye_y": 0.241,
+      "eye_x": 0.653,
+      "eye_y": 0.262,
       "head_h": 0.19,
+      "eye_w": 0.037,
       "facing": "right"
     }
   }

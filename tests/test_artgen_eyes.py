@@ -73,13 +73,16 @@ def test_eye_anchor_matches_the_canonical_rig():
 def test_every_plate_is_centred_on_the_rig_anchor(plates):
     """The drawn eye's centre of mass must sit on the anchor the rig expects."""
     for key, img in plates.items():
-        a = np.asarray(img)[:, :, 3].astype(np.float32)
-        ys, xs = np.nonzero(a > 128)
+        # Measure the opaque eye body only. `crying` and `laser` deliberately
+        # spill past it — tears fall, a beam leaves — and averaging those in
+        # drags the centroid off the anchor.
+        a = np.asarray(img)[:, :, 3]
+        ys, xs = np.nonzero(a >= 250)
         assert xs.size, key
-        # `crying` and `laser` deliberately spill (tears fall, a beam leaves),
-        # so compare the eye body only: the densest row band.
         cx = float(xs.mean()) / img.width
-        assert cx == pytest.approx(eyes.EYE[0], abs=0.06), f"{key} x={cx:.3f}"
+        cy = float(ys.mean()) / img.height
+        assert cx == pytest.approx(eyes.EYE[0], abs=0.02), f"{key} x={cx:.3f}"
+        assert cy == pytest.approx(eyes.EYE[1], abs=0.02), f"{key} y={cy:.3f}"
 
 
 def test_plates_stay_inside_the_head(plates):
@@ -93,13 +96,16 @@ def test_plates_stay_inside_the_head(plates):
         assert ys.max() / img.height < head_bottom, f"{key} reaches the body"
 
 
-def test_the_eye_is_large_enough_to_cover_the_body_art():
-    """Sized to occlude: at 0.048 the original eye's outline showed as a ring.
+def test_the_drawn_eye_matches_the_canonical_eye_width():
+    """The art and the rig must agree on how wide the canonical eye is.
 
-    Expressed against head height, since that is what the rig scales by.
+    The compositor scales each plate by ``anchor.eye_w / canonical.eye_w``, so
+    art drawn at a different size than the rig claims lands at the wrong scale
+    on every body. This is what went wrong when the layer scaled by head
+    height: eye-to-head ratio varies by more than 2x across the plates.
     """
-    ratio = (eyes.EYE_W * 2) / rig.CANONICAL.head_h
-    assert 0.55 < ratio < 0.80, f"eye is {ratio:.2f} of head height"
+    assert eyes.EYE_W * 2 == pytest.approx(rig.CANONICAL.eye_w, abs=1e-6)
+    assert 0.6 < eyes.EYE_H / eyes.EYE_W < 1.0, "eye aspect should be wider than tall"
 
 
 @pytest.mark.parametrize("key", ["normal", "closed", "sleepy", "dead"])
@@ -139,12 +145,17 @@ def test_closed_and_open_eyes_differ_in_colour_not_coverage(plates):
     What separates them is what is inked onto it: an iris and pupil versus a
     lid line and lashes.
     """
-    a = np.asarray(plates["closed"]).astype(np.int16)
-    b = np.asarray(plates["normal"]).astype(np.int16)
+    # Compare inside the eye region: the plate is mostly empty canvas, so a
+    # whole-image mean just measures how small the eye is.
+    cx, cy = int(eyes.EYE[0] * 2048), int(eyes.EYE[1] * 2048)
+    r = int(eyes.EYE_W * 2048 * 1.4)
+    box = (slice(cy - r, cy + r), slice(cx - r, cx + r))
+    a = np.asarray(plates["closed"]).astype(np.int16)[box]
+    b = np.asarray(plates["normal"]).astype(np.int16)[box]
     alpha_delta = np.abs(a[:, :, 3] - b[:, :, 3]).mean()
     rgb_delta = np.abs(a[:, :, :3] - b[:, :, :3]).mean()
-    assert alpha_delta < 0.6, "coverage should barely differ"
-    assert rgb_delta > 0.4, "the inked state should differ"
+    assert alpha_delta < 12.0, "coverage should barely differ"
+    assert rgb_delta > 15.0, "the inked state should differ"
 
 
 # --------------------------------------------------------- placement on bodies

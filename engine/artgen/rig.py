@@ -38,49 +38,69 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 CONFIG = ROOT / "config"
 RIG_PATH = CONFIG / "rig.json"
 
-FACE_LAYERS = ("eyes", "mouth", "hat")
-"""Layers that must follow the head. ``clothing`` keys off the torso instead."""
+FACE_LAYERS = {"eyes": "eye_w", "mouth": "eye_w", "hat": "head_h"}
+"""Face layer -> which anchor measure scales it.
+
+Eyes and mouth are *features*, so they scale with feature size (``eye_w``).
+A hat sits on the skull, so it scales with ``head_h``. Using one measure for
+both gets one of them wrong: eye-to-head ratio varies by more than 2x here.
+``clothing`` is absent because it keys off the torso, not the head.
+"""
 
 
 @dataclass(frozen=True)
 class Anchor:
     """Head geometry for one plate, in normalised plate coordinates.
 
-    ``eye_x``/``eye_y`` is the **dominant** eye: the single visible eye on a
-    profile head, the nearer and larger one where two are drawn. Not the centre
-    of the eye mass — the eyes layer draws one eye (the species cue is *a
-    single large expressive eye*), so anchoring on the midpoint of a two-eyed
-    face lands it on the bridge of the nose.
+    ``eye_x``/``eye_y`` is the centre of the **dominant** eye: the single
+    visible eye on a profile head, the nearer and larger one where two are
+    drawn. Not the centre of the eye mass — the eyes layer draws one eye (the
+    species cue is *a single large expressive eye*), so anchoring on the
+    midpoint of a two-eyed face lands it on the bridge of the nose.
 
-    ``head_h`` is crown-to-chin, excluding hair. It sets the scale.
+    ``eye_w`` is that eye's drawn width, outer lid to outer lid. It is what the
+    eyes layer scales by, because eye-to-head ratio is *not* constant across
+    these plates — ``gold`` has a small eye (0.042) on a normal head while
+    ``blue_back_turned`` has a large one (0.090). Scaling eye art by head
+    height therefore gets the size wrong on most of them.
+
+    ``head_h`` is crown-to-chin, excluding hair. Hats scale by this instead,
+    since a hat sits on the skull rather than on the features.
+
+    Width, not height, is the scale reference: a half-lidded eye
+    (``blue_sitting``) has a much reduced opening but an unchanged width.
     """
 
     eye_x: float
     eye_y: float
     head_h: float
+    eye_w: float = 0.062
     facing: str = "right"
 
 
-CANONICAL = Anchor(eye_x=0.520, eye_y=0.145, head_h=0.190, facing="right")
+CANONICAL = Anchor(eye_x=0.520, eye_y=0.145, head_h=0.190, eye_w=0.062,
+                   facing="right")
 """The rig face sprites are authored against.
 
-Taken from the middle of the measured distribution so no plate needs an extreme
-transform: the largest resulting scale factor is about 1.6x.
+Every value sits mid-distribution so no plate needs an extreme transform:
+measured eye widths run 0.037-0.090, so scaling against 0.062 keeps every
+factor inside 0.6x-1.5x.
 """
 
 ANNOTATIONS: dict[str, Anchor] = {
-    "blue_back_turned": Anchor(0.513, 0.159, 0.170),
-    "blue_looking_down": Anchor(0.513, 0.213, 0.190),
-    "blue_on_bow": Anchor(0.474, 0.145, 0.130),
-    "blue_saluting": Anchor(0.536, 0.231, 0.180),
-    "blue_sitting": Anchor(0.557, 0.198, 0.180),
-    "blue_standing": Anchor(0.830, 0.435, 0.180),
-    "chrome_standing": Anchor(0.476, 0.272, 0.330, facing="left"),
-    "corrupted_standing": Anchor(0.648, 0.263, 0.200),
-    "emerald_standing": Anchor(0.446, 0.284, 0.170),
-    "ghost_standing": Anchor(0.564, 0.209, 0.190),
-    "gold_standing": Anchor(0.645, 0.250, 0.200),
-    "green_standing": Anchor(0.664, 0.241, 0.190),
+    #                       eye_x  eye_y  head_h  eye_w
+    "blue_back_turned":   Anchor(0.500, 0.163, 0.170, 0.090),
+    "blue_looking_down":  Anchor(0.507, 0.240, 0.190, 0.075),
+    "blue_on_bow":        Anchor(0.472, 0.162, 0.130, 0.075),
+    "blue_saluting":      Anchor(0.537, 0.250, 0.180, 0.065),
+    "blue_sitting":       Anchor(0.565, 0.210, 0.180, 0.045),
+    "blue_standing":      Anchor(0.832, 0.424, 0.180, 0.065),
+    "chrome_standing":    Anchor(0.520, 0.250, 0.330, 0.055, facing="left"),
+    "corrupted_standing": Anchor(0.655, 0.265, 0.200, 0.050),
+    "emerald_standing":   Anchor(0.448, 0.288, 0.170, 0.065),
+    "ghost_standing":     Anchor(0.550, 0.193, 0.190, 0.070),
+    "gold_standing":      Anchor(0.651, 0.262, 0.200, 0.042),
+    "green_standing":     Anchor(0.653, 0.262, 0.190, 0.037),
 }
 """Hand-annotated head anchors for the twelve unique source images.
 
@@ -99,16 +119,19 @@ def plate_anchors() -> dict[str, Anchor]:
 # -------------------------------------------------------------- the transform
 
 
-def face_transform(anchor: Anchor,
-                   canonical: Anchor = CANONICAL) -> tuple[float, float, float, bool]:
+def face_transform(anchor: Anchor, canonical: Anchor = CANONICAL,
+                   scale_by: str = "eye_w") -> tuple[float, float, float, bool]:
     """``(scale, dx, dy, mirror)`` taking face-sprite space onto this body.
 
     A point ``p`` authored against ``canonical`` lands at
     ``(p - canonical_eye) * scale + anchor_eye``, all in normalised
     coordinates. ``mirror`` is set when the body faces the other way, so a
     profile eye stays on the correct side of the skull.
+
+    ``scale_by`` selects the measure: ``eye_w`` for features, ``head_h`` for
+    hats. See ``FACE_LAYERS``.
     """
-    scale = anchor.head_h / canonical.head_h
+    scale = getattr(anchor, scale_by) / getattr(canonical, scale_by)
     mirror = anchor.facing != canonical.facing
     cx = 1.0 - canonical.eye_x if mirror else canonical.eye_x
     dx = anchor.eye_x - cx * scale
@@ -117,11 +140,12 @@ def face_transform(anchor: Anchor,
 
 
 def apply_face_transform(sprite, anchor: Anchor, size: int,
-                         canonical: Anchor = CANONICAL):
+                         canonical: Anchor = CANONICAL,
+                         scale_by: str = "eye_w"):
     """Place a face sprite onto a body's head. Returns a full-canvas RGBA image."""
     from PIL import Image
 
-    scale, dx, dy, mirror = face_transform(anchor, canonical)
+    scale, dx, dy, mirror = face_transform(anchor, canonical, scale_by)
     if mirror:
         sprite = sprite.transpose(Image.FLIP_LEFT_RIGHT)
     new = max(1, round(size * scale))
@@ -147,7 +171,7 @@ def build_doc() -> dict:
         "config_name": "rig",
         "version": "1.0.0",
         "canonical": asdict(CANONICAL),
-        "face_layers": list(FACE_LAYERS),
+        "face_layers": dict(FACE_LAYERS),
         "sources": {k: asdict(v) for k, v in sorted(ANNOTATIONS.items())},
         "plates": {k: asdict(v) for k, v in sorted(plate_anchors().items())},
     }

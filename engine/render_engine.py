@@ -246,7 +246,8 @@ def _body_plate(store: SpriteStore, traits: dict) -> str | None:
 
 
 def _place_face(sprite: Image.Image, size: int, anchor: dict,
-                canonical: dict, body_tf: dict | None) -> Image.Image:
+                canonical: dict, body_tf: dict | None,
+                scale_by: str = "eye_w") -> Image.Image:
     """Land a face sprite on this body's head.
 
     ``eyes``/``mouth``/``hat`` are single sprites per trait, but the head moves
@@ -256,15 +257,18 @@ def _place_face(sprite: Image.Image, size: int, anchor: dict,
 
     Two transforms compose here, in this order:
 
-    1. the **rig**, which maps the canonical head the sprite was authored
-       against onto this body's actual head (and mirrors it if the body faces
+    1. the **rig**, which maps the canonical feature the sprite was authored
+       against onto this body's actual one (and mirrors it if the body faces
        the other way, so a profile eye stays on the correct side of the skull);
     2. the **body's own layer transform**, because the rig is expressed in
        body-plate coordinates and the body is itself composited scaled and
        anchored. Skipping this second step lands the face art where the head
        would be if the body filled the frame, which it does not.
     """
-    scale_r = float(anchor["head_h"]) / float(canonical["head_h"])
+    # Which measure scales this layer: features track eye width, hats track
+    # head height. Eye-to-head ratio varies by more than 2x across the body
+    # plates, so one measure cannot serve both.
+    scale_r = float(anchor[scale_by]) / float(canonical[scale_by])
     mirror = anchor.get("facing", "right") != canonical.get("facing", "right")
     cx = 1.0 - float(canonical["eye_x"]) if mirror else float(canonical["eye_x"])
     dx = float(anchor["eye_x"]) - cx * scale_r
@@ -308,7 +312,7 @@ def compose(store: SpriteStore, traits: dict, zone: str | None) -> Image.Image:
     subject = Image.new("RGBA", (size, size), (0, 0, 0, 0)) if graded else None
 
     rig = _rig_doc() if graded else None
-    face_layers = set(rig["face_layers"]) if rig else set()
+    face_layers = dict(rig["face_layers"]) if rig else {}
     plate = _body_plate(store, traits) if face_layers else None
     anchor = rig["plates"].get(plate) if (rig and plate) else None
 
@@ -318,7 +322,8 @@ def compose(store: SpriteStore, traits: dict, zone: str | None) -> Image.Image:
             continue
         if anchor is not None and layer.name in face_layers:
             sprite = _place_face(sprite, size, anchor, rig["canonical"],
-                                 store.profile.layer_transforms.get("body"))
+                                 store.profile.layer_transforms.get("body"),
+                                 scale_by=face_layers[layer.name])
         else:
             sprite = _place(sprite, size,
                             store.profile.layer_transforms.get(layer.name))

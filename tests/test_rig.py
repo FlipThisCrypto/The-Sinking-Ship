@@ -68,6 +68,8 @@ def test_anchor_values_are_in_range():
         assert 0.0 < a.eye_x < 1.0, name
         assert 0.0 < a.eye_y < 1.0, name
         assert 0.05 < a.head_h < 0.6, name
+        assert 0.02 < a.eye_w < 0.20, name
+        assert a.eye_w < a.head_h, f"{name}: the eye cannot exceed the head"
         assert a.facing in ("left", "right"), name
 
 
@@ -110,10 +112,30 @@ def test_transform_maps_the_canonical_eye_onto_the_anchor_eye():
         assert rig.CANONICAL.eye_y * scale + dy == pytest.approx(a.eye_y, abs=1e-9), name
 
 
-def test_scale_follows_head_height():
+def test_features_scale_by_eye_width_and_hats_by_head_height():
+    """One measure cannot serve both: eye-to-head ratio varies by >2x here.
+
+    gold has a 0.042 eye on a 0.200 head; blue_back_turned has a 0.090 eye on a
+    0.170 head. Scaling eye art by head height made it far too large on the
+    former and too small on the latter.
+    """
     for name, a in rig.ANNOTATIONS.items():
-        scale = rig.face_transform(a)[0]
-        assert scale == pytest.approx(a.head_h / rig.CANONICAL.head_h), name
+        by_eye = rig.face_transform(a, scale_by="eye_w")[0]
+        by_head = rig.face_transform(a, scale_by="head_h")[0]
+        assert by_eye == pytest.approx(a.eye_w / rig.CANONICAL.eye_w), name
+        assert by_head == pytest.approx(a.head_h / rig.CANONICAL.head_h), name
+    assert DOC["face_layers"] == {"eyes": "eye_w", "mouth": "eye_w",
+                                  "hat": "head_h"}
+
+
+def test_eye_and_head_scales_genuinely_disagree():
+    """If they agreed, the distinction above would be dead weight."""
+    worst = max(
+        abs(rig.face_transform(a, scale_by="eye_w")[0]
+            - rig.face_transform(a, scale_by="head_h")[0])
+        for a in rig.ANNOTATIONS.values()
+    )
+    assert worst > 0.5
 
 
 def test_only_the_left_facing_plate_is_mirrored():
@@ -188,7 +210,7 @@ def test_mirrored_body_flips_the_sprite():
     placed = re_._place_face(sprite, size, DOC["plates"][plate], DOC["canonical"], None)
     got_x, _ = _found_at(placed)
     anchor = DOC["plates"][plate]
-    scale = anchor["head_h"] / DOC["canonical"]["head_h"]
+    scale = anchor["eye_w"] / DOC["canonical"]["eye_w"]
     mirrored = 1.0 - mark_x
     expected = anchor["eye_x"] + (mirrored - (1.0 - DOC["canonical"]["eye_x"])) * scale
     assert got_x == pytest.approx(expected, abs=0.02)

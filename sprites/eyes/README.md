@@ -26,8 +26,22 @@ this spot, so every trait lays down an opaque bone-white eye body before inking
 its state onto it. That shape is always drawn at *full* extent even when the
 lid is down: shrinking it with the lid left the body's open eye showing around
 a sliver of closed lid, which is the exact artefact this layer exists to
-prevent. The eye is ~0.63 of head height — sized to cover the art beneath, and
-matching the reference character's very large eye.
+prevent.
+
+## Scale comes from the eye, not the head
+
+`EYE_W * 2` must equal `rig.CANONICAL.eye_w`, and the compositor scales each
+plate by `anchor.eye_w / canonical.eye_w`.
+
+Scaling by *head height* was wrong and shipped briefly: eye-to-head ratio
+varies by more than 2x across the body plates — `gold_standing` has a 0.042
+eye on a 0.200 head, `blue_back_turned` a 0.090 eye on a 0.170 head — so
+head-based scaling made the eye far too large on small-eyed bodies and too
+small on large-eyed ones. Measured eye widths span 0.037–0.090; against the
+canonical 0.062 every plate now scales within 0.60x–1.45x.
+
+Width is the reference rather than height because a half-lidded eye
+(`blue_sitting`) has a much reduced opening but an unchanged width.
 
 | file | trait |
 |---|---|
