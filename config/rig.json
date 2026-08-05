@@ -1,0 +1,380 @@
+{
+  "$comment": "Head anchors per body plate, in normalised plate coordinates. eyes/mouth/hat are single sprites per trait, so the compositor transforms them onto each body's head using this table. Values are hand-annotated from the art and verified with scripts/build_rig.py --sheet. Rendering config only: it is NOT part of the traits/weights/tiers bundle hash the fairness pipeline uses.",
+  "config_name": "rig",
+  "version": "1.0.0",
+  "canonical": {
+    "eye_x": 0.52,
+    "eye_y": 0.145,
+    "head_h": 0.19,
+    "facing": "right"
+  },
+  "face_layers": [
+    "eyes",
+    "mouth",
+    "hat"
+  ],
+  "sources": {
+    "blue_back_turned": {
+      "eye_x": 0.532,
+      "eye_y": 0.108,
+      "head_h": 0.17,
+      "facing": "right"
+    },
+    "blue_looking_down": {
+      "eye_x": 0.53,
+      "eye_y": 0.155,
+      "head_h": 0.19,
+      "facing": "right"
+    },
+    "blue_on_bow": {
+      "eye_x": 0.55,
+      "eye_y": 0.125,
+      "head_h": 0.13,
+      "facing": "right"
+    },
+    "blue_saluting": {
+      "eye_x": 0.565,
+      "eye_y": 0.185,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "blue_sitting": {
+      "eye_x": 0.575,
+      "eye_y": 0.165,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "blue_standing": {
+      "eye_x": 0.83,
+      "eye_y": 0.435,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "chrome_standing": {
+      "eye_x": 0.35,
+      "eye_y": 0.235,
+      "head_h": 0.33,
+      "facing": "left"
+    },
+    "corrupted_standing": {
+      "eye_x": 0.53,
+      "eye_y": 0.2,
+      "head_h": 0.2,
+      "facing": "right"
+    },
+    "emerald_standing": {
+      "eye_x": 0.6,
+      "eye_y": 0.19,
+      "head_h": 0.17,
+      "facing": "right"
+    },
+    "ghost_standing": {
+      "eye_x": 0.53,
+      "eye_y": 0.225,
+      "head_h": 0.19,
+      "facing": "right"
+    },
+    "gold_standing": {
+      "eye_x": 0.53,
+      "eye_y": 0.205,
+      "head_h": 0.2,
+      "facing": "right"
+    },
+    "green_standing": {
+      "eye_x": 0.565,
+      "eye_y": 0.205,
+      "head_h": 0.19,
+      "facing": "right"
+    }
+  },
+  "plates": {
+    "blue_back_turned": {
+      "eye_x": 0.532,
+      "eye_y": 0.108,
+      "head_h": 0.17,
+      "facing": "right"
+    },
+    "blue_looking_down": {
+      "eye_x": 0.53,
+      "eye_y": 0.155,
+      "head_h": 0.19,
+      "facing": "right"
+    },
+    "blue_on_bow": {
+      "eye_x": 0.55,
+      "eye_y": 0.125,
+      "head_h": 0.13,
+      "facing": "right"
+    },
+    "blue_saluting": {
+      "eye_x": 0.565,
+      "eye_y": 0.185,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "blue_sitting": {
+      "eye_x": 0.575,
+      "eye_y": 0.165,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "blue_standing": {
+      "eye_x": 0.83,
+      "eye_y": 0.435,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "chrome_back_turned": {
+      "eye_x": 0.532,
+      "eye_y": 0.108,
+      "head_h": 0.17,
+      "facing": "right"
+    },
+    "chrome_looking_down": {
+      "eye_x": 0.53,
+      "eye_y": 0.155,
+      "head_h": 0.19,
+      "facing": "right"
+    },
+    "chrome_on_bow": {
+      "eye_x": 0.55,
+      "eye_y": 0.125,
+      "head_h": 0.13,
+      "facing": "right"
+    },
+    "chrome_saluting": {
+      "eye_x": 0.565,
+      "eye_y": 0.185,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "chrome_sitting": {
+      "eye_x": 0.575,
+      "eye_y": 0.165,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "chrome_standing": {
+      "eye_x": 0.35,
+      "eye_y": 0.235,
+      "head_h": 0.33,
+      "facing": "left"
+    },
+    "corrupted_back_turned": {
+      "eye_x": 0.532,
+      "eye_y": 0.108,
+      "head_h": 0.17,
+      "facing": "right"
+    },
+    "corrupted_looking_down": {
+      "eye_x": 0.53,
+      "eye_y": 0.155,
+      "head_h": 0.19,
+      "facing": "right"
+    },
+    "corrupted_on_bow": {
+      "eye_x": 0.55,
+      "eye_y": 0.125,
+      "head_h": 0.13,
+      "facing": "right"
+    },
+    "corrupted_saluting": {
+      "eye_x": 0.565,
+      "eye_y": 0.185,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "corrupted_sitting": {
+      "eye_x": 0.575,
+      "eye_y": 0.165,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "corrupted_standing": {
+      "eye_x": 0.53,
+      "eye_y": 0.2,
+      "head_h": 0.2,
+      "facing": "right"
+    },
+    "emerald_back_turned": {
+      "eye_x": 0.532,
+      "eye_y": 0.108,
+      "head_h": 0.17,
+      "facing": "right"
+    },
+    "emerald_looking_down": {
+      "eye_x": 0.53,
+      "eye_y": 0.155,
+      "head_h": 0.19,
+      "facing": "right"
+    },
+    "emerald_on_bow": {
+      "eye_x": 0.55,
+      "eye_y": 0.125,
+      "head_h": 0.13,
+      "facing": "right"
+    },
+    "emerald_saluting": {
+      "eye_x": 0.565,
+      "eye_y": 0.185,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "emerald_sitting": {
+      "eye_x": 0.575,
+      "eye_y": 0.165,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "emerald_standing": {
+      "eye_x": 0.6,
+      "eye_y": 0.19,
+      "head_h": 0.17,
+      "facing": "right"
+    },
+    "ghost_back_turned": {
+      "eye_x": 0.532,
+      "eye_y": 0.108,
+      "head_h": 0.17,
+      "facing": "right"
+    },
+    "ghost_looking_down": {
+      "eye_x": 0.53,
+      "eye_y": 0.155,
+      "head_h": 0.19,
+      "facing": "right"
+    },
+    "ghost_on_bow": {
+      "eye_x": 0.55,
+      "eye_y": 0.125,
+      "head_h": 0.13,
+      "facing": "right"
+    },
+    "ghost_saluting": {
+      "eye_x": 0.565,
+      "eye_y": 0.185,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "ghost_sitting": {
+      "eye_x": 0.575,
+      "eye_y": 0.165,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "ghost_standing": {
+      "eye_x": 0.53,
+      "eye_y": 0.225,
+      "head_h": 0.19,
+      "facing": "right"
+    },
+    "gold_back_turned": {
+      "eye_x": 0.532,
+      "eye_y": 0.108,
+      "head_h": 0.17,
+      "facing": "right"
+    },
+    "gold_looking_down": {
+      "eye_x": 0.53,
+      "eye_y": 0.155,
+      "head_h": 0.19,
+      "facing": "right"
+    },
+    "gold_on_bow": {
+      "eye_x": 0.55,
+      "eye_y": 0.125,
+      "head_h": 0.13,
+      "facing": "right"
+    },
+    "gold_saluting": {
+      "eye_x": 0.565,
+      "eye_y": 0.185,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "gold_sitting": {
+      "eye_x": 0.575,
+      "eye_y": 0.165,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "gold_standing": {
+      "eye_x": 0.53,
+      "eye_y": 0.205,
+      "head_h": 0.2,
+      "facing": "right"
+    },
+    "green_back_turned": {
+      "eye_x": 0.532,
+      "eye_y": 0.108,
+      "head_h": 0.17,
+      "facing": "right"
+    },
+    "green_looking_down": {
+      "eye_x": 0.53,
+      "eye_y": 0.155,
+      "head_h": 0.19,
+      "facing": "right"
+    },
+    "green_on_bow": {
+      "eye_x": 0.55,
+      "eye_y": 0.125,
+      "head_h": 0.13,
+      "facing": "right"
+    },
+    "green_saluting": {
+      "eye_x": 0.565,
+      "eye_y": 0.185,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "green_sitting": {
+      "eye_x": 0.575,
+      "eye_y": 0.165,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "green_standing": {
+      "eye_x": 0.565,
+      "eye_y": 0.205,
+      "head_h": 0.19,
+      "facing": "right"
+    },
+    "zombie_back_turned": {
+      "eye_x": 0.532,
+      "eye_y": 0.108,
+      "head_h": 0.17,
+      "facing": "right"
+    },
+    "zombie_looking_down": {
+      "eye_x": 0.53,
+      "eye_y": 0.155,
+      "head_h": 0.19,
+      "facing": "right"
+    },
+    "zombie_on_bow": {
+      "eye_x": 0.55,
+      "eye_y": 0.125,
+      "head_h": 0.13,
+      "facing": "right"
+    },
+    "zombie_saluting": {
+      "eye_x": 0.565,
+      "eye_y": 0.185,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "zombie_sitting": {
+      "eye_x": 0.575,
+      "eye_y": 0.165,
+      "head_h": 0.18,
+      "facing": "right"
+    },
+    "zombie_standing": {
+      "eye_x": 0.565,
+      "eye_y": 0.205,
+      "head_h": 0.19,
+      "facing": "right"
+    }
+  }
+}

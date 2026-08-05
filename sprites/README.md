@@ -37,6 +37,35 @@ Contract for every file, whatever its status:
 fully transparent canvas for those layers, and all files in each are
 byte-identical. They render as nothing.
 
+## Face-layer registration (the body rig)
+
+`eyes`, `mouth` and `hat` are single sprites per trait — `traits.json` gives
+them no pose dimension — so one `eyes/normal.png` has to land correctly on all
+48 body plates. Measured, the head moves a long way between them: **eye centres
+span x 0.26 to x 0.83 and head height varies about 2.4x**. A fixed placement
+puts the eyes on the cheek, or off the head, depending on the roll.
+
+The plates cannot be normalised onto a shared rig without destroying their
+composition (`blue_standing` and `emerald_standing` are different pictures, not
+recolours), so the *face layers* are transformed per body instead:
+
+- [`config/rig.json`](../config/rig.json) records a head anchor — eye centre,
+  head height, facing — for each of the twelve unique source images, expanded
+  to all 48 plates. Values are **hand-annotated from the art and verified with
+  a proof sheet**; two automatic detectors were tried and discarded (one had a
+  confidence score inversely correlated with correctness; the other found a
+  cigarette).
+- `render_engine._place_face` composes two transforms: the rig, which maps the
+  canonical head onto this body's head and mirrors it when the body faces the
+  other way, then the body's own `layer_transform`, because the rig is in
+  body-plate coordinates while the body is composited scaled and anchored.
+- Face sprites are authored against `rig.CANONICAL` — eye at (0.520, 0.145),
+  head height 0.190. No plate needs a scale outside 0.66x–1.74x.
+
+Check it with `make rig`, which draws the anchors on each plate and lands a
+registration card on all 48 bodies. `rig.json` is rendering config and is *not*
+part of the traits/weights/tiers bundle hash the fairness pipeline uses.
+
 ## Authoring production art
 
 `engine/artgen/` is the illustration engine; `scripts/gen_art.py --layer <name>`

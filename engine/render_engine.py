@@ -25,6 +25,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import functools
+import json
 import hashlib
 import logging
 import sys
@@ -228,6 +230,61 @@ def _place(sprite: Image.Image, size: int, tf: dict | None) -> Image.Image:
     return layer_canvas
 
 
+@functools.lru_cache(maxsize=1)
+def _rig_doc() -> dict | None:
+    """The body rig, or None if it is absent (pixel profile / bare checkouts)."""
+    path = Path(__file__).resolve().parent.parent / "config" / "rig.json"
+    if not path.is_file():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _body_plate(store: SpriteStore, traits: dict) -> str | None:
+    """The body sprite stem this NFT uses, e.g. ``gold_sitting``."""
+    path = store.sprite_path("body", traits)
+    return path.stem if path is not None else None
+
+
+def _place_face(sprite: Image.Image, size: int, anchor: dict,
+                canonical: dict, body_tf: dict | None) -> Image.Image:
+    """Land a face sprite on this body's head.
+
+    ``eyes``/``mouth``/``hat`` are single sprites per trait, but the head moves
+    a long way between body plates — eye centres span x 0.26 to x 0.83 and head
+    height varies about 2.4x — so a fixed placement puts the eyes on the cheek,
+    or off the head entirely, depending on the roll.
+
+    Two transforms compose here, in this order:
+
+    1. the **rig**, which maps the canonical head the sprite was authored
+       against onto this body's actual head (and mirrors it if the body faces
+       the other way, so a profile eye stays on the correct side of the skull);
+    2. the **body's own layer transform**, because the rig is expressed in
+       body-plate coordinates and the body is itself composited scaled and
+       anchored. Skipping this second step lands the face art where the head
+       would be if the body filled the frame, which it does not.
+    """
+    scale_r = float(anchor["head_h"]) / float(canonical["head_h"])
+    mirror = anchor.get("facing", "right") != canonical.get("facing", "right")
+    cx = 1.0 - float(canonical["eye_x"]) if mirror else float(canonical["eye_x"])
+    dx = float(anchor["eye_x"]) - cx * scale_r
+    dy = float(anchor["eye_y"]) - float(canonical["eye_y"]) * scale_r
+
+    scale_b = float(body_tf.get("scale", 1.0)) if body_tf else 1.0
+    anchor_y = float(body_tf.get("anchor_y", 1.0)) if body_tf else 1.0
+    scale = scale_r * scale_b
+    dx = dx * scale_b + (1.0 - scale_b) / 2.0
+    dy = dy * scale_b + anchor_y * (1.0 - scale_b)
+
+    if mirror:
+        sprite = sprite.transpose(Image.FLIP_LEFT_RIGHT)
+    new = max(1, round(size * scale))
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    out.paste(sprite.resize((new, new), Image.LANCZOS),
+              (round(dx * size), round(dy * size)))
+    return out
+
+
 def compose(store: SpriteStore, traits: dict, zone: str | None) -> Image.Image:
     size = store.master_px
     # Illustration: bone-white ground (ships_amano / ART-DIRECTION). Pixel: clear.
@@ -250,11 +307,21 @@ def compose(store: SpriteStore, traits: dict, zone: str | None) -> Image.Image:
     exempt = store.palette.background_layers if graded else set()
     subject = Image.new("RGBA", (size, size), (0, 0, 0, 0)) if graded else None
 
+    rig = _rig_doc() if graded else None
+    face_layers = set(rig["face_layers"]) if rig else set()
+    plate = _body_plate(store, traits) if face_layers else None
+    anchor = rig["plates"].get(plate) if (rig and plate) else None
+
     for layer in layers:
         sprite = store.get(layer.name, traits, zone)
         if sprite is None:
             continue
-        sprite = _place(sprite, size, store.profile.layer_transforms.get(layer.name))
+        if anchor is not None and layer.name in face_layers:
+            sprite = _place_face(sprite, size, anchor, rig["canonical"],
+                                 store.profile.layer_transforms.get("body"))
+        else:
+            sprite = _place(sprite, size,
+                            store.profile.layer_transforms.get(layer.name))
         if graded and layer.name not in exempt:
             subject.alpha_composite(sprite)
         else:

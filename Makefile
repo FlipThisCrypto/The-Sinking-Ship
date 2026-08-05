@@ -1,8 +1,8 @@
 # THE SINKING SHIP — common operator targets (Windows-friendly via make/GNU or WSL)
-.PHONY: test validate sprites vault art-verify vectors roll-vectors smoke load sellout site-data grails share og-image brand-assets fairness-check ci lint secrets-check site-links doc-links validate-html preflight soak help
+.PHONY: test validate sprites vault art-verify rig vectors roll-vectors smoke load sellout site-data grails share og-image brand-assets fairness-check ci lint secrets-check site-links doc-links validate-html preflight soak help
 
 help:
-	@echo "make test | validate | sprites | vault | art-verify | vectors | smoke | load | sellout | site-data | grails | share | og-image | fairness-check | lint | secrets-check | site-links | doc-links | validate-html | preflight | soak | ci"
+	@echo "make test | validate | sprites | vault | art-verify | rig | vectors | smoke | load | sellout | site-data | grails | share | og-image | fairness-check | lint | secrets-check | site-links | doc-links | validate-html | preflight | soak | ci"
 
 
 
@@ -22,6 +22,12 @@ vault:
 # Every committed sprite must regenerate byte-identically from its renderer.
 art-verify:
 	python -m pytest tests/test_artgen_reproducible.py -q
+
+# Prove the body rig: head anchors drawn on each plate, and the canonical
+# registration card transformed onto all 48 bodies.
+rig:
+	python scripts/build_rig.py --report
+	python scripts/build_rig.py --sheet output/art/rig_anchors.png 		--registration output/art/rig_registration.png
 
 vectors:
 	python scripts/export_fairness_vectors.py
