@@ -6,6 +6,7 @@ round. Read-only by convention: nothing in this tree is ever edited in place.
 | vault | frozen from | files | contents |
 |---|---|---|---|
 | `sprites-v1/` | `sprites/` @ commit `1efd7d9` (2026-08-04) | 216 | the pre-round-3 art: real illustration in `body/` + `ship_class/`, procedural stand-ins elsewhere |
+| `sprites-v2/` | `sprites/` @ commit `387cd4f` (2026-08-05) | 216 | the whole layer set as shipped through iteration 14, frozen before the face-blanking work begins. This is the revert point for the current look. |
 
 ## Why this exists
 

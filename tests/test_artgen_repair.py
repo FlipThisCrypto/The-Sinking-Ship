@@ -187,3 +187,70 @@ def test_shipped_repair_did_not_change_the_plate_over_white(path):
 def test_ship_layer_size_is_disciplined():
     total = sum(p.stat().st_size for p in SHIPS)
     assert total < 55 * 1024 * 1024, f"ship_class is {total / 1048576:.1f} MB"
+
+
+# ------------------------------------------------- blanking the eye socket
+
+
+def test_vault_v2_exists_as_a_revert_point():
+    """Frozen before the face-blanking work so the current art can be restored."""
+    v2 = ROOT / "vault" / "sprites-v2"
+    assert v2.is_dir()
+    assert (v2 / "MANIFEST.sha256").is_file()
+    assert len(list((v2 / "body").glob("*.png"))) == 48
+
+
+def test_blanking_never_alters_the_silhouette():
+    """The eye is interior to the figure, so alpha must pass through untouched.
+
+    This is the safety property: whatever the fill does to colour, it must not
+    change what the body occludes or how it composites.
+    """
+    from artgen import rig
+    from artgen.repair import blank_for
+
+    for name in ("green_standing", "chrome_standing", "corrupted_standing"):
+        src = Image.open(
+            ROOT / "vault" / "sprites-v1" / "body" / f"{name}.png"
+        ).convert("RGBA")
+        out = blank_for(name, src, rig.ANNOTATIONS[name])
+        assert np.array_equal(np.asarray(src)[:, :, 3], np.asarray(out)[:, :, 3]), name
+
+
+def test_blanking_only_touches_the_eye_region():
+    """A runaway fill would repaint the face; bound it to the socket's vicinity."""
+    from artgen import rig
+    from artgen.repair import blank_for
+
+    name = "green_standing"
+    a = rig.ANNOTATIONS[name]
+    src = Image.open(
+        ROOT / "vault" / "sprites-v1" / "body" / f"{name}.png"
+    ).convert("RGBA")
+    out = blank_for(name, src, a)
+    a_src = np.asarray(src).astype(int)
+    a_out = np.asarray(out).astype(int)
+    # Compare *visible* pixels only. The writer also zeroes RGB underneath
+    # fully transparent pixels (alpha hygiene), which changes millions of
+    # invisible values and would swamp this measurement.
+    visible = a_src[:, :, 3] > 8
+    delta = np.abs(a_src - a_out).max(axis=2) * visible
+    ys, xs = np.nonzero(delta > 12)
+    assert xs.size, "nothing was blanked"
+    w = src.width
+    assert abs(float(xs.mean()) / w - a.eye_x) < 0.05
+    assert abs(float(ys.mean()) / w - a.eye_y) < 0.05
+    reach = max(np.abs(xs / w - a.eye_x).max(), np.abs(ys / w - a.eye_y).max())
+    assert reach < a.eye_w * 4.0, "the fill escaped the eye region"
+
+
+def test_blanking_is_deterministic():
+    from artgen import rig
+    from artgen.repair import blank_for
+
+    src = Image.open(
+        ROOT / "vault" / "sprites-v1" / "body" / "gold_standing.png"
+    ).convert("RGBA")
+    a = rig.ANNOTATIONS["gold_standing"]
+    assert (np.asarray(blank_for("gold_standing", src, a)).tobytes()
+            == np.asarray(blank_for("gold_standing", src, a)).tobytes())
