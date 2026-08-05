@@ -54,20 +54,31 @@ def test_layer_has_no_transform_in_render_config():
 def test_ship_placement_is_read_from_config_not_hardcoded():
     doc = json.loads((ROOT / "config" / "render.json").read_text(encoding="utf-8"))
     tf = doc["profiles"]["illustration"]["layer_transforms"]["ship_class"]
-    assert sc.ship_placement() == (float(tf["scale"]), float(tf["anchor_y"]))
+    assert sc.ship_placement() == (float(tf["scale"]), float(tf["anchor_x"]),
+                                   float(tf["anchor_y"]))
 
 
 def test_ship_to_canvas_matches_the_compositor_placement():
-    """Mirror of render_engine._place: scale about centre, anchor vertically."""
-    scale, anchor = sc.ship_placement()
+    """Mirror of render_engine._place, including anchor_x.
+
+    ship_class is anchored to one side of the frame, so a mapping that assumed
+    horizontal centring would place every condition mark well off the hull.
+    """
+    scale, anchor_x, anchor_y = sc.ship_placement()
     size = 2048
     new = round(size * scale)
-    ax = (size - new) // 2
-    ay = round(anchor * (size - new))
+    ax = round(anchor_x * (size - new))
+    ay = round(anchor_y * (size - new))
     for u, v in ((0.0, 0.0), (0.5, 0.5), (1.0, 1.0), (0.25, 0.7)):
         cx, cy = sc.ship_to_canvas(u, v)
         assert cx * size == pytest.approx(ax + u * new, abs=1.0)
         assert cy * size == pytest.approx(ay + v * new, abs=1.0)
+
+
+def test_ship_is_not_horizontally_centred():
+    """If it were, the character and the vessel would overlap into a tangle."""
+    _, anchor_x, _ = sc.ship_placement()
+    assert abs(anchor_x - 0.5) > 0.2
 
 
 def test_sea_horizon_agrees_with_the_sea_layer():
@@ -92,9 +103,10 @@ def test_occupancy_is_a_probability_field_over_the_ship_plates():
 
 def test_sample_hull_lands_inside_the_ship_box():
     """Sampled points must map into the ship's composited rectangle."""
-    scale, anchor = sc.ship_placement()
-    lo_x, hi_x = 0.5 - scale / 2, 0.5 + scale / 2
-    lo_y = anchor * (1.0 - scale)
+    scale, anchor_x, anchor_y = sc.ship_placement()
+    lo_x = anchor_x * (1.0 - scale)
+    hi_x = lo_x + scale
+    lo_y = anchor_y * (1.0 - scale)
     ctx = sc.ConditionCtx(
         spec=sc.CONDITION_SPECS["burning"], size=1000,
         rng=np.random.default_rng(0), canvas=None, occ=sc.ship_occupancy(),
@@ -138,8 +150,12 @@ def test_water_surface_relaxes_to_the_sea_horizon_at_the_frame_edges():
     )
     surface = sc._surface_y(ctx, sc.CONDITION_SPECS["half_sunk"].water_level) / 512
     assert surface[0] == pytest.approx(sc.SEA_HORIZON, abs=0.02)
-    assert surface[-1] == pytest.approx(sc.SEA_HORIZON, abs=0.02)
-    assert surface[256] < sc.SEA_HORIZON - 0.05, "swell does not rise at the ship"
+    # The swell is centred on the *vessel*, which is anchored off-centre, so
+    # probe there rather than at the middle of the frame.
+    ship_cx = int(sc.ship_to_canvas(0.5, 0.5)[0] * 512)
+    assert surface[ship_cx] < sc.SEA_HORIZON - 0.05, "swell does not rise at the ship"
+    far = 0 if ship_cx > 256 else 511
+    assert surface[far] == pytest.approx(sc.SEA_HORIZON, abs=0.02)
 
 
 def test_full_plane_water_ignores_the_swell():

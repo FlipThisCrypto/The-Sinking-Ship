@@ -22,6 +22,7 @@ layers; anything sitting on the water keys off it rather than guessing.
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from dataclasses import dataclass, field as dc_field
 from typing import Callable, Sequence
 
@@ -38,13 +39,36 @@ from .core import (
     value_noise,
 )
 
+ROOT = Path(__file__).resolve().parent.parent.parent
+CONFIG = ROOT / "config"
+
 PAL = load_palette()
 
 SEA_HORIZON = 0.58
 """Canvas waterline — shared with sea/ship_condition."""
 
-SHIP_CORE = (0.50, 0.62, 0.34, 0.30)
-"""(cx, cy, rx, ry) of the ship's mass, from the measured occupancy field."""
+def _ship_core() -> tuple[float, float, float, float]:
+    """(cx, cy, rx, ry) of the vessel's mass in canvas space.
+
+    Derived from ``render.json`` rather than hardcoded: ship_class is anchored
+    to one side of the frame, so a clearance ellipse assumed to be centred
+    would protect empty water and leave the hull to be tangled with.
+    """
+    import json
+
+    tf = json.loads((CONFIG / "render.json").read_text(encoding="utf-8"))
+    tf = tf["profiles"]["illustration"]["layer_transforms"]["ship_class"]
+    scale = float(tf["scale"])
+    ax = float(tf.get("anchor_x", 0.5))
+    ay = float(tf.get("anchor_y", 1.0))
+    # the occupancy field peaks near (0.50, 0.60) in ship-plate space
+    cx = ax * (1.0 - scale) + 0.50 * scale
+    cy = ay * (1.0 - scale) + 0.60 * scale
+    return (cx, cy, 0.42 * scale, 0.44 * scale)
+
+
+SHIP_CORE = _ship_core()
+"""(cx, cy, rx, ry) of the ship's mass, derived from its composite placement."""
 
 MAX_ALPHA = 0.88
 

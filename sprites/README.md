@@ -37,6 +37,25 @@ Contract for every file, whatever its status:
 fully transparent canvas for those layers, and all files in each are
 byte-identical. They render as nothing.
 
+## Frame layout: the character and the vessel are separated
+
+`body` and `ship_class` are anchored to **opposite sides** of the frame
+(`config/render.json` → `layer_transforms`): body at `anchor_x` 0.05, ship at
+0.95.
+
+Both are fully rendered illustrations in their own right. Composited centred at
+similar scale they overlap almost completely, and the result is an unreadable
+tangle — with `ship_class`, a 16-value rarity axis, hidden behind the figure.
+Separating them horizontally lets both read.
+
+Anything that maps ship-plate or body-plate coordinates into canvas space must
+honour `anchor_x`, or its marks land beside the subject instead of on it:
+
+- `render_engine._place` / `_place_face`
+- `artgen.ship_condition.ship_to_canvas` — and the water swell, which is
+  centred on the vessel rather than on the frame
+- `artgen.scene_element.SHIP_CORE`, the clearance ellipse
+
 ## Face-layer registration (the body rig)
 
 `eyes`, `mouth` and `hat` are single sprites per trait — `traits.json` gives

@@ -70,8 +70,8 @@ MAX_ALPHA = 0.92
 
 
 @lru_cache(maxsize=1)
-def ship_placement() -> tuple[float, float]:
-    """``(scale, anchor_y)`` that ``render_engine`` composites ship_class with.
+def ship_placement() -> tuple[float, float, float]:
+    """``(scale, anchor_x, anchor_y)`` ``render_engine`` composites ship_class with.
 
     Read from config rather than hardcoded so the two cannot drift apart. This
     layer has *no* transform of its own — water has to reach the frame edges,
@@ -82,18 +82,25 @@ def ship_placement() -> tuple[float, float]:
         (CONFIG / "render.json").read_text(encoding="utf-8")
     )
     tf = doc["profiles"]["illustration"]["layer_transforms"]["ship_class"]
-    return float(tf["scale"]), float(tf.get("anchor_y", 1.0))
+    return (float(tf["scale"]), float(tf.get("anchor_x", 0.5)),
+            float(tf.get("anchor_y", 1.0)))
 
 
 def ship_to_canvas(u: float, v: float) -> tuple[float, float]:
-    """Normalised ship-plate point -> normalised canvas point."""
-    scale, anchor_y = ship_placement()
-    return (0.5 + (u - 0.5) * scale, anchor_y * (1.0 - scale) + v * scale)
+    """Normalised ship-plate point -> normalised canvas point.
+
+    Mirrors ``render_engine._place`` exactly, including ``anchor_x``: the ship
+    is anchored to one side of the frame, so a mark placed as if it were
+    centred lands well off the hull.
+    """
+    scale, anchor_x, anchor_y = ship_placement()
+    return (anchor_x * (1.0 - scale) + u * scale,
+            anchor_y * (1.0 - scale) + v * scale)
 
 
 def canvas_waterline_in_ship_space() -> float:
     """Where the composite sea crosses the ship, in the ship's own coordinates."""
-    scale, anchor_y = ship_placement()
+    scale, _, anchor_y = ship_placement()
     return (SEA_HORIZON - anchor_y * (1.0 - scale)) / scale
 
 
@@ -220,7 +227,11 @@ def _surface_y(ctx: ConditionCtx, level: float) -> np.ndarray:
     if ctx.spec.water_spread is None:
         base = np.full_like(xs, level)
     else:
-        bell = np.exp(-((xs - 0.5) / ctx.spec.water_spread) ** 2)
+        # Centre the swell on the *vessel*, not the frame. ship_class is
+        # anchored to one side, so a frame-centred bell raises water beside the
+        # hull instead of around it.
+        ship_cx = ship_to_canvas(0.5, 0.5)[0]
+        bell = np.exp(-((xs - ship_cx) / ctx.spec.water_spread) ** 2)
         base = SEA_HORIZON + (level - SEA_HORIZON) * bell
     tilt = math.tan(ctx.spec.tilt) * (xs - 0.5)
     ripple = (np.sin(xs * 2 * math.pi * 3.1) * 0.004

@@ -175,8 +175,10 @@ def test_eye_lands_on_the_head_of_representative_bodies(plate):
     ys, xs = np.nonzero(a > 128)
     assert xs.size, plate
     anchor = RIG["plates"][plate]
-    sc, ay = float(btf["scale"]), float(btf["anchor_y"])
-    want_x = anchor["eye_x"] * sc + (1.0 - sc) / 2.0
+    sc = float(btf["scale"])
+    ax = float(btf.get("anchor_x", 0.5))
+    ay = float(btf["anchor_y"])
+    want_x = anchor["eye_x"] * sc + ax * (1.0 - sc)
     want_y = anchor["eye_y"] * sc + ay * (1.0 - sc)
     assert float(xs.mean()) / size == pytest.approx(want_x, abs=0.03), plate
     assert float(ys.mean()) / size == pytest.approx(want_y, abs=0.03), plate

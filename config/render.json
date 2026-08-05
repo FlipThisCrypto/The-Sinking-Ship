@@ -8,7 +8,8 @@
     "active_profile selects how render_engine composites and validates. The owner chose full Amano illustration (ADR-0008), so 'illustration' is active.",
     "The 'pixel' profile is retained verbatim (the original spec behaviour) so a hybrid pixel side-line is a one-word switch.",
     "Real illustration art is authored at master_px; other output sizes are LANCZOS-resampled from it. Bump master_px to 4000 and author there if maximum fidelity at 4000 is required (heavier).",
-    "ship_condition deliberately has NO layer transform. Its water effects must reach the frame edges, and a transform would confine them to the ship's 0.8 box and render them as a rectangle mid-frame. engine/artgen/ship_condition.py instead reads ship_class's transform and maps ship-plate coordinates into canvas space itself, so damage still lands on the hull."
+    "body and ship_class are anchored to OPPOSITE sides of the frame. Both are fully rendered illustrations; composited centred at similar scale they overlap almost completely and the result is an unreadable tangle, with ship_class \u2014 a 16-value rarity axis \u2014 hidden behind the figure. Separating them horizontally lets both read. Anything that maps ship-plate or body-plate coordinates into canvas space (engine/artgen/ship_condition.py, scene_element.py, render_engine._place_face) must honour anchor_x.",
+    "ship_condition deliberately has NO layer transform: its water must reach the frame edges. It reads ship_class's transform and maps ship coordinates into canvas space itself."
   ],
   "profiles": {
     "pixel": {
@@ -34,12 +35,14 @@
       ],
       "layer_transforms": {
         "body": {
-          "scale": 0.84,
+          "scale": 0.8,
+          "anchor_x": 0.05,
           "anchor_y": 1.0
         },
         "ship_class": {
-          "scale": 0.8,
-          "anchor_y": 0.8
+          "scale": 0.7,
+          "anchor_x": 0.95,
+          "anchor_y": 0.78
         }
       }
     }

@@ -218,12 +218,25 @@ def _zone_ramp_name(zone: str | None) -> str:
 
 
 def _place(sprite: Image.Image, size: int, tf: dict | None) -> Image.Image:
-    """Apply a layer's margin transform (scale about centre, vertical anchor)."""
+    """Apply a layer's margin transform: scale, then anchor in both axes.
+
+    ``anchor_x``/``anchor_y`` are 0..1 positions of the scaled sprite inside the
+    frame (0 = flush left/top, 0.5 = centred, 1 = flush right/bottom).
+    ``anchor_x`` defaults to 0.5, which is the behaviour this had before it
+    existed.
+
+    Horizontal anchoring is what lets the character and the vessel occupy
+    *different* parts of the frame. Composited both-centred at similar scale
+    they overlap almost completely, and since each is a fully rendered
+    illustration in its own right the result is an unreadable tangle — and the
+    ship, a 16-value rarity axis, is left almost entirely hidden behind the
+    figure.
+    """
     if not tf or float(tf.get("scale", 1.0)) == 1.0:
         return sprite
     sc = float(tf["scale"])
     new = sprite.resize((max(1, round(size * sc)),) * 2, Image.LANCZOS)
-    ax = (size - new.width) // 2
+    ax = round(float(tf.get("anchor_x", 0.5)) * (size - new.width))
     ay = round(float(tf.get("anchor_y", 1.0)) * (size - new.height))
     layer_canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     layer_canvas.paste(new, (ax, ay))
@@ -275,9 +288,10 @@ def _place_face(sprite: Image.Image, size: int, anchor: dict,
     dy = float(anchor["eye_y"]) - float(canonical["eye_y"]) * scale_r
 
     scale_b = float(body_tf.get("scale", 1.0)) if body_tf else 1.0
+    anchor_x = float(body_tf.get("anchor_x", 0.5)) if body_tf else 0.5
     anchor_y = float(body_tf.get("anchor_y", 1.0)) if body_tf else 1.0
     scale = scale_r * scale_b
-    dx = dx * scale_b + (1.0 - scale_b) / 2.0
+    dx = dx * scale_b + anchor_x * (1.0 - scale_b)
     dy = dy * scale_b + anchor_y * (1.0 - scale_b)
 
     if mirror:

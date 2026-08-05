@@ -179,8 +179,9 @@ def test_face_sprite_lands_on_the_head_of_every_body(plate):
                              DOC["canonical"], BODY_TF)
     anchor = DOC["plates"][plate]
     sc = float(BODY_TF["scale"])
+    anchor_x = float(BODY_TF.get("anchor_x", 0.5))
     anchor_y = float(BODY_TF["anchor_y"])
-    want_x = anchor["eye_x"] * sc + (1.0 - sc) / 2.0
+    want_x = anchor["eye_x"] * sc + anchor_x * (1.0 - sc)
     want_y = anchor["eye_y"] * sc + anchor_y * (1.0 - sc)
     got_x, got_y = _found_at(placed)
     assert got_x == pytest.approx(want_x, abs=0.01), plate
