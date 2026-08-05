@@ -38,6 +38,7 @@ RENDERERS = {
     "ship_condition": "artgen.ship_condition",
     "aura": "artgen.aura",
     "body": "artgen.body",
+    "scene_element": "artgen.scene_element",
 }
 
 

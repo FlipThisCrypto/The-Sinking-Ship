@@ -2,10 +2,30 @@
 
 z-order: 3 | required: False | dimensions: 2048x2048 RGBA PNG (illustration profile)
 
-> **PLACEHOLDERS**: procedural Amano-ink stand-ins (gradient linework
-> on transparent ground; corner checker tag). Match ships_amano/ +
-> docs/art-reference/ART-DIRECTION.md and CLAUDE-STYLE-PACK.md.
-> Replace file-for-file with final art; filenames must not change.
+> **PRODUCTION ART** — authored by `engine/artgen/scene_element.py`, regenerate
+> with `python scripts/gen_art.py --layer scene_element`. Originals frozen in
+> [`vault/sprites-v1/`](../../vault/README.md).
+
+## Composition contract
+
+Forty plates across five series — harbor, military, pirate, wizard, crystal.
+The layer is single-select, so exactly one series appears per NFT and they never
+mix by construction. Every element has to share a frame with any of the sixteen
+ships, which drives two rules:
+
+- **Everything reads as distance.** These sit *behind* the vessel (z-order 3),
+  so they are drawn small, seated on the shared waterline (`SEA_HORIZON`, the
+  same 0.58 the sea and ship_condition layers use), with thinner strokes and
+  lower contrast than the ship's linework. An element that competes with the
+  ship for weight stops being a setting and becomes clutter.
+- **The centre is surrendered.** `clearance_mask` attenuates alpha inside the
+  ellipse the ship's mass occupies, so structures pass *behind* the hull rather
+  than tangling with it. The wizard and crystal series, meant to float around
+  the vessel, carry a weaker clearance.
+
+Elements spread along the horizon — convoys, fog fleets, reefs — necessarily
+have some mass where the ship is, because they are at the same distance. The
+clearance mask keeps it faint; measured, the densest core coverage is 0.033.
 
 | file | trait |
 |---|---|

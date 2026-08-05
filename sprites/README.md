@@ -23,7 +23,7 @@ Contract for every file, whatever its status:
 |---|---|---|---|
 | sky | 15 | **production** (`artgen.sky`) | background top; atmosphere wash + cloud linework + per-trait motif |
 | sea | 11 | **production** (`artgen.sea`) | background bottom; perspective wave band with a ragged hem |
-| scene_element | 40 | empty stand-in | series-prefixed filenames (harbor_/military_/pirate_/wizard_/crystal_) |
+| scene_element | 40 | **production** (`artgen.scene_element`) | five series (harbor_/military_/pirate_/wizard_/crystal_); distance-scaled, clears the ship's core |
 | ship_class | 16 | externally authored, **repaired** | 16 distinct illustrations; residual white matte removed (`scripts/repair_art.py`) |
 | ship_condition | 11 | **production** (`artgen.ship_condition`) | overlays; water keys off the waterline, damage off measured ship occupancy |
 | body | 48 | **derived** (`artgen.body`) | 8 colourways × 6 poses from 12 vaulted originals; all 48 now distinct |
