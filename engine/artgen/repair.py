@@ -104,113 +104,94 @@ def appearance_delta_over_white(a: Image.Image, b: Image.Image) -> tuple[float, 
 # --------------------------------------------------------- blanking the face
 
 
-BLANK_OVERRIDES: dict[str, dict[str, float]] = {
-    # One global threshold cannot serve twelve stylistically different
-    # illustrations: at a single setting `corrupted` and `ghost` lost their
-    # socket contour while `chrome` kept its whole eyeball. `cut_pct` is the
-    # skin-variation percentile above which a pixel counts as "not skin"
-    # (lower removes more), `cover` the guaranteed ellipse in eye widths.
-    "chrome_standing": {"cut_pct": 62.0, "cover": 1.45},
-    "corrupted_standing": {"cut_pct": 90.0, "cover": 0.80},
-    "ghost_standing": {"cut_pct": 90.0, "cover": 0.85},
-    "blue_standing": {"cut_pct": 86.0, "cover": 0.90},
-    "blue_saluting": {"cut_pct": 74.0, "cover": 1.10},
-}
-"""Per-plate blanking parameters, tuned against the before/after proof sheet."""
+BLANK_OVERRIDES: dict[str, dict[str, float]] = {}
+"""Per-plate blanking parameters, tuned against the before/after proof sheet.
+
+One global threshold cannot serve twelve stylistically different illustrations.
+"""
 
 
-def blank_eye_socket(img: Image.Image, eye_x: float, eye_y: float,
-                     eye_w: float, *, cover: float = 0.98,
-                     seed_from: float = 1.22,
-                     cut_pct: float = 80.0) -> Image.Image:
-    """Remove the drawn **eyeball**, leaving the socket and lid intact.
+def blank_pupil(img: Image.Image, eye_x: float, eye_y: float, eye_w: float, *,
+                feature_frac: float = 0.34, cover: float = 1.0,
+                seed_from: float = 1.55, cut_pct: float = 55.0,
+                smooth: float = 0.45) -> Image.Image:
+    """Remove the drawn **pupil**, leaving iris, sclera, lid and socket intact.
 
-    Why only the eyeball: the eye sits inside a network of hand-drawn contour
-    lines — lid, socket, skull edge — and diffusion inpainting cannot invent
-    line art, so masking the whole eye smears those contours into mush (tried,
-    with both Telea and Navier-Stokes, at several radii). Keeping the socket is
-    also better art direction: the character's own linework goes on framing the
-    eye, and the ``eyes`` trait supplies only what sits inside it.
+    The character keeps its own eye — its iris colour, its lid weight, its
+    socket linework, all hand-drawn — and the ``eyes`` trait supplies only the
+    pupil and, where a trait needs it, a lid drawn over the top. That is the
+    part that actually varies between traits, and it is the smallest edit that
+    makes the layer work.
 
-    The fill follows *local* colour rather than an average. A single median
-    skin tone taken from a ring around the eye picks up whatever shading
-    happens to fall in that ring — on ``blue_looking_down`` it produced a red
-    disc on a pale face. Instead every removed pixel takes the colour of its
-    nearest surviving skin pixel, and the result is blurred, so the fill
-    inherits the face's local gradient.
+    Removing more was tried and rejected. Masking the whole eye and inpainting
+    (Telea and Navier-Stokes, several radii) smears: the eye sits inside a
+    network of hand-drawn contour lines and diffusion cannot invent line art.
+    Removing the whole eyeball loses the iris, which is some of the best
+    drawing in the plates.
 
-    Alpha is untouched: the eye is interior to the figure, so its silhouette
-    does not change.
+    The fill takes colour from the **iris ring immediately around the pupil**,
+    by nearest surviving donor, then blurs. Sampling a wider ring picks up the
+    lid and smears dark into the fill; sampling a flat median picks up whatever
+    shading happens to fall in the ring.
+
+    Alpha is never touched: the pupil is interior to the figure, so the
+    silhouette and compositing behaviour cannot change.
+
+    ``feature_frac``
+        pupil radius as a fraction of eye width — what to remove.
+    ``seed_from``
+        donor ring start, in pupil radii. Must clear the pupil but stay inside
+        the iris.
+    ``cut_pct``
+        percentile of local colour variation above which a pixel counts as
+        "not iris". Lower removes more.
     """
     arr = np.asarray(img.convert("RGBA")).astype(np.float32)
     rgb, alpha = arr[:, :, :3], arr[:, :, 3]
     h, w = alpha.shape
-    r = max(2.0, eye_w * w * 0.5)
+    r = max(2.0, eye_w * w * feature_frac)
     cx, cy = eye_x * w, eye_y * h
 
     ys, xs = np.mgrid[0:h, 0:w].astype(np.float32)
-    d = np.hypot((xs - cx) / r, (ys - cy) / (r * 0.95))
+    d = np.hypot((xs - cx) / r, (ys - cy) / r)
 
-    # The eyeball's true extent is found, not assumed. A hand-measured eye
-    # width is good enough to *aim* at the eye but not to bound it — on
-    # `chrome` and `ghost` an assumed radius left half the eyeball behind.
-    # Grow the region of not-skin pixels connected to the anchor, capped at a
-    # radius so it cannot leak out along the hair.
-    near = d < 3.0
-    skin_ref = (alpha > 200) & (d > seed_from) & (d < seed_from * 3.0)
-    if skin_ref.sum() < 100:
+    ring = (d > seed_from) & (d < seed_from * 2.0) & (alpha > 200)
+    if ring.sum() < 60:
         return img
-    skin = np.median(rgb[skin_ref], axis=0)
-    diff = np.linalg.norm(rgb - skin.reshape(1, 1, 3), axis=2)
-    # Loose enough to include a mid-tone iris: at p92 only the pupil and the
-    # lid line cleared the bar and the iris survived as a ring. Per-plate
-    # overrides live in BLANK_OVERRIDES.
-    cut = max(18.0, float(np.percentile(diff[skin_ref], cut_pct)))
-    seed = ((diff > cut) & near & (alpha > 120)).astype(np.uint8)
+    iris = np.median(rgb[ring], axis=0)
+    diff = np.linalg.norm(rgb - iris.reshape(1, 1, 3), axis=2)
+    cut = max(14.0, float(np.percentile(diff[ring], cut_pct)))
+
+    seed = ((diff > cut) & (d < seed_from) & (alpha > 120)).astype(np.uint8)
     seed = cv2.morphologyEx(
         seed, cv2.MORPH_CLOSE,
         cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
     n, labels = cv2.connectedComponents(seed, 8)
     lab = labels[int(round(cy)), int(round(cx))]
-    if lab == 0:                      # anchor landed on skin — take the nearest blob
-        cand = [i for i in range(1, n) if (labels == i).sum() > 40]
-        if not cand:
-            return img
-        lab = min(cand, key=lambda i: float(
-            np.hypot(*(np.array(np.nonzero(labels == i)).mean(axis=1)
-                       - np.array([cy, cx])))))
-    eyeball = labels == lab
-    eyeball = cv2.dilate(
-        eyeball.astype(np.uint8),
-        cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
-                                  (max(3, int(r * 0.18)) | 1,) * 2)).astype(bool)
+    blob = (labels == lab) if lab else np.zeros_like(seed, bool)
 
-    # Union with the measured ellipse: detection bounds the eyeball better than
-    # a hand measurement can, but the measurement guarantees a floor.
-    removed = (eyeball | (d < cover)) & (d < 3.0)
+    removed = (blob | (d < cover)) & (d < seed_from)
     if not removed.any():
         return img
 
     grown = cv2.dilate(removed.astype(np.uint8),
                        cv2.getStructuringElement(
-                           cv2.MORPH_ELLIPSE, (max(3, int(r * 0.5)) | 1,) * 2)).astype(bool)
-    donor = (alpha > 200) & (~grown) & (diff < cut)
+                           cv2.MORPH_ELLIPSE, (max(3, int(r * 0.6)) | 1,) * 2)).astype(bool)
+    donor = (alpha > 200) & (~grown) & (d < seed_from * 2.4)
+    if donor.sum() < 40:
+        return img
 
-    # Nearest surviving donor for every removed pixel.
-    _, labels = cv2.distanceTransformWithLabels(
-        (~donor).astype(np.uint8), cv2.DIST_L2, 3,
-        labelType=cv2.DIST_LABEL_PIXEL)
+    _, lbl = cv2.distanceTransformWithLabels(
+        (~donor).astype(np.uint8), cv2.DIST_L2, 3, labelType=cv2.DIST_LABEL_PIXEL)
     dy, dx = np.nonzero(donor)
-    order = labels[donor]
-    lookup = np.zeros(int(labels.max()) + 1, dtype=np.int64)
-    lookup[order] = dy * w + dx
-    flat = lookup[labels]
-    filled = rgb.reshape(-1, 3)[flat.ravel()].reshape(h, w, 3)
+    lookup = np.zeros(int(lbl.max()) + 1, dtype=np.int64)
+    lookup[lbl[donor]] = dy * w + dx
+    filled = rgb.reshape(-1, 3)[lookup[lbl].ravel()].reshape(h, w, 3)
+    filled = cv2.GaussianBlur(filled, (0, 0), max(1.0, r * smooth))
 
-    filled = cv2.GaussianBlur(filled, (0, 0), max(1.0, r * 0.40))
     feather = cv2.GaussianBlur(removed.astype(np.float32), (0, 0),
-                               max(1.0, r * 0.10))[:, :, None]
-    feather = np.clip(feather * 1.35, 0.0, 1.0)
+                               max(1.0, r * 0.16))[:, :, None]
+    feather = np.clip(feather * 1.30, 0.0, 1.0)
     out = rgb * (1.0 - feather) + filled * feather
     out = np.clip(np.rint(np.dstack([out, alpha])), 0, 255).astype(np.uint8)
     out[out[:, :, 3] == 0] = 0
@@ -218,6 +199,6 @@ def blank_eye_socket(img: Image.Image, eye_x: float, eye_y: float,
 
 
 def blank_for(name: str, img: Image.Image, anchor) -> Image.Image:
-    """Blank one source plate using its tuned parameters."""
-    kw = dict(BLANK_OVERRIDES.get(name, {}))
-    return blank_eye_socket(img, anchor.eye_x, anchor.eye_y, anchor.eye_w, **kw)
+    """Blank one source plate's pupil using its tuned parameters."""
+    return blank_pupil(img, anchor.eye_x, anchor.eye_y, anchor.eye_w,
+                       **dict(BLANK_OVERRIDES.get(name, {})))

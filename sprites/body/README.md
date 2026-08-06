@@ -19,6 +19,26 @@ a rarer combination received a duplicate.
 A second, quieter defect: the trait names did not describe the art.
 `blue_on_bow` rendered a **red** character.
 
+## The drawn pupil is removed
+
+Each source plate has its **pupil** deleted before the colourway is applied, so
+the `eyes` trait can draw its own. Without this every NFT that rolls an eye
+trait shows two pupils.
+
+Only the pupil goes. The iris, sclera, eyelid and socket — the hand-drawn
+linework that makes these plates good — all survive and go on framing the eye.
+Removing more was tried and rejected: masking the whole eye and inpainting
+(Telea and Navier-Stokes, several radii) smears, because the eye sits inside a
+network of contour lines and diffusion cannot invent line art.
+
+The fill takes colour from the iris ring immediately around the pupil, by
+nearest surviving donor, then blurs — so it inherits that eye's own local
+shading rather than a flat average. Alpha is never touched, so the silhouette
+and compositing behaviour cannot change.
+
+Only the *dominant* eye is blanked. Two-eyed characters keep their far eye
+exactly as drawn, which matches the one-pupil design of the `eyes` layer.
+
 ## How it works now
 
 The filename means what it says: **pose selects the composition, variant

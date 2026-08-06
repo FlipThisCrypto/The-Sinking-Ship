@@ -58,10 +58,10 @@
       "facing": "right"
     },
     "chrome_standing": {
-      "eye_x": 0.52,
-      "eye_y": 0.25,
+      "eye_x": 0.555,
+      "eye_y": 0.24,
       "head_h": 0.33,
-      "eye_w": 0.055,
+      "eye_w": 0.1,
       "facing": "left"
     },
     "corrupted_standing": {
@@ -79,10 +79,10 @@
       "facing": "right"
     },
     "ghost_standing": {
-      "eye_x": 0.55,
-      "eye_y": 0.193,
+      "eye_x": 0.58,
+      "eye_y": 0.195,
       "head_h": 0.19,
-      "eye_w": 0.07,
+      "eye_w": 0.09,
       "facing": "right"
     },
     "gold_standing": {
@@ -179,10 +179,10 @@
       "facing": "right"
     },
     "chrome_standing": {
-      "eye_x": 0.52,
-      "eye_y": 0.25,
+      "eye_x": 0.555,
+      "eye_y": 0.24,
       "head_h": 0.33,
-      "eye_w": 0.055,
+      "eye_w": 0.1,
       "facing": "left"
     },
     "corrupted_back_turned": {
@@ -305,10 +305,10 @@
       "facing": "right"
     },
     "ghost_standing": {
-      "eye_x": 0.55,
-      "eye_y": 0.193,
+      "eye_x": 0.58,
+      "eye_y": 0.195,
       "head_h": 0.19,
-      "eye_w": 0.07,
+      "eye_w": 0.09,
       "facing": "right"
     },
     "gold_back_turned": {

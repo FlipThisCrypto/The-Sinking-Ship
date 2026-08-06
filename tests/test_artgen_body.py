@@ -195,3 +195,75 @@ def test_plate_file_sizes_are_bounded():
     """
     worst = max(p.stat().st_size for p in PLATES)
     assert worst < 4_500_000, f"largest body plate is {worst} bytes"
+
+
+# ------------------------------------------------- the pupil is removed
+
+
+def test_body_derives_through_the_pupil_blanking_step():
+    """The eyes layer supplies the pupil, so the drawn one must be gone.
+
+    Without this the composite shows two pupils on every NFT that rolls an eye
+    trait, which is what made the layer unusable.
+    """
+    from artgen import rig
+    from artgen.repair import blank_for
+
+    name = "green_standing"
+    raw = Image.open(body.VAULT_BODY / f"{name}.png").convert("RGBA")
+    blanked = blank_for(name, raw, rig.ANNOTATIONS[name])
+    derived = body._blanked_source(name, raw.width)
+    assert np.array_equal(np.asarray(derived), np.asarray(blanked))
+
+
+@pytest.mark.parametrize("name", sorted(
+    {"blue_back_turned", "blue_looking_down", "blue_on_bow", "blue_saluting",
+     "blue_sitting", "blue_standing", "chrome_standing", "corrupted_standing",
+     "emerald_standing", "ghost_standing", "gold_standing", "green_standing"}))
+def test_the_drawn_pupil_is_actually_gone(name):
+    """Measured, not assumed — via *flattening*, not brightness.
+
+    Brightness is the wrong signal: the fill takes the iris colour, and it
+    overwrites the sclera highlight as well as the pupil, so the mean moves up
+    on some plates and down on others depending on how dark that character's
+    iris is. What holds universally is that the eye's centre stops being a
+    dark disc on a bright field and becomes one flat tone. Measured across all
+    twelve sources the std ratio runs 0.22-0.72.
+    """
+    from artgen import rig
+
+    a = rig.ANNOTATIONS[name]
+    raw = np.asarray(
+        Image.open(body.VAULT_BODY / f"{name}.png").convert("RGBA")
+    ).astype(np.float32)
+    out = np.asarray(body._blanked_source(name, raw.shape[0])).astype(np.float32)
+    s = raw.shape[0]
+    r = max(4, int(a.eye_w * s * 0.30))
+    cx, cy = int(a.eye_x * s), int(a.eye_y * s)
+    box = (slice(cy - r, cy + r), slice(cx - r, cx + r))
+    before = raw[box][:, :, :3].mean(axis=2)
+    after = out[box][:, :, :3].mean(axis=2)
+    assert before.std() > 20, f"{name}: fixture has no pupil to remove"
+    assert after.std() < before.std() * 0.80, (
+        f"{name}: eye centre not flattened ({after.std():.1f} vs {before.std():.1f})"
+    )
+
+
+def test_blanking_leaves_the_rest_of_the_plate_alone():
+    """Only the eye changes; the hand-drawn art everywhere else must survive."""
+    from artgen import rig
+
+    name = "gold_standing"
+    a = rig.ANNOTATIONS[name]
+    raw = np.asarray(
+        Image.open(body.VAULT_BODY / f"{name}.png").convert("RGBA")
+    ).astype(int)
+    out = np.asarray(body._blanked_source(name, raw.shape[0])).astype(int)
+    s = raw.shape[0]
+    visible = raw[:, :, 3] > 8
+    delta = (np.abs(raw - out).max(axis=2) > 12) & visible
+    ys, xs = np.nonzero(delta)
+    assert xs.size, "nothing changed"
+    reach = max(np.abs(xs / s - a.eye_x).max(), np.abs(ys / s - a.eye_y).max())
+    assert reach < a.eye_w * 3.0, "the edit escaped the eye"
+    assert delta.mean() < 0.002, "too much of the plate changed"

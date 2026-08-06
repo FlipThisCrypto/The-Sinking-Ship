@@ -166,10 +166,22 @@ def gradient_map(img: Image.Image, variant: str) -> Image.Image:
     return Image.fromarray(out, mode="RGBA")
 
 
-def render(trait_key: str, size: int = 2048) -> Image.Image:
-    """Derive one body plate. Deterministic; depends only on vaulted source art."""
-    variant, _ = split_key(trait_key)
-    src_path = VAULT_BODY / f"{source_for(trait_key)}.png"
+@lru_cache(maxsize=16)
+def _blanked_source(name: str, size: int) -> Image.Image:
+    """A vaulted source plate with its drawn pupil removed.
+
+    The ``eyes`` layer supplies the pupil, so the character's own one has to go
+    or every composite shows two. Everything else the artist drew — iris,
+    sclera, lid, socket — survives, which is the whole point of removing so
+    little: that linework is what makes the plates good, and no procedural
+    sprite can replace it.
+
+    Cached because 48 body plates derive from only 12 sources.
+    """
+    from . import rig
+    from .repair import blank_for
+
+    src_path = VAULT_BODY / f"{name}.png"
     if not src_path.is_file():
         raise FileNotFoundError(
             f"{src_path} is missing — the body layer derives from the vault, "
@@ -178,7 +190,13 @@ def render(trait_key: str, size: int = 2048) -> Image.Image:
     img = Image.open(src_path).convert("RGBA")
     if img.size != (size, size):
         img = img.resize((size, size), Image.LANCZOS)
-    return gradient_map(img, variant)
+    return blank_for(name, img, rig.ANNOTATIONS[name])
+
+
+def render(trait_key: str, size: int = 2048) -> Image.Image:
+    """Derive one body plate. Deterministic; depends only on vaulted source art."""
+    variant, _ = split_key(trait_key)
+    return gradient_map(_blanked_source(source_for(trait_key), size), variant)
 
 
 def expected_from_traits() -> set[str]:

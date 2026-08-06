@@ -95,10 +95,10 @@ ANNOTATIONS: dict[str, Anchor] = {
     "blue_saluting":      Anchor(0.537, 0.250, 0.180, 0.065),
     "blue_sitting":       Anchor(0.565, 0.210, 0.180, 0.045),
     "blue_standing":      Anchor(0.832, 0.424, 0.180, 0.065),
-    "chrome_standing":    Anchor(0.520, 0.250, 0.330, 0.055, facing="left"),
+    "chrome_standing":    Anchor(0.555, 0.240, 0.330, 0.100, facing="left"),
     "corrupted_standing": Anchor(0.655, 0.265, 0.200, 0.050),
     "emerald_standing":   Anchor(0.448, 0.288, 0.170, 0.065),
-    "ghost_standing":     Anchor(0.550, 0.193, 0.190, 0.070),
+    "ghost_standing":     Anchor(0.580, 0.195, 0.190, 0.090),
     "gold_standing":      Anchor(0.651, 0.262, 0.200, 0.042),
     "green_standing":     Anchor(0.653, 0.262, 0.190, 0.037),
 }
