@@ -89,13 +89,13 @@ factor inside 0.6x-1.5x.
 
 ANNOTATIONS: dict[str, Anchor] = {
     #                       eye_x  eye_y  head_h  eye_w
-    "blue_back_turned":   Anchor(0.500, 0.163, 0.170, 0.090),
-    "blue_looking_down":  Anchor(0.507, 0.240, 0.190, 0.075),
+    "blue_back_turned":   Anchor(0.526, 0.170, 0.170, 0.043),
+    "blue_looking_down":  Anchor(0.516, 0.240, 0.190, 0.055),
     "blue_on_bow":        Anchor(0.472, 0.162, 0.130, 0.075),
-    "blue_saluting":      Anchor(0.537, 0.250, 0.180, 0.065),
-    "blue_sitting":       Anchor(0.565, 0.210, 0.180, 0.045),
-    "blue_standing":      Anchor(0.832, 0.424, 0.180, 0.065),
-    "chrome_standing":    Anchor(0.555, 0.240, 0.330, 0.100, facing="left"),
+    "blue_saluting":      Anchor(0.548, 0.252, 0.180, 0.055),
+    "blue_sitting":       Anchor(0.546, 0.213, 0.180, 0.028),
+    "blue_standing":      Anchor(0.820, 0.424, 0.180, 0.048),
+    "chrome_standing":    Anchor(0.545, 0.235, 0.330, 0.096, facing="left"),
     "corrupted_standing": Anchor(0.655, 0.265, 0.200, 0.050),
     "emerald_standing":   Anchor(0.448, 0.288, 0.170, 0.065),
     "ghost_standing":     Anchor(0.580, 0.195, 0.190, 0.090),

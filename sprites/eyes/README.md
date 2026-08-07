@@ -6,58 +6,35 @@ z-order: 8 | required: True | dimensions: 2048x2048 RGBA PNG (illustration profi
 > `python scripts/gen_art.py --layer eyes`. Originals frozen in
 > [`vault/sprites-v1/`](../../vault/README.md).
 
-## Authored in canonical rig space
+## What this layer draws — and what it does not
 
-Drawn once against `rig.CANONICAL` — eye at (0.520, 0.145), head height 0.190 —
-and landed on each body by `render_engine._place_face`. See the rig section of
-[`sprites/README.md`](../README.md).
+The **pupil**, plus a lid or an accent where the expression needs one. Nothing
+else.
 
-## Two rules
+The body plates keep their own **iris, sclera, eyelid and socket**, all
+hand-drawn; only their pupil is removed (see
+[`sprites/body/README.md`](../body/README.md)). So the character's own eye goes
+on doing the framing and the trait supplies the part that actually varies.
 
-**One eye, not two.** `ART-DIRECTION.md` names *a single large expressive eye
-in profile* as the species cue, and the body plates disagree about how many
-eyes are visible. So the rig anchor is the **dominant** eye — the only one on a
-profile head, the nearer and larger one where two are drawn — not the centre of
-the eye mass. Anchoring on the midpoint of a two-eyed face put the sprite on
-the bridge of the nose.
+An earlier version drew a complete opaque eyeball over the top. It read as a
+decal — a constructed shape sitting on a hand-drawn face — and correcting its
+placement and scale did not help, because the problem was that it was replacing
+better art than it could produce. `test_no_plate_paints_a_whole_eyeball` exists
+to stop it growing back.
 
-**The eye occludes; it does not overlay.** The body already has an eye drawn at
-this spot, so every trait lays down an opaque bone-white eye body before inking
-its state onto it. That shape is always drawn at *full* extent even when the
-lid is down: shrinking it with the lid left the body's open eye showing around
-a sliver of closed lid, which is the exact artefact this layer exists to
-prevent.
+## Sizing
 
-## Scale comes from the eye, not the head
+Authored against `rig.CANONICAL`: eye centre (0.520, 0.145), eye width 0.062,
+which `eyes.EYE_W` must equal — the compositor scales by
+`anchor.eye_w / canonical.eye_w`, so art drawn against a different width lands
+wrong on every body.
 
-`EYE_W * 2` must equal `rig.CANONICAL.eye_w`, and the compositor scales each
-plate by `anchor.eye_w / canonical.eye_w`.
+`PUPIL_R` stays inside the disc `blank_pupil` clears (`0.34 * eye_w`).
+Anything larger would overlap iris the artist drew and the composite would show
+both.
 
-Scaling by *head height* was wrong and shipped briefly: eye-to-head ratio
-varies by more than 2x across the body plates — `gold_standing` has a 0.042
-eye on a 0.200 head, `blue_back_turned` a 0.090 eye on a 0.170 head — so
-head-based scaling made the eye far too large on small-eyed bodies and too
-small on large-eyed ones. Measured eye widths span 0.037–0.090; against the
-canonical 0.062 every plate now scales within 0.60x–1.45x.
-
-Width is the reference rather than height because a half-lidded eye
-(`blue_sitting`) has a much reduced opening but an unchanged width.
-
-| file | trait |
-|---|---|
-| `normal.png` | Normal |
-| `sleepy.png` | Sleepy |
-| `closed.png` | Closed |
-| `determined.png` | Determined |
-| `scared.png` | Scared |
-| `crying.png` | Crying |
-| `hopeful.png` | Hopeful |
-| `looking_to_horizon.png` | Looking to Horizon |
-| `dead.png` | Dead |
-| `heart.png` | Heart |
-| `laser.png` | Laser |
-| `middle_finger_pupils.png` | Middle Finger Pupils |
-| `pixel_stars.png` | Pixel Stars |
-| `wizard.png` | Wizard |
-| `diamond.png` | Diamond |
-| `xch.png` | XCH |
+A lid cannot be skin-coloured — this sprite has no idea which of the eight
+colourways is underneath — so `closed` and `sleepy` are drawn in the
+character's own idiom: a heavy ink lid with lashes, which reads over any skin
+tone. Partial lids lean on the ink rim rather than the fill; at full strength
+they read as a grey slab laid over the eye rather than a lid coming down.

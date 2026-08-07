@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: MIT
 """QA gates for the eyes layer.
 
-The eyes plate is authored in canonical rig space and lands on each body via
-``render_engine._place_face``, so the assertions split in two: that the plate
-agrees with the rig it was drawn against, and that it *occludes* the eye already
-drawn on the body rather than floating over it.
+This layer draws the **pupil** and, where the expression needs it, a lid or an
+accent. It does not draw an eyeball: the body plates keep their own iris,
+sclera, eyelid and socket, and only their pupil is removed
+(``artgen.repair.blank_pupil``). An earlier version drew a complete opaque
+eyeball over the top and read as a decal — a constructed shape sitting on a
+hand-drawn face — so several of these tests exist to keep it from growing back.
 """
 from __future__ import annotations
 
@@ -26,6 +28,9 @@ from artgen.core import alpha_stats  # noqa: E402
 DIR = ROOT / "sprites" / "eyes"
 PLATES = sorted(DIR.glob("*.png"))
 RIG = json.loads((ROOT / "config" / "rig.json").read_text(encoding="utf-8"))
+BODY_TF = json.loads(
+    (ROOT / "config" / "render.json").read_text(encoding="utf-8")
+)["profiles"]["illustration"]["layer_transforms"]["body"]
 
 
 def _traits_filenames() -> list[str]:
@@ -65,123 +70,137 @@ def test_all_plates_are_distinct(plates):
 # ------------------------------------------------------------------ the rig
 
 
-def test_eye_anchor_matches_the_canonical_rig():
-    """If these drift apart, every eye plate lands off the head."""
+def test_eye_anchor_and_width_match_the_canonical_rig():
+    """If the art and the rig disagree, every plate lands wrong on every body.
+
+    The compositor scales by ``anchor.eye_w / canonical.eye_w``, so the width
+    this layer is drawn against has to be the width the rig publishes.
+    """
     assert eyes.EYE == (rig.CANONICAL.eye_x, rig.CANONICAL.eye_y)
+    assert eyes.EYE_W == pytest.approx(rig.CANONICAL.eye_w, abs=1e-9)
+
+
+def test_the_pupil_fits_inside_the_area_the_body_blanked():
+    """blank_pupil clears 0.34 * eye_w; drawing past that lands on the artist's
+    iris and the composite shows both."""
+    cleared = 0.34 * eyes.EYE_W
+    widest = max(s.pupil_scale for s in eyes.EYE_SPECS.values())
+    assert eyes.PUPIL_R * widest < cleared, (
+        f"pupil {eyes.PUPIL_R * widest:.4f} exceeds cleared {cleared:.4f}"
+    )
 
 
 def test_every_plate_is_centred_on_the_rig_anchor(plates):
-    """The drawn eye's centre of mass must sit on the anchor the rig expects."""
     for key, img in plates.items():
-        # Measure the opaque eye body only. `crying` and `laser` deliberately
-        # spill past it — tears fall, a beam leaves — and averaging those in
-        # drags the centroid off the anchor.
         a = np.asarray(img)[:, :, 3]
         ys, xs = np.nonzero(a >= 250)
         assert xs.size, key
-        cx = float(xs.mean()) / img.width
-        cy = float(ys.mean()) / img.height
-        assert cx == pytest.approx(eyes.EYE[0], abs=0.02), f"{key} x={cx:.3f}"
-        assert cy == pytest.approx(eyes.EYE[1], abs=0.02), f"{key} y={cy:.3f}"
+        assert float(xs.mean()) / img.width == pytest.approx(eyes.EYE[0], abs=0.03), key
 
 
-def test_plates_stay_inside_the_head(plates):
-    """Nothing may stray far from the canonical head, or it lands on the body."""
-    head_top = rig.CANONICAL.eye_y - rig.CANONICAL.head_h
-    head_bottom = rig.CANONICAL.eye_y + rig.CANONICAL.head_h * 1.6
+def test_plates_stay_within_the_eye_and_its_immediate_surround(plates):
+    """Nothing may stray far from the eye, or it lands on the body.
+
+    `crying` and `laser` deliberately reach past the eye — tears fall, a beam
+    leaves — so the bound is generous, but finite.
+    """
     for key, img in plates.items():
         a = np.asarray(img)[:, :, 3]
         ys, xs = np.nonzero(a > 20)
-        assert ys.min() / img.height > head_top, key
-        assert ys.max() / img.height < head_bottom, f"{key} reaches the body"
+        reach = max(
+            abs(xs.min() / img.width - eyes.EYE[0]),
+            abs(xs.max() / img.width - eyes.EYE[0]),
+            abs(ys.min() / img.height - eyes.EYE[1]),
+            abs(ys.max() / img.height - eyes.EYE[1]),
+        )
+        assert reach < eyes.EYE_W * 4.0, f"{key} reaches {reach:.3f} from the eye"
 
 
-def test_the_drawn_eye_matches_the_canonical_eye_width():
-    """The art and the rig must agree on how wide the canonical eye is.
+# ------------------------------------------- pupil, not a replacement eyeball
 
-    The compositor scales each plate by ``anchor.eye_w / canonical.eye_w``, so
-    art drawn at a different size than the rig claims lands at the wrong scale
-    on every body. This is what went wrong when the layer scaled by head
-    height: eye-to-head ratio varies by more than 2x across the plates.
+
+def test_no_plate_paints_a_whole_eyeball(plates):
+    """The regression this layer was rebuilt to remove.
+
+    An opaque disc the size of the eye would cover the artist's iris. Coverage
+    is measured against the eye's own area, so it scales with the rig rather
+    than with the canvas. Lid traits are exempt: a lid is *meant* to cover.
     """
-    assert eyes.EYE_W * 2 == pytest.approx(rig.CANONICAL.eye_w, abs=1e-6)
-    assert 0.6 < eyes.EYE_H / eyes.EYE_W < 1.0, "eye aspect should be wider than tall"
+    size = 2048
+    eye_area = np.pi * (eyes.EYE_W * 0.5 * size) ** 2
+    for key, img in plates.items():
+        if eyes.EYE_SPECS[key].lid > 0.01:
+            continue
+        opaque = int((np.asarray(img)[:, :, 3] >= 250).sum())
+        assert opaque < eye_area * 0.85, (
+            f"{key} covers {opaque / eye_area:.2f} of the eye — drawing an eyeball"
+        )
 
 
-@pytest.mark.parametrize("key", ["normal", "closed", "sleepy", "dead"])
-def test_the_eye_body_is_opaque(key, plates):
-    """A translucent sclera would let the body's own eye show through.
-
-    `closed` matters most: a see-through lid renders an open eye with a lid
-    floating over it.
-    """
-    img = plates[key]
-    cx, cy = int(eyes.EYE[0] * 2048), int(eyes.EYE[1] * 2048)
-    r = int(eyes.EYE_H * 2048 * 0.35)
-    core = np.asarray(img)[cy - r:cy + r, cx - r:cx + r, 3]
-    assert core.min() >= 250, f"{key} eye body is not opaque"
-
-
-def plate_of(key: str) -> Image.Image:
-    return Image.open(DIR / f"{key}.png").convert("RGBA")
+def test_the_pupil_itself_is_opaque(plates):
+    """Whatever its shape, the pupil must read as solid against the iris."""
+    for key in ("normal", "hopeful", "looking_to_horizon", "heart", "diamond"):
+        a = np.asarray(plates[key])[:, :, 3]
+        ys, xs = np.nonzero(a >= 250)
+        assert xs.size, key
+        # Solidity as fill ratio within the pupil's own bounding box, not the
+        # alpha at one chosen point: a heart has a cleft and a diamond has
+        # corners, so a geometric probe lands in empty space on some shapes.
+        box = a[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+        fill = float((box >= 250).mean())
+        assert fill > 0.45, f"{key} pupil is not solid (fill {fill:.2f})"
 
 
-def test_the_occluding_cover_does_not_shrink_with_the_lid():
-    """A shut eye must still cover the whole eye drawn on the body.
-
-    Conflating the occluding shape with the visible opening left the body's
-    open eye showing around a sliver of lid.
-    """
-    opaque = {}
-    for key in ("normal", "closed"):
-        a = np.asarray(plate_of(key))[:, :, 3]
-        opaque[key] = int((a >= 250).sum())
-    assert opaque["closed"] >= opaque["normal"] * 0.85
+def test_closed_is_the_only_trait_without_a_pupil():
+    shut = [k for k, s in eyes.EYE_SPECS.items() if s.lid >= 0.99]
+    assert shut == ["closed"]
 
 
-def test_closed_and_open_eyes_differ_in_colour_not_coverage(plates):
-    """They share an occluding cover by design, so alpha is nearly identical.
-
-    What separates them is what is inked onto it: an iris and pupil versus a
-    lid line and lashes.
-    """
-    # Compare inside the eye region: the plate is mostly empty canvas, so a
-    # whole-image mean just measures how small the eye is.
-    cx, cy = int(eyes.EYE[0] * 2048), int(eyes.EYE[1] * 2048)
-    r = int(eyes.EYE_W * 2048 * 1.4)
-    box = (slice(cy - r, cy + r), slice(cx - r, cx + r))
-    a = np.asarray(plates["closed"]).astype(np.int16)[box]
-    b = np.asarray(plates["normal"]).astype(np.int16)[box]
-    alpha_delta = np.abs(a[:, :, 3] - b[:, :, 3]).mean()
-    rgb_delta = np.abs(a[:, :, :3] - b[:, :, :3]).mean()
-    assert alpha_delta < 12.0, "coverage should barely differ"
-    assert rgb_delta > 15.0, "the inked state should differ"
+def test_closed_covers_more_of_the_eye_than_an_open_one(plates):
+    a = int((np.asarray(plates["closed"])[:, :, 3] >= 200).sum())
+    b = int((np.asarray(plates["normal"])[:, :, 3] >= 200).sum())
+    assert a > b * 2, "a shut lid must cover far more than a pupil"
 
 
 # --------------------------------------------------------- placement on bodies
 
 
 @pytest.mark.parametrize("plate", ["green_standing", "chrome_saluting",
-                                   "blue_standing", "ghost_sitting"])
-def test_eye_lands_on_the_head_of_representative_bodies(plate):
-    """End-to-end: the plate, through the rig, onto a body's head."""
+                                   "blue_standing", "ghost_sitting",
+                                   "gold_on_bow", "corrupted_sitting"])
+def test_pupil_lands_on_the_eye_of_representative_bodies(plate):
+    """End-to-end: the plate, through the rig, onto a body's own eye."""
     size = 512
-    btf = json.loads(
-        (ROOT / "config" / "render.json").read_text(encoding="utf-8")
-    )["profiles"]["illustration"]["layer_transforms"]["body"]
     sprite = eyes.render("normal", size=size).to_image()
-    placed = re_._place_face(sprite, size, RIG["plates"][plate], RIG["canonical"], btf)
+    placed = re_._place_face(sprite, size, RIG["plates"][plate],
+                             RIG["canonical"], BODY_TF, "eye_w")
     a = np.asarray(placed)[:, :, 3]
     ys, xs = np.nonzero(a > 128)
     assert xs.size, plate
     anchor = RIG["plates"][plate]
-    sc = float(btf["scale"])
-    ax = float(btf.get("anchor_x", 0.5))
-    ay = float(btf["anchor_y"])
+    sc = float(BODY_TF["scale"])
+    ax = float(BODY_TF.get("anchor_x", 0.5))
+    ay = float(BODY_TF["anchor_y"])
     want_x = anchor["eye_x"] * sc + ax * (1.0 - sc)
     want_y = anchor["eye_y"] * sc + ay * (1.0 - sc)
-    assert float(xs.mean()) / size == pytest.approx(want_x, abs=0.03), plate
-    assert float(ys.mean()) / size == pytest.approx(want_y, abs=0.03), plate
+    assert float(xs.mean()) / size == pytest.approx(want_x, abs=0.02), plate
+    assert float(ys.mean()) / size == pytest.approx(want_y, abs=0.02), plate
+
+
+@pytest.mark.parametrize("plate", ["green_standing", "chrome_standing",
+                                   "blue_sitting"])
+def test_the_placed_pupil_is_no_wider_than_the_body_eye(plate):
+    """A pupil wider than the eye it sits in would spill onto the face."""
+    size = 1024
+    sprite = eyes.render("normal", size=size).to_image()
+    placed = re_._place_face(sprite, size, RIG["plates"][plate],
+                             RIG["canonical"], BODY_TF, "eye_w")
+    xs = np.nonzero(np.asarray(placed)[:, :, 3] > 128)[1]
+    drawn = (xs.max() - xs.min()) / size
+    eye_on_canvas = RIG["plates"][plate]["eye_w"] * float(BODY_TF["scale"])
+    assert drawn < eye_on_canvas, (
+        f"{plate}: pupil {drawn:.4f} wider than eye {eye_on_canvas:.4f}"
+    )
 
 
 # --------------------------------------------------------------- the renderer
@@ -189,19 +208,17 @@ def test_eye_lands_on_the_head_of_representative_bodies(plate):
 
 def test_specs_reference_only_master_palette_colors():
     for key, spec in eyes.EYE_SPECS.items():
-        assert spec.iris in eyes.PAL, f"{key} iris {spec.iris}"
+        assert spec.colour in eyes.PAL, f"{key} colour {spec.colour}"
+        glow = spec.extras.get("glow")
+        if glow:
+            assert glow in eyes.PAL, f"{key} glow {glow}"
 
 
 def test_spec_budgets_are_sane():
     for key, spec in eyes.EYE_SPECS.items():
-        assert 0.0 <= spec.open_amount <= 1.4, key
-        assert 0.0 < spec.pupil < 1.0, key
-        assert 0.0 < spec.line_alpha <= 1.0, key
-
-
-def test_exactly_one_trait_is_fully_closed():
-    shut = [k for k, s in eyes.EYE_SPECS.items() if s.open_amount < 0.12]
-    assert shut == ["closed"]
+        assert 0.0 <= spec.lid <= 1.0, key
+        assert 0.3 <= spec.pupil_scale <= 1.5, key
+        assert 0.0 <= spec.highlight <= 1.0, key
 
 
 def test_render_is_deterministic():
@@ -216,6 +233,6 @@ def test_render_rejects_unknown_trait():
 
 
 def test_plate_file_sizes_are_small():
-    """A single eye covers a fraction of the canvas; these must stay tiny."""
+    """A pupil covers a tiny fraction of the canvas; these must stay tiny."""
     for p in PLATES:
-        assert p.stat().st_size < 200_000, f"{p.name} is {p.stat().st_size} bytes"
+        assert p.stat().st_size < 120_000, f"{p.name} is {p.stat().st_size} bytes"
